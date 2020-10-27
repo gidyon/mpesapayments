@@ -1,0 +1,15 @@
+Confirmation: {
+  "TransactionType": "Pay Bill",
+  "TransID": "OHG2OIQVQC",
+  "TransTime": "20200816204116",
+  "TransAmount": "10.00",
+  "BusinessShortCode": "499555",
+  "BillRefNumber": "0712555626",
+  "InvoiceNumber": "",
+  "OrgAccountBalance": "879409.00",
+  "ThirdPartyTransID": "",
+  "MSISDN": "254712555626",
+  "FirstName": "Eunice",
+  "MiddleName": "W",
+  "LastName": "Kimani"
+}
