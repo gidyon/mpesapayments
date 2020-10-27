@@ -1,0 +1,30 @@
+version: '3'
+
+services:
+  mysql:
+    image: mysql:8.0.18
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - frontend-bridge
+    volumes:
+      - /Users/jessegitaka/mysql-storage/mpesaportal/:/var/lib/mysql
+    environment:
+      MYSQL_HOST: localhost
+      MYSQL_USER: root
+      MYSQL_PASSWORD: hakty11
+      MYSQL_ROOT_PASSWORD: hakty11
+      MYSQL_DATABASE: tracking-portal
+  
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - frontend-bridge
+
+networks:
+  frontend-bridge:
+    external: true
