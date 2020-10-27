@@ -1,0 +1,6 @@
+dependencies:
+- name: micro
+  repository: https://raw.githubusercontent.com/gidyon/services/master/deployments/helm/packages
+  version: 0.1.1
+digest: sha256:2590f27d59bd529a7517841106fd3b4e107530d72728ae53569b9c1f7a193c8a
+generated: "2020-10-19T11:54:08.405973+03:00"
