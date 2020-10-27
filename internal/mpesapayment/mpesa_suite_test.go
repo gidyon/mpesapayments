@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro"
 	"github.com/gidyon/micro/pkg/conn"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/mocks"
 	"github.com/go-redis/redis"
 	_ "github.com/go-sql-driver/mysql"

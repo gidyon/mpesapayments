@@ -3,7 +3,7 @@ package mpesapayment
 import (
 	"fmt"
 
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/utils/errs"
 )
 

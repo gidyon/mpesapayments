@@ -1,16 +1,19 @@
 package mpesapayment
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/encryption"
 	"github.com/gidyon/services/pkg/utils/errs"
@@ -19,6 +22,7 @@ import (
 	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
+	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
@@ -169,6 +173,129 @@ func ValidateMPESAPayment(payment *mpesapayment.MPESAPayment) error {
 	return err
 }
 
+// GetMpesaPaymentKey retrives hash storing details of an mpesa transaction
+func GetMpesaPaymentKey(msisdn string) string {
+	return fmt.Sprintf("mpesa:%s", msisdn)
+}
+
+func (mpesaAPI *mpesaAPIServer) InitiateSTKPush(
+	ctx context.Context, initReq *mpesapayment.InitiateSTKPushRequest,
+) (*mpesapayment.InitiateSTKPushResponse, error) {
+	// Authentication
+	err := mpesaAPI.authAPI.AuthenticateRequest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case initReq == nil:
+		return nil, errs.NilObject("initiate request")
+	case initReq.Phone == "":
+		return nil, errs.MissingField("phone")
+	case initReq.Amount == 0:
+		return nil, errs.MissingField("amount")
+	}
+
+	txKey := GetMpesaPaymentKey(initReq.Phone)
+
+	// Check whether another transaction is under way
+	exists, err := mpesaAPI.RedisDB.Exists(txKey).Result()
+	if err != nil {
+		return nil, errs.RedisCmdFailed(err, "exists")
+	}
+
+	if exists == 1 {
+		return &mpesapayment.InitiateSTKPushResponse{
+			Progress: false,
+			Message:  "Another MPESA transaction is currently underway. Please wait.",
+		}, nil
+	}
+
+	// Marshal initReq
+	bs, err := proto.Marshal(initReq)
+	if err != nil {
+		return nil, errs.FromProtoMarshal(err, "init request")
+	}
+
+	// Save transaction information in cache for max of 5 min
+	err = mpesaAPI.RedisDB.Set(txKey, bs, 5*time.Minute).Err()
+	if err != nil {
+		return nil, errs.RedisCmdFailed(err, "set")
+	}
+
+	// Correct phone number
+	phoneNumber := strings.TrimSpace(initReq.Phone)
+	phoneNumber = strings.TrimSuffix(initReq.Phone, "+")
+	phoneNumber = strings.TrimSuffix(initReq.Phone, "0")
+	if strings.HasPrefix(phoneNumber, "7") {
+		phoneNumber = "254" + phoneNumber
+	}
+
+	// STK Push
+	stkPayload := &STKRequestPayload{
+		BusinessShortCode: mpesaAPI.STKOptions.BusinessShortCode,
+		Password:          mpesaAPI.STKOptions.Password,
+		Timestamp:         mpesaAPI.STKOptions.Timestamp,
+		TransactionType:   "CustomerPayBillOnline",
+		Amount:            fmt.Sprint(initReq.Amount),
+		PartyA:            phoneNumber,
+		PartyB:            mpesaAPI.STKOptions.BusinessShortCode,
+		PhoneNumber:       phoneNumber,
+		CallBackURL:       mpesaAPI.STKOptions.CallBackURL,
+		AccountReference:  mpesaAPI.STKOptions.AccountReference,
+		TransactionDesc:   "payment",
+	}
+
+	bs, err = json.Marshal(stkPayload)
+	if err != nil {
+		mpesaAPI.RedisDB.Del(txKey)
+		return nil, errs.FromJSONMarshal(err, "stkPayload")
+	}
+
+	req, err := http.NewRequest(http.MethodPost, mpesaAPI.STKOptions.PostURL, bytes.NewReader(bs))
+	if err != nil {
+		mpesaAPI.RedisDB.Del(txKey)
+		return nil, errs.WrapMessage(codes.Internal, "failed to create new request")
+	}
+
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", mpesaAPI.STKOptions.accessToken))
+	req.Header.Set("Content-Type", "application/json")
+
+	// Post to MPESA
+	res, err := mpesaAPI.HTTPClient.Do(req)
+	if err != nil {
+		mpesaAPI.RedisDB.Del(txKey)
+		return &mpesapayment.InitiateSTKPushResponse{
+			Progress: false,
+			Message:  err.Error(),
+		}, nil
+	}
+
+	resData := make(map[string]interface{}, 0)
+
+	err = json.NewDecoder(res.Body).Decode(&resData)
+	if err != nil && err != io.EOF {
+		mpesaAPI.RedisDB.Del(txKey)
+		return &mpesapayment.InitiateSTKPushResponse{
+			Progress: false,
+			Message:  err.Error(),
+		}, nil
+	}
+
+	// Check for error
+	errMsg, ok := resData["errorMessage"]
+	if ok {
+		mpesaAPI.RedisDB.Del(txKey)
+		return nil, errs.WrapMessage(codes.Unknown, fmt.Sprint(errMsg))
+	}
+
+	return &mpesapayment.InitiateSTKPushResponse{
+		Progress: true,
+		Message:  "Continue with transaction",
+	}, nil
+}
+
 func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
 	ctx context.Context, createReq *mpesapayment.CreateMPESAPaymentRequest,
 ) (*mpesapayment.CreateMPESAPaymentResponse, error) {
@@ -211,7 +338,7 @@ func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
 }
 
 func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
-	ctx context.Context, getReq *mpesapayment.GetMPESAPayloadRequest,
+	ctx context.Context, getReq *mpesapayment.GetMPESAPaymentRequest,
 ) (*mpesapayment.MPESAPayment, error) {
 	// Authentication
 	err := mpesaAPI.authAPI.AuthenticateRequest(ctx)
@@ -223,7 +350,7 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 	var paymentID int
 	switch {
 	case getReq == nil:
-		return nil, errs.NilObject("GetMPESAPayloadRequest")
+		return nil, errs.NilObject("GetMPESAPaymentRequest")
 	case getReq.PaymentId == "":
 		return nil, errs.MissingField("payment id")
 	default:
@@ -297,7 +424,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		paymentID = uint(ids[0])
 	}
 
-	mpesaMPESAPayments := make([]*Model, 0, pageSize)
+	mpesapayments := make([]*Model, 0, pageSize)
 
 	db := mpesaAPI.SQLDB.Limit(int(pageSize)).Order("payment_id DESC")
 
@@ -335,16 +462,16 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		}
 	}
 
-	err = db.Find(&mpesaMPESAPayments).Error
+	err = db.Find(&mpesapayments).Error
 	switch {
 	case err == nil:
 	default:
 		return nil, errs.FailedToFind("ussd channels", err)
 	}
 
-	paymentPaymentsPB := make([]*mpesapayment.MPESAPayment, 0, len(mpesaMPESAPayments))
+	paymentPaymentsPB := make([]*mpesapayment.MPESAPayment, 0, len(mpesapayments))
 
-	for _, paymentPaymentDB := range mpesaMPESAPayments {
+	for _, paymentPaymentDB := range mpesapayments {
 		paymentPaymenPB, err := GetMpesaPB(paymentPaymentDB)
 		if err != nil {
 			return nil, err
@@ -354,7 +481,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	}
 
 	var token string
-	if int(pageSize) == len(mpesaMPESAPayments) {
+	if int(pageSize) == len(mpesapayments) {
 		// Next page token
 		token, err = mpesaAPI.hasher.EncodeInt64([]int64{int64(paymentID)})
 		if err != nil {

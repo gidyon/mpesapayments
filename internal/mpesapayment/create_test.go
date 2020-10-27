@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
 	"github.com/Pallinder/go-randomdata"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

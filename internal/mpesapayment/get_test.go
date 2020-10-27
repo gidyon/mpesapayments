@@ -4,20 +4,20 @@ import (
 	"context"
 	"fmt"
 
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
 	"github.com/Pallinder/go-randomdata"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("Getting mpesa payment @create", func() {
 	var (
-		getReq *mpesapayment.GetMPESAPayloadRequest
+		getReq *mpesapayment.GetMPESAPaymentRequest
 		ctx    context.Context
 	)
 
 	BeforeEach(func() {
-		getReq = &mpesapayment.GetMPESAPayloadRequest{
+		getReq = &mpesapayment.GetMPESAPaymentRequest{
 			PaymentId: fmt.Sprint(randomdata.Number(99, 999)),
 		}
 		ctx = context.Background()
@@ -68,7 +68,7 @@ var _ = Describe("Getting mpesa payment @create", func() {
 
 		Context("Getting the payment", func() {
 			It("should succeed", func() {
-				getRes, err := MpesaPaymentAPI.GetMPESAPayment(ctx, &mpesapayment.GetMPESAPayloadRequest{
+				getRes, err := MpesaPaymentAPI.GetMPESAPayment(ctx, &mpesapayment.GetMPESAPaymentRequest{
 					PaymentId: paymentID,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
