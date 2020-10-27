@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	mpesa "bitbucket.org/gideonkamau/mpesa-tracking-portal/internal/mpesapayment"
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
+	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/errs"
 	"github.com/go-redis/redis"

@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"os"
 
-	mpesa "bitbucket.org/gideonkamau/mpesa-tracking-portal/internal/mpesapayment"
-	"bitbucket.org/gideonkamau/mpesa-tracking-portal/pkg/api/mpesapayment"
 	"github.com/gidyon/micro"
 	"github.com/gidyon/micro/pkg/config"
 	"github.com/gidyon/micro/utils/healthcheck"
+	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/encryption"
 	"github.com/gidyon/services/pkg/utils/errs"
