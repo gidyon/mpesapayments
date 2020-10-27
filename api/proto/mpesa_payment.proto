@@ -1,0 +1,241 @@
+syntax = "proto3";
+
+package gidyon.mpesapayments;
+
+option go_package="bitbucket.org/gideonkamau/mpesa-tracking-portal-api/pkg/api/mpesapayment";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/api/field_behaviour.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+message MPESAPayment {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "MPESAPayment"
+			description: "MPESA Payment made using paybill or buy goods"
+		}
+	};
+
+	string payment_id = 1;
+	string tx_type = 2;
+	string tx_id = 3;
+	string msisdn = 4;
+	string names = 5;
+	string tx_ref_number = 6;
+	int64 tx_timestamp = 7;
+	float tx_amount = 8;
+	float org_balance = 9;
+	int32 business_short_code = 10;
+	bool processed = 11;
+}
+
+message CreateMPESAPaymentRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "CreateMPESAPaymentRequest"
+			description: "Request to create mpesa payment"
+			required: ["mpesa_payment"]
+		}
+	};
+
+	MPESAPayment mpesa_payment = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message CreateMPESAPaymentResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "CreateMPESAPaymentResponse"
+			description: "Response after creating payment containing payment id"
+		}
+	};
+
+	string payment_id = 1;
+}
+
+message GetMPESAPayloadRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetMPESAPayloadRequest"
+			description: "Request to retrieve mpesa payment"
+			required: ["payment_id"]
+		}
+	};
+
+	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ListMPESAPaymentsFilter {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListMPESAPaymentsFilter"
+			description: "Filter payload for querying payments"
+		}
+	};
+	
+	string tx_date = 1;
+	repeated string msisdns = 2;
+	repeated string accounts_number = 3;
+}
+
+message ListMPESAPaymentsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListMPESAPaymentsRequest"
+			description: "Request to retrieve a collection of mpesa payments"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+	ListMPESAPaymentsFilter filter = 3;
+}
+
+message ListMPESAPaymentsResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListMPESAPaymentsResponse"
+			description: "Reponse containing a collection of mpesa payments"
+		}
+	};
+
+	string next_page_token = 1;
+	repeated MPESAPayment mpesa_payments = 2;
+}
+
+message Scopes {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "Scopes"
+			description: "Resources allowed access"
+		}
+	};
+
+	repeated string allowed_phones = 1;
+	repeated string allowed_acc_number = 2;
+}
+
+message AddScopesRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "AddScopesRequest"
+			description: "Request to add scopes"
+			required: ["user_id", "scopes"]
+		}
+	};
+
+	string user_id = 1 [(google.api.field_behavior) = REQUIRED];
+	Scopes scopes = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message AddScopesResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "AddScopesResponse"
+			description: "Response containing scopes"
+		}
+	};
+
+	Scopes scopes = 1;
+}
+
+message GetScopesRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetScopesRequest"
+			description: "Request to list permissions scopes for users and admins"
+			required: ["user_id"]
+		}
+	};
+
+	string user_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+message GetScopesResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetScopesResponse"
+			description: "Reponse containing the scopes"
+		}
+	};
+
+	Scopes scopes = 1;
+}
+
+// Stores and retrieves LIPA NA MPESA payments 
+service LipaNaMPESA {
+
+	// Creates a record of mpesa payment
+	rpc CreateMPESAPayment (CreateMPESAPaymentRequest) returns (CreateMPESAPaymentResponse) {
+		option (google.api.http) = {
+			patch: "/api/mpestx"
+		};
+	};
+
+	// Retrieves a MPESA payment
+	rpc GetMPESAPayment (GetMPESAPayloadRequest) returns (MPESAPayment) {
+		option (google.api.http) = {
+			get: "/api/mpestx/{payment_id}"
+		};
+	};
+
+	// Retrieves a collection of MPESA payments
+	rpc ListMPESAPayments (ListMPESAPaymentsRequest) returns (ListMPESAPaymentsResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx"
+		};
+	};
+
+	// Adds scopes to a user
+	rpc AddScopes (AddScopesRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx:scopes"
+			body: "*"
+		};
+	};
+
+	// Retrieves scopes for a user
+	rpc GetScopes (GetScopesRequest) returns (GetScopesResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/scopes/{user_id}"
+		};
+	};
+
+}
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	info: {
+		title: "MPESA Payment Service - Onfon Media";
+		description: "Stores and retrieves LIPA NA MPESA payments "
+		version: "0.1";
+		contact: {
+			name: "Bitbucket <Gideon Kamau>";
+			url: "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/";
+			email: "gkamau@onfonmedia.com";
+		};
+		license: {
+			name: "BSD 3-Clause License";
+			url: "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/LICENSE.txt";
+		};
+	};
+	schemes: HTTP;
+	schemes: HTTPS;
+	consumes: "application/json";
+	produces: "application/json";
+	security_definitions: {
+		security: {
+		  key: "bearer"
+		  value: {
+			type: TYPE_API_KEY
+			in: IN_HEADER
+			name: "Authorization"
+			description: "Authentication token, prefixed by Bearer: Bearer <token>"
+		  }
+		}
+	  }
+	  security: {
+		security_requirement: {
+		  key: "bearer"
+		}
+	  }
+};
