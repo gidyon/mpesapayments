@@ -1,0 +1,134 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: mpesapayment-gateway
+  namespace: trackingportal
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: onfon-portal-tls # must be the same as secret
+    hosts:
+    - "*"
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "*"
+---
+
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: onfon
+  namespace: trackingportal
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - mpesapayment-gateway
+  http:
+  - match:
+    - uri:
+        prefix: /api/accounts
+    route:
+    - destination:
+        host: account
+        port:
+          number: 80
+    corsPolicy:
+      allowOrigins:
+      - exact: "http://localhost:3000"
+      - exact: "http://localhost:3030"
+      - exact: "https://onfonportal.web.app"
+      - exact: "https://mpesa-tracking-portal.web.app"
+      allowMethods:
+      - POST
+      - GET
+      - PATCH
+      - DELETE
+      - PUT
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      - Access-Control-Allow-Origin
+      - Access-Control-Expose-Headers
+      allowCredentials: true
+      maxAge: "24h"
+    timeout: 10s
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+  - match:
+    - uri:
+        prefix: /api/messaging
+    route:
+    - destination:
+        host: messaging
+        port:
+          number: 80
+    corsPolicy:
+      allowOrigins:
+      - exact: "http://localhost:3000"
+      - exact: "http://localhost:3030"
+      - exact: "https://onfonportal.web.app"
+      - exact: "https://mpesa-tracking-portal.web.app"
+      allowMethods:
+      - POST
+      - GET
+      - PATCH
+      - DELETE
+      - PUT
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      - Access-Control-Allow-Origin
+      - Access-Control-Expose-Headers
+      allowCredentials: true
+      maxAge: "24h"
+    timeout: 10s
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+  - match:
+    - uri:
+        prefix: /api/mpestx
+    route:
+    - destination:
+        host: mpesapayment
+        port:
+          number: 80
+    corsPolicy:
+      allowOrigins:
+      - exact: "http://localhost:3000"
+      - exact: "http://localhost:3030"
+      - exact: "https://onfonportal.web.app"
+      - exact: "https://mpesa-tracking-portal.web.app"
+      allowMethods:
+      - POST
+      - GET
+      - PATCH
+      - DELETE
+      - PUT
+      allowHeaders:
+      - Authorization
+      - Content-Type
+      - Access-Control-Allow-Origin
+      - Access-Control-Expose-Headers
+      allowCredentials: true
+      maxAge: "24h"
+  - match:
+    - uri:
+        prefix: /
+    route:
+    - destination:
+        host: mpesapaymentapidoc
+        port:
+          number: 80
