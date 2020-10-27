@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mpesapaymentapidoc
+  labels:
+    app: mpesapaymentapidoc
+spec:
+  selector:
+    app: mpesapaymentapidoc
+  ports:
+  - port: 80
+    name: http
+  - port: 8080
+    name: grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mpesapaymentapidoc
+  labels:
+    app: mpesapaymentapidoc
+    version: v1
+spec:
+
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mpesapaymentapidoc
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: mpesapaymentapidoc
+        version: v1
+    spec:
+      containers:
+      - name: mpesapaymentapidoc
+        image: nofno/mpesapaymentapidoc:latest
+        args:
+          - "--port=:80"
+          - "--insecure"
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
+          name: http
+          protocol: TCP
+        resources:
+          requests:
+            cpu: 10m
+            memory: 15Mi
+          limits:
+            cpu: 500m
+            memory: 100Mi
+        readinessProbe: # Checks that the container is started
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 8
+          timeoutSeconds: 1
+          periodSeconds: 20
+          failureThreshold: 3
+        livenessProbe: # Checks that the container is running
+          httpGet:
+            path: /
+            port: 80
+          initialDelaySeconds: 8
+          timeoutSeconds: 1
+          periodSeconds: 20
+          failureThreshold: 3
+        volumeMounts:
+          - name: swagger-files
+            mountPath: /app/dist/swagger/
+            readOnly: true
+      volumes:
+      - name: swagger-files
+        configMap:
+          name: swagger-v1
+
+---
+apiVersion: "autoscaling/v2beta1"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "mpesapaymentapidoc-hpa"
+  labels:
+    app: "mpesapaymentapidoc"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "mpesapaymentapidoc"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: "Resource"
+    resource:
+      name: "cpu"
+      targetAverageUtilization: 80
