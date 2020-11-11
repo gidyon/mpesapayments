@@ -35,16 +35,14 @@ func main() {
 
 	// Readiness health check
 	app.AddEndpoint("/api/mpestx/health/ready", healthcheck.RegisterProbe(&healthcheck.ProbeOptions{
-		Service:      app,
-		Type:         healthcheck.ProbeReadiness,
-		AutoMigrator: func() error { return nil },
+		Service: app,
+		Type:    healthcheck.ProbeReadiness,
 	}))
 
 	// Liveness health check
 	app.AddEndpoint("/api/mpestx/health/live", healthcheck.RegisterProbe(&healthcheck.ProbeOptions{
-		Service:      app,
-		Type:         healthcheck.ProbeLiveNess,
-		AutoMigrator: func() error { return nil },
+		Service: app,
+		Type:    healthcheck.ProbeLiveNess,
 	}))
 
 	sc := securecookie.New(apiHashKey, apiBlockKey)
@@ -63,11 +61,12 @@ func main() {
 
 		// MPESA API
 		mpesaAPI, err := mpesa.NewAPIServerMPESA(ctx, &mpesa.Options{
-			SQLDB:         app.GormDBByName("sqlWrites"),
-			RedisDB:       app.RedisClientByName("redisWrites"),
-			Logger:        app.Logger(),
-			JWTSigningKey: []byte(os.Getenv("JWT_SIGNING_KEY")),
-			HTTPClient:    http.DefaultClient,
+			SQLDB:          app.GormDBByName("sqlWrites"),
+			RedisDB:        app.RedisClientByName("redisWrites"),
+			Logger:         app.Logger(),
+			JWTSigningKey:  []byte(os.Getenv("JWT_SIGNING_KEY")),
+			PublishChannel: os.Getenv("PUBLISH_CHANNEL"),
+			HTTPClient:     http.DefaultClient,
 			STKOptions: &mpesa.STKOptions{
 				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
 				ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
@@ -86,7 +85,7 @@ func main() {
 		mpesapayment.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
 		errs.Panic(mpesapayment.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 
-		// MPESA Paybill gateway
+		// MPESA Paybill confirmation gateway
 		paybillGW, err := NewPayBillGateway(ctx, &Options{
 			SQLDB:         app.GormDBByName("sqlWrites"),
 			RedisDB:       app.RedisClientByName("redisWrites"),
