@@ -702,6 +702,8 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 		return nil, errs.NilObject("publish request")
 	case pubReq.PaymentId == "":
 		return nil, errs.MissingField("payment id")
+	case pubReq.InitiatorId == "":
+		return nil, errs.MissingField("initiator id")
 	}
 
 	// Get mpesa payment
@@ -712,25 +714,27 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 		return nil, err
 	}
 
+	publishPayload := fmt.Sprintf("%s:%s", pubReq.PaymentId, pubReq.InitiatorId)
+
 	// Publish based on state
 	switch pubReq.ProcessedState {
 	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 		// Publish only if the processed state is false
 		if !mpesaPayment.Processed {
-			err = mpesaAPI.RedisDB.Publish(publishChannel, pubReq.PaymentId).Err()
+			err = mpesaAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
 	case mpesapayment.ProcessedState_ANY:
-		err = mpesaAPI.RedisDB.Publish(publishChannel, pubReq.PaymentId).Err()
+		err = mpesaAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
 	case mpesapayment.ProcessedState_UNPROCESSED_ONLY:
 		// Publish only if the processed state is false
 		if !mpesaPayment.Processed {
-			err = mpesaAPI.RedisDB.Publish(publishChannel, pubReq.PaymentId).Err()
+			err = mpesaAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
@@ -738,7 +742,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 	case mpesapayment.ProcessedState_PROCESSED_ONLY:
 		// Publish only if the processed state is true
 		if mpesaPayment.Processed {
-			err = mpesaAPI.RedisDB.Publish(publishChannel, pubReq.PaymentId).Err()
+			err = mpesaAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
