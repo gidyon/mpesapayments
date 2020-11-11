@@ -13,7 +13,7 @@ message MPESAPayment {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "MPESAPayment"
-			description: "MPESA Payment made using paybill or buy goods"
+			description: "Lipa na MPESA Payment information"
 		}
 	};
 
@@ -30,11 +30,37 @@ message MPESAPayment {
 	bool processed = 11;
 }
 
+message InitiateSTKPushRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "InitiateSTKPushRequest"
+			description: "Initiates a STK push payment to the specified phone number"
+			required: ["paid_service", "phone", "amount"]
+		}
+    };
+
+	string paid_service = 1 [(google.api.field_behavior) = REQUIRED];
+	string initiator_id = 2 [(google.api.field_behavior) = REQUIRED];
+	string phone = 3 [(google.api.field_behavior) = REQUIRED];
+	double amount = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message InitiateSTKPushResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "InitiateSTKPushResponse"
+			description: "Response after initiating a STK push"
+		}
+    };
+    bool progress = 1;
+    string message = 2;
+}
+
 message CreateMPESAPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "CreateMPESAPaymentRequest"
-			description: "Request to create mpesa payment"
+			description: "Request to create record of mpesa payment"
 			required: ["mpesa_payment"]
 		}
 	};
@@ -53,16 +79,23 @@ message CreateMPESAPaymentResponse {
 	string payment_id = 1;
 }
 
-message GetMPESAPayloadRequest {
+message GetMPESAPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "GetMPESAPayloadRequest"
+			title: "GetMPESAPaymentRequest"
 			description: "Request to retrieve mpesa payment"
 			required: ["payment_id"]
 		}
 	};
 
 	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+enum ProcessedState {
+	PROCESS_STATE_UNSPECIFIED = 0;
+	PROCESSED_ONLY = 1;
+	UNPROCESSED_ONLY = 2;
+	ANY = 3;
 }
 
 message ListMPESAPaymentsFilter {
@@ -76,6 +109,7 @@ message ListMPESAPaymentsFilter {
 	string tx_date = 1;
 	repeated string msisdns = 2;
 	repeated string accounts_number = 3;
+	ProcessedState process_state = 4;
 }
 
 message ListMPESAPaymentsRequest {
@@ -107,7 +141,7 @@ message Scopes {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "Scopes"
-			description: "Resources allowed access"
+			description: "Identities that is allowed access"
 		}
 	};
 
@@ -143,7 +177,7 @@ message GetScopesRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "GetScopesRequest"
-			description: "Request to list permissions scopes for users and admins"
+			description: "Request to scopes for an identity"
 			required: ["user_id"]
 		}
 	};
@@ -155,38 +189,83 @@ message GetScopesResponse {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "GetScopesResponse"
-			description: "Reponse containing the scopes"
+			description: "Reponse containing scopes"
 		}
 	};
 
 	Scopes scopes = 1;
 }
 
+message ProcessMpesaPaymentRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ProcessMpesaPaymentRequest"
+			description: "Request to update Mpesa transaction processed state"
+		}
+	};
+
+	string payment_id = 1;
+	bool state = 2;
+}
+
+message PublishMpesaPaymentRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishMpesaPaymentRequest"
+			description: "Request to publish an mpesa transaction for listerners to process"
+		}
+	};
+
+	string payment_id = 1;
+	string initiator_id = 2;
+	ProcessedState processed_state = 3;
+}
+
+message PublishAllMpesaPaymentRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishAllMpesaPaymentRequest"
+			description: "Update Mpesa tx processed state to either true or false"
+		}
+	};
+
+	int64 since_time_seconds = 1;
+	ProcessedState processed_state = 2;
+}
+
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
+	// Initiates mpesa payment.
+    rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
+        option (google.api.http) = {
+            post: "/api/mpestx/initiate"
+            body: "*"
+        };
+	};
 
-	// Creates a record of mpesa payment
+	// Creates a record of mpesa payment.
 	rpc CreateMPESAPayment (CreateMPESAPaymentRequest) returns (CreateMPESAPaymentResponse) {
 		option (google.api.http) = {
-			patch: "/api/mpestx"
+			post: "/api/mpestx"
+			body: "*"
 		};
 	};
 
-	// Retrieves a MPESA payment
-	rpc GetMPESAPayment (GetMPESAPayloadRequest) returns (MPESAPayment) {
+	// Retrieves MPESA payment.
+	rpc GetMPESAPayment (GetMPESAPaymentRequest) returns (MPESAPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/{payment_id}"
 		};
 	};
 
-	// Retrieves a collection of MPESA payments
+	// Retrieves a collection of MPESA payments.
 	rpc ListMPESAPayments (ListMPESAPaymentsRequest) returns (ListMPESAPaymentsResponse) {
 		option (google.api.http) = {
 			get: "/api/mpestx"
 		};
 	};
 
-	// Adds scopes to a user
+	// Adds scopes to a user.
 	rpc AddScopes (AddScopesRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx:scopes"
@@ -194,10 +273,31 @@ service LipaNaMPESA {
 		};
 	};
 
-	// Retrieves scopes for a user
+	// Retrieves scopes for a user.
 	rpc GetScopes (GetScopesRequest) returns (GetScopesResponse) {
 		option (google.api.http) = {
 			get: "/api/mpestx/scopes/{user_id}"
+		};
+	};
+
+	// Updates Mpesa transaction processed state to either true or false.
+	rpc ProcessMpesaPayment (ProcessMpesaPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/process"
+		};
+	};
+
+	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
+	rpc PublishMpesaPayment (PublishMpesaPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/acition/publish"
+		};
+	};
+
+	// Publish all failed Mpesa transaction for listeners to process.
+	rpc PublishAllMpesaPayment (PublishAllMpesaPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/action/publishall"
 		};
 	};
 
@@ -205,17 +305,17 @@ service LipaNaMPESA {
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 	info: {
-		title: "MPESA Payment Service - Onfon Media";
-		description: "Stores and retrieves LIPA NA MPESA payments "
+		title: "MPESA Payment Service";
+		description: "Gateway to confirm and validate MPESA payments, and a CRUD API for the MpesaPayment resource"
 		version: "0.1";
 		contact: {
-			name: "Bitbucket <Gideon Kamau>";
-			url: "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/";
+			name: "Github <Gideon Kamau>";
+			url: "https://github.com/gidyon/mpesapayments/src/master/";
 			email: "gkamau@onfonmedia.com";
 		};
 		license: {
 			name: "BSD 3-Clause License";
-			url: "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/LICENSE.txt";
+			url: "https://github.com/gidyon/mpesapayments/src/master/LICENSE.txt";
 		};
 	};
 	schemes: HTTP;
