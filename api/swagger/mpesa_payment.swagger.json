@@ -1,17 +1,17 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "MPESA Payment Service - Onfon Media",
-    "description": "Stores and retrieves LIPA NA MPESA payments ",
+    "title": "MPESA Payment Service",
+    "description": "Gateway to confirm and validate MPESA payments, and a CRUD API for the MpesaPayment resource",
     "version": "0.1",
     "contact": {
-      "name": "Bitbucket \u003cGideon Kamau\u003e",
-      "url": "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/",
+      "name": "Github \u003cGideon Kamau\u003e",
+      "url": "https://github.com/gidyon/mpesapayments/src/master/",
       "email": "gkamau@onfonmedia.com"
     },
     "license": {
       "name": "BSD 3-Clause License",
-      "url": "https://bitbucket.org/gideonkamau/mpesa-tracking-portal/src/master/LICENSE.txt"
+      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE.txt"
     }
   },
   "schemes": [
@@ -27,7 +27,7 @@
   "paths": {
     "/api/mpestx": {
       "get": {
-        "summary": "Retrieves a collection of MPESA payments",
+        "summary": "Retrieves a collection of MPESA payments.",
         "operationId": "LipaNaMPESA_ListMPESAPayments",
         "responses": {
           "200": {
@@ -82,14 +82,27 @@
               "type": "string"
             },
             "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.process_state",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PROCESS_STATE_UNSPECIFIED",
+              "PROCESSED_ONLY",
+              "UNPROCESSED_ONLY",
+              "ANY"
+            ],
+            "default": "PROCESS_STATE_UNSPECIFIED"
           }
         ],
         "tags": [
           "LipaNaMPESA"
         ]
       },
-      "patch": {
-        "summary": "Creates a record of mpesa payment",
+      "post": {
+        "summary": "Creates a record of mpesa payment.",
         "operationId": "LipaNaMPESA_CreateMPESAPayment",
         "responses": {
           "200": {
@@ -105,6 +118,182 @@
             }
           }
         },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesapaymentsCreateMPESAPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/acition/publish": {
+      "get": {
+        "summary": "Publishes Mpesa statement for listeners to process. Safe to be called many times.",
+        "operationId": "LipaNaMPESA_PublishMpesaPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "initiator_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "processed_state",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PROCESS_STATE_UNSPECIFIED",
+              "PROCESSED_ONLY",
+              "UNPROCESSED_ONLY",
+              "ANY"
+            ],
+            "default": "PROCESS_STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/action/publishall": {
+      "get": {
+        "summary": "Publish all failed Mpesa transaction for listeners to process.",
+        "operationId": "LipaNaMPESA_PublishAllMpesaPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "since_time_seconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "processed_state",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PROCESS_STATE_UNSPECIFIED",
+              "PROCESSED_ONLY",
+              "UNPROCESSED_ONLY",
+              "ANY"
+            ],
+            "default": "PROCESS_STATE_UNSPECIFIED"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/initiate": {
+      "post": {
+        "summary": "Initiates mpesa payment.",
+        "operationId": "LipaNaMPESA_InitiateSTKPush",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesapaymentsInitiateSTKPushResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesapaymentsInitiateSTKPushRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/process": {
+      "get": {
+        "summary": "Updates Mpesa transaction processed state to either true or false.",
+        "operationId": "LipaNaMPESA_ProcessMpesaPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response",
+            "schema": {
+              "$ref": "#/definitions/runtimeError"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "payment_id",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "required": false,
+            "type": "boolean",
+            "format": "boolean"
+          }
+        ],
         "tags": [
           "LipaNaMPESA"
         ]
@@ -112,7 +301,7 @@
     },
     "/api/mpestx/scopes/{user_id}": {
       "get": {
-        "summary": "Retrieves scopes for a user",
+        "summary": "Retrieves scopes for a user.",
         "operationId": "LipaNaMPESA_GetScopes",
         "responses": {
           "200": {
@@ -143,7 +332,7 @@
     },
     "/api/mpestx/{payment_id}": {
       "get": {
-        "summary": "Retrieves a MPESA payment",
+        "summary": "Retrieves MPESA payment.",
         "operationId": "LipaNaMPESA_GetMPESAPayment",
         "responses": {
           "200": {
@@ -174,7 +363,7 @@
     },
     "/api/mpestx:scopes": {
       "post": {
-        "summary": "Adds scopes to a user",
+        "summary": "Adds scopes to a user.",
         "operationId": "LipaNaMPESA_AddScopes",
         "responses": {
           "200": {
@@ -223,7 +412,7 @@
           }
         }
       },
-      "description": "Resources allowed access",
+      "description": "Identities that is allowed access",
       "title": "Scopes"
     },
     "mpesapaymentsAddScopesRequest": {
@@ -243,6 +432,19 @@
         "scopes"
       ]
     },
+    "mpesapaymentsCreateMPESAPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "mpesa_payment": {
+          "$ref": "#/definitions/mpesapaymentsMPESAPayment"
+        }
+      },
+      "description": "Request to create record of mpesa payment",
+      "title": "CreateMPESAPaymentRequest",
+      "required": [
+        "mpesa_payment"
+      ]
+    },
     "mpesapaymentsCreateMPESAPaymentResponse": {
       "type": "object",
       "properties": {
@@ -260,8 +462,47 @@
           "$ref": "#/definitions/gidyonmpesapaymentsScopes"
         }
       },
-      "description": "Reponse containing the scopes",
+      "description": "Reponse containing scopes",
       "title": "GetScopesResponse"
+    },
+    "mpesapaymentsInitiateSTKPushRequest": {
+      "type": "object",
+      "properties": {
+        "paid_service": {
+          "type": "string"
+        },
+        "initiator_id": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number",
+          "format": "double"
+        }
+      },
+      "description": "Initiates a STK push payment to the specified phone number",
+      "title": "InitiateSTKPushRequest",
+      "required": [
+        "paid_service",
+        "phone",
+        "amount"
+      ]
+    },
+    "mpesapaymentsInitiateSTKPushResponse": {
+      "type": "object",
+      "properties": {
+        "progress": {
+          "type": "boolean",
+          "format": "boolean"
+        },
+        "message": {
+          "type": "string"
+        }
+      },
+      "description": "Response after initiating a STK push",
+      "title": "InitiateSTKPushResponse"
     },
     "mpesapaymentsListMPESAPaymentsFilter": {
       "type": "object",
@@ -280,6 +521,9 @@
           "items": {
             "type": "string"
           }
+        },
+        "process_state": {
+          "$ref": "#/definitions/mpesapaymentsProcessedState"
         }
       },
       "description": "Filter payload for querying payments",
@@ -343,8 +587,18 @@
           "format": "boolean"
         }
       },
-      "description": "MPESA Payment made using paybill or buy goods",
+      "description": "Lipa na MPESA Payment information",
       "title": "MPESAPayment"
+    },
+    "mpesapaymentsProcessedState": {
+      "type": "string",
+      "enum": [
+        "PROCESS_STATE_UNSPECIFIED",
+        "PROCESSED_ONLY",
+        "UNPROCESSED_ONLY",
+        "ANY"
+      ],
+      "default": "PROCESS_STATE_UNSPECIFIED"
     },
     "protobufAny": {
       "type": "object",
