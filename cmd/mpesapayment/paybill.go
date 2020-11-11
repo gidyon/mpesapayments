@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -70,7 +71,18 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 		Options:            opt,
 	}
 
+	gw.printToken()
+
 	return gw, nil
+}
+
+func (gw *gateway) printToken() {
+	token, err := gw.authAPI.GenToken(context.Background(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Hour*365))
+	if err != nil {
+		gw.Logger.Errorf("failed to generate auth token: %v", err)
+		return
+	}
+	gw.Logger.Infof("jwt is %s", token)
 }
 
 func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -161,7 +173,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		TxAmount:          float32(transactionAmount),
 		OrgBalance:        float32(orgBalance),
 		BusinessShortCode: int32(businessShortCode),
-		Processed:         true,
+		Processed:         false,
 	}
 
 	token, err := gw.authAPI.GenToken(r.Context(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Minute))
@@ -173,8 +185,10 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
 
+	ctxExt := metadata.NewIncomingContext(r.Context(), md)
+
 	// Save to database
-	_, err = gw.mpesaPaymentServer.CreateMPESAPayment(metadata.NewIncomingContext(r.Context(), md), &mpesapayment.CreateMPESAPaymentRequest{
+	createRes, err := gw.mpesaPaymentServer.CreateMPESAPayment(ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
 		MpesaPayment: mpesaPaymentPB,
 	})
 	if err != nil {
@@ -186,6 +200,49 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	publish := true
+
+	// Get the stk payload saved
+	key := mpesa.GetMpesaSTKPushKey(mpesaPaymentPB.Msisdn)
+	val, err := gw.RedisDB.Get(key).Result()
+	switch {
+	case err == nil:
+	case errors.Is(err, redis.Nil):
+		publish = false
+	default:
+		gw.Logger.Errorf("failed to get initiator payload from cache: %v", err)
+		publish = false
+	}
+
+	// Delete the key to allow other transactions to proceeed
+	defer func() {
+		gw.RedisDB.Del(key)
+	}()
+
+	if publish {
+		gw.Logger.Infoln("publishing mpesa transaction to consumers")
+
+		go func() {
+			// Get stk push initiator payload
+			payload := &mpesapayment.InitiateSTKPushRequest{}
+			err = proto.Unmarshal([]byte(val), payload)
+			if err != nil {
+				gw.Logger.Errorf("failed unmarshal stk push payload: %v", err)
+				return
+			}
+
+			// Publish the mpesa payment for consumers
+			_, err = gw.mpesaPaymentServer.PublishMpesaPayment(ctxExt, &mpesapayment.PublishMpesaPaymentRequest{
+				PaymentId:   createRes.PaymentId,
+				InitiatorId: payload.InitiatorId,
+			})
+			if err != nil {
+				gw.Logger.Errorf("failed to publish mpesa payment with id: %s", createRes.PaymentId)
+				return
+			}
+		}()
 	}
 
 	w.Write([]byte("mpesa transaction processed"))
