@@ -3,8 +3,8 @@ httpPort: 9009
 grpcPort: 9010
 logLevel: -1
 security:
-  tlsCert: /Users/jessegitaka/Desktop/tpgo/certs/localhost/cert.pem
-  tlsKey: /Users/jessegitaka/Desktop/tpgo/certs/localhost/key.pem
+  tlsCert: /Users/jessegitaka/Desktop/mpesapayments/certs/localhost/cert.pem
+  tlsKey: /Users/jessegitaka/Desktop/mpesapayments/certs/localhost/key.pem
   serverName: localhost
   # insecure: true
 databases:
@@ -13,7 +13,7 @@ databases:
   address: localhost:3306
   user: root
   password: hakty11
-  schema: mpesa-payments
+  schema: tracking-portal
   metadata:
     name: sqlWrites
     dialect: mysql
