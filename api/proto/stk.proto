@@ -1,0 +1,212 @@
+syntax = "proto3";
+
+package gidyon.mpesa;
+
+option go_package="github.com/gidyon/mpesapayments/pkg/api/stk";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/api/field_behaviour.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+import "mpesa_payment.proto";
+
+message StkPayload {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "StkPayload"
+			description: "Stk Push payload callback"
+		}
+    };
+
+    string payload_id = 1;
+    string merchant_request_id = 2;
+    string checkout_request_id = 3;
+    string result_code = 4;
+    string result_desc = 5;
+    string amount = 6;
+    string mpesa_receipt_number = 7;
+    string balance = 8;
+    string transaction_date = 9;
+    string phone_number = 10;
+    bool succeeded = 11;
+    bool processed = 12;
+}
+
+message InitiateSTKPushRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "InitiateSTKPushRequest"
+			description: "Initiates a STK push payment to the specified phone number"
+			required: ["paid_service", "phone", "amount"]
+		}
+    };
+
+	string paid_service = 1 [(google.api.field_behavior) = REQUIRED];
+	string initiator_id = 2 [(google.api.field_behavior) = REQUIRED];
+	string phone = 3 [(google.api.field_behavior) = REQUIRED];
+	double amount = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+message InitiateSTKPushResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "InitiateSTKPushResponse"
+			description: "Response after initiating STK push"
+		}
+    };
+
+    bool progress = 1;
+    string message = 2;
+}
+
+message GetStkPayloadRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetStkPayloadRequest"
+			description: "Request to retrieve stk push payload"
+			required: ["payload_id"]
+		}
+    };
+    
+    string payload_id = 1;
+}
+
+message CreateStkPayloadRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "CreateStkPayloadRequest"
+			description: "Request to create stk push payload"
+			required: ["payload"]
+		}
+    };
+    
+    StkPayload payload = 1;
+}
+
+message ListStkPayloadFilter {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStkPayloadFilter"
+			description: "Filter payload for querying stk payloads"
+		}
+	};
+	
+	string tx_date = 1;
+	repeated string msisdns = 2;
+	gidyon.mpesa.ProcessedState process_state = 3;
+}
+
+message ListStkPayloadsRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStkPayloadsRequest"
+			description: "Request to retrieve a collection of stk push payloads"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+	ListStkPayloadFilter filter = 3;
+}
+
+message ListStkPayloadsResponse {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStkPayloadsResponse"
+			description: "Reponse containing a collection of stk push payloads"
+		}
+	};
+
+	string next_page_token = 1;
+	repeated StkPayload stk_payloads = 2;
+}
+
+message ProcessStkPayloadRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ProcessStkPayloadRequest"
+			description: "Request to update stk push processed state"
+		}
+	};
+
+	string payload_id = 1;
+	bool processed = 2;
+}
+
+message PublishStkPayloadRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishStkPayloadRequest"
+			description: "Request to publish a stk push payload"
+		}
+	};
+
+	string payload_id = 1;
+	string initiator_id = 2;
+	ProcessedState processed_state = 3;
+}
+
+message PublishAllStkPayloadRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishAllStkPayloadRequest"
+			description: "Request to publish all stk push payloads"
+		}
+	};
+
+	int64 since_time_seconds = 1;
+	ProcessedState processed_state = 2;
+}
+
+service StkPushAPI {
+    // Initiates mpesa payment.
+    rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
+        option (google.api.http) = {
+            post: "/api/mpestx/stkpush:initiate"
+            body: "*"
+        };
+    };
+
+    // Retrieves a single stk payload
+    rpc GetStkPayload (GetStkPayloadRequest) returns (StkPayload) {
+        option (google.api.http) = {
+			get: "/api/mpestx/stkpush/{payload_id}"
+		};
+    };
+
+    // Creates a record of stk push response sent to callback
+    rpc CreateStkPayload (CreateStkPayloadRequest) returns (StkPayload) {
+        option (google.api.http) = {
+			post: "/api/mpestx/stkpush"
+			body: "*"
+		};
+    };
+
+    // Retrieves a collection of stk push payloads
+    rpc ListStkPayloads (ListStkPayloadsRequest) returns (ListStkPayloadsResponse) {
+        option (google.api.http) = {
+			get: "/api/mpestx/stkpush"
+		};
+    };
+
+	// Processes stk push payload updating its status
+	rpc ProcessStkPayload (ProcessStkPayloadRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/stkpush:process"
+		};
+	};
+
+	// Publishes stk push payload for consumers
+	rpc PublishStkPayload (PublishStkPayloadRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/stkpush:publish"
+		};
+	};
+
+	// Publihses all stk push payloads to consumers
+	rpc PublishAllStkPayload (PublishAllStkPayloadRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/stkpush:publishall"
+		};
+	};
+}
