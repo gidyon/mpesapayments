@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package gidyon.mpesapayments;
+package gidyon.mpesa;
 
-option go_package="bitbucket.org/gideonkamau/mpesa-tracking-portal-api/pkg/api/mpesapayment";
+option go_package="github.com/gidyon/mpesapayments/pkg/api/mpesapayment";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
@@ -28,32 +28,6 @@ message MPESAPayment {
 	float org_balance = 9;
 	int32 business_short_code = 10;
 	bool processed = 11;
-}
-
-message InitiateSTKPushRequest {
-    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-		json_schema: {
-			title: "InitiateSTKPushRequest"
-			description: "Initiates a STK push payment to the specified phone number"
-			required: ["paid_service", "phone", "amount"]
-		}
-    };
-
-	string paid_service = 1 [(google.api.field_behavior) = REQUIRED];
-	string initiator_id = 2 [(google.api.field_behavior) = REQUIRED];
-	string phone = 3 [(google.api.field_behavior) = REQUIRED];
-	double amount = 4 [(google.api.field_behavior) = REQUIRED];
-}
-
-message InitiateSTKPushResponse {
-	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-		json_schema: {
-			title: "InitiateSTKPushResponse"
-			description: "Response after initiating a STK push"
-		}
-    };
-    bool progress = 1;
-    string message = 2;
 }
 
 message CreateMPESAPaymentRequest {
@@ -235,18 +209,18 @@ message PublishAllMpesaPaymentRequest {
 
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
-	// Initiates mpesa payment.
-    rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
-        option (google.api.http) = {
-            post: "/api/mpestx/initiate"
-            body: "*"
-        };
-	};
+	// // Initiates mpesa payment.
+    // rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
+    //     option (google.api.http) = {
+    //         post: "/api/mpestx/initiate"
+    //         body: "*"
+    //     };
+	// };
 
 	// Creates a record of mpesa payment.
 	rpc CreateMPESAPayment (CreateMPESAPaymentRequest) returns (CreateMPESAPaymentResponse) {
 		option (google.api.http) = {
-			post: "/api/mpestx"
+			post: "/api/mpestx/payments"
 			body: "*"
 		};
 	};
@@ -254,21 +228,21 @@ service LipaNaMPESA {
 	// Retrieves MPESA payment.
 	rpc GetMPESAPayment (GetMPESAPaymentRequest) returns (MPESAPayment) {
 		option (google.api.http) = {
-			get: "/api/mpestx/{payment_id}"
+			get: "/api/mpestx/payments/{payment_id}"
 		};
 	};
 
 	// Retrieves a collection of MPESA payments.
 	rpc ListMPESAPayments (ListMPESAPaymentsRequest) returns (ListMPESAPaymentsResponse) {
 		option (google.api.http) = {
-			get: "/api/mpestx"
+			get: "/api/mpestx/payments"
 		};
 	};
 
 	// Adds scopes to a user.
 	rpc AddScopes (AddScopesRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx:scopes"
+			post: "/api/mpestx/scopes:add"
 			body: "*"
 		};
 	};
@@ -283,21 +257,21 @@ service LipaNaMPESA {
 	// Updates Mpesa transaction processed state to either true or false.
 	rpc ProcessMpesaPayment (ProcessMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/process"
+			get: "/api/mpestx/payments/actions/process"
 		};
 	};
 
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
 	rpc PublishMpesaPayment (PublishMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/acition/publish"
+			get: "/api/mpestx/payments/actions/publish"
 		};
 	};
 
 	// Publish all failed Mpesa transaction for listeners to process.
 	rpc PublishAllMpesaPayment (PublishAllMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/action/publishall"
+			get: "/api/mpestx/payments/actions/publishall"
 		};
 	};
 
