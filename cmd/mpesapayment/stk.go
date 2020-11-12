@@ -3,21 +3,23 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
-	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	stkapp "github.com/gidyon/mpesapayments/internal/stk"
+	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/errs"
+	"github.com/go-redis/redis"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
 type stkGateway struct {
-	authAPI            auth.Interface
-	mpesaPaymentServer mpesapayment.LipaNaMPESAServer
+	authAPI auth.Interface
+	stkAPI  stk.StkPushAPIServer
 	*Options
 }
 
@@ -38,8 +40,8 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 		err = errs.NilObject("Logger")
 	case opt.JWTSigningKey == nil:
 		err = errs.NilObject("jwt key")
-	case opt.MpesaAPI == nil:
-		err = errs.NilObject("mpesa server")
+	case opt.StkAPI == nil:
+		err = errs.NilObject("stk API")
 	}
 	if err != nil {
 		return nil, err
@@ -52,9 +54,9 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 	}
 
 	gw := &stkGateway{
-		authAPI:            authAPI,
-		mpesaPaymentServer: opt.MpesaAPI,
-		Options:            opt,
+		authAPI: authAPI,
+		stkAPI:  opt.StkAPI,
+		Options: opt,
 	}
 
 	return gw, nil
@@ -63,7 +65,7 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
 
-	gw.Logger.Infoln("received request from safaricom mpesa")
+	gw.Logger.Infoln("received stk request from mpesa")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
@@ -100,27 +102,25 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = fmt.Errorf("missing description")
 	}
 	if err != nil {
-		gw.Logger.Errorf("error is %v", err)
+		gw.Logger.Errorf("validation error: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if stkPayload.Body.STKCallback.ResultCode != 0 {
 		gw.Logger.Errorln("stk mpesa transaction failed")
-		w.Write([]byte("stk mpesa transaction failed"))
-		return
 	}
 
-	mpesaPaymentPB := &mpesapayment.MPESAPayment{
-		TxId:              stkPayload.Body.STKCallback.CheckoutRequestID,
-		TxType:            "STK_PUSH",
-		TxTimestamp:       stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().Unix(),
-		Msisdn:            stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
-		Names:             stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
-		TxRefNumber:       stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
-		TxAmount:          stkPayload.Body.STKCallback.CallbackMetadata.GetAmount(),
-		BusinessShortCode: 0,
-		Processed:         true,
+	stkPayloadPB := &stk.StkPayload{
+		MerchantRequestId:  stkPayload.Body.STKCallback.MerchantRequestID,
+		CheckoutRequestId:  stkPayload.Body.STKCallback.CheckoutRequestID,
+		ResultCode:         fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
+		ResultDesc:         stkPayload.Body.STKCallback.ResultDesc,
+		Amount:             fmt.Sprintf("%.2f", stkPayload.Body.STKCallback.CallbackMetadata.GetAmount()),
+		MpesaReceiptNumber: stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
+		TransactionDate:    stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().UTC().String(),
+		PhoneNumber:        stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
+		Succeeded:          stkPayload.Body.STKCallback.ResultCode == 0,
 	}
 
 	token, err := gw.authAPI.GenToken(r.Context(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Minute))
@@ -132,21 +132,67 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
 
+	ctxExt := metadata.NewIncomingContext(r.Context(), md)
+
 	// Save to database
-	_, err = gw.mpesaPaymentServer.CreateMPESAPayment(metadata.NewIncomingContext(r.Context(), md), &mpesapayment.CreateMPESAPaymentRequest{
-		MpesaPayment: mpesaPaymentPB,
-	})
+	createRes, err := gw.stkAPI.CreateStkPayload(
+		ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
+	)
 	if err != nil {
-		bs, err2 := proto.Marshal(mpesaPaymentPB)
+		bs, err2 := proto.Marshal(stkPayloadPB)
 		if err2 == nil {
-			gw.RedisDB.LPush(mpesa.FailedTxList, bs)
+			gw.RedisDB.LPush(stkapp.FailedTxList, bs)
 		}
 		gw.Logger.Errorln(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.Write([]byte("mpesa transaction processed"))
+	publish := true
+
+	// Get the stk payload saved
+	key := stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber)
+	val, err := gw.RedisDB.Get(key).Result()
+	switch {
+	case err == nil:
+	case errors.Is(err, redis.Nil):
+		publish = false
+	default:
+		gw.Logger.Errorf("failed to get initiator payload from cache: %v", err)
+		publish = false
+	}
+
+	// Delete the key to allow other transactions to proceeed
+	defer func() {
+		gw.RedisDB.Del(key)
+	}()
+
+	// Publish stk success to consumers
+	if publish && stkPayloadPB.Succeeded {
+		gw.Logger.Infoln("publishing stk result to consumers")
+
+		go func() {
+			// Get stk push initiator payload
+			payload := &stk.InitiateSTKPushRequest{}
+			err = proto.Unmarshal([]byte(val), payload)
+			if err != nil {
+				gw.Logger.Errorf("failed unmarshal stk push payload: %v", err)
+				return
+			}
+
+			// Publish the stk info to consumers
+			_, err = gw.stkAPI.PublishStkPayload(ctxExt, &stk.PublishStkPayloadRequest{
+				PayloadId:   createRes.PayloadId,
+				InitiatorId: payload.InitiatorId,
+			})
+			if err != nil {
+				gw.Logger.Errorf("failed to publish stk payment with id: %s", createRes.PayloadId)
+				return
+			}
+		}()
+	}
+
+	w.Write([]byte("mpesa stk processed"))
 }
 
 // STKPayload sent from stk push

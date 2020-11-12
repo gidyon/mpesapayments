@@ -9,7 +9,9 @@ import (
 	"github.com/gidyon/micro/pkg/config"
 	"github.com/gidyon/micro/utils/healthcheck"
 	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
+	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/encryption"
 	"github.com/gidyon/services/pkg/utils/errs"
@@ -59,31 +61,42 @@ func main() {
 
 	app.Start(ctx, func() error {
 
-		// MPESA API
-		mpesaAPI, err := mpesa.NewAPIServerMPESA(ctx, &mpesa.Options{
+		stkOption := &stkapp.OptionsSTK{
+			AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+			ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
+			ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
+			BusinessShortCode: os.Getenv("BUSINESS_SHORT_CODE"),
+			AccountReference:  os.Getenv("MPESA_ACCOUNT_REFERENCE"),
+			Timestamp:         os.Getenv("MPESA_ACCESS_TIMESTAMP"),
+			Password:          os.Getenv("MPESA_ACCESS_PASSWORD"),
+			CallBackURL:       os.Getenv("MPESA_CALLBACK_URL"),
+			PostURL:           os.Getenv("MPESA_POST_URL"),
+			QueryURL:          os.Getenv("MPESA_QUERY_URL"),
+		}
+
+		opt := stkapp.Options{
 			SQLDB:          app.GormDBByName("sqlWrites"),
 			RedisDB:        app.RedisClientByName("redisWrites"),
 			Logger:         app.Logger(),
 			JWTSigningKey:  []byte(os.Getenv("JWT_SIGNING_KEY")),
 			PublishChannel: os.Getenv("PUBLISH_CHANNEL"),
 			HTTPClient:     http.DefaultClient,
-			STKOptions: &mpesa.STKOptions{
-				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-				ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
-				ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
-				BusinessShortCode: os.Getenv("BUSINESS_SHORT_CODE"),
-				AccountReference:  os.Getenv("MPESA_ACCOUNT_REFERENCE"),
-				Timestamp:         os.Getenv("MPESA_ACCESS_TIMESTAMP"),
-				Password:          os.Getenv("MPESA_ACCESS_PASSWORD"),
-				CallBackURL:       os.Getenv("MPESA_CALLBACK_URL"),
-				PostURL:           os.Getenv("MPESA_POST_URL"),
-				QueryURL:          os.Getenv("MPESA_QUERY_URL"),
-			},
-		})
+			OptionsSTK:     stkOption,
+		}
+
+		// MPESA API
+		mpesaAPI, err := mpesa.NewAPIServerMPESA(ctx, &opt)
 		errs.Panic(err)
 
 		mpesapayment.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
 		errs.Panic(mpesapayment.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+
+		// STK Push API
+		stkAPI, err := stkapp.NewStkAPI(ctx, &opt)
+		errs.Panic(err)
+
+		stk.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
+		errs.Panic(stk.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 
 		// MPESA Paybill confirmation gateway
 		paybillGW, err := NewPayBillGateway(ctx, &Options{
@@ -111,7 +124,7 @@ func main() {
 			RedisDB:       app.RedisClientByName("redisWrites"),
 			Logger:        app.Logger(),
 			JWTSigningKey: []byte(os.Getenv("JWT_SIGNING_KEY")),
-			MpesaAPI:      mpesaAPI,
+			StkAPI:        stkAPI,
 		})
 		errs.Panic(err)
 
