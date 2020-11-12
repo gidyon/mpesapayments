@@ -21,7 +21,7 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 		ctx = context.Background()
 	})
 
-	Describe("Publoshing mpesa payment with malformed request", func() {
+	Describe("Publishing mpesa payment with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			pubReq = nil
 			pubRes, err := MpesaPaymentAPI.PublishAllMpesaPayment(ctx, pubReq)

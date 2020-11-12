@@ -7,11 +7,11 @@ import (
 	"github.com/gidyon/services/pkg/utils/errs"
 )
 
-// MpesaTables is table for mpesa payments
-const MpesaTables = "payments_mpesa"
+// MpesaPayments is table for mpesa payments
+const MpesaPayments = "payments_mpesa"
 
-// Model contains mpesa transaction details
-type Model struct {
+// PaymentMpesa contains mpesa transaction details
+type PaymentMpesa struct {
 	PaymentID         uint    `gorm:"primaryKey;autoIncrement"`
 	TxType            string  `gorm:"type:varchar(50);not null"`
 	TxID              string  `gorm:"type:varchar(50);not null;unique"`
@@ -26,17 +26,17 @@ type Model struct {
 }
 
 // TableName returns the name of the table
-func (*Model) TableName() string {
-	return MpesaTables
+func (*PaymentMpesa) TableName() string {
+	return MpesaPayments
 }
 
-// GetMpesaDB converts protobuf mpesa message to MPESAModel
-func GetMpesaDB(MpesaPB *mpesapayment.MPESAPayment) (*Model, error) {
+// GetMpesaDB converts protobuf mpesa message to MPESAPaymentMpesa
+func GetMpesaDB(MpesaPB *mpesapayment.MPESAPayment) (*PaymentMpesa, error) {
 	if MpesaPB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}
 
-	mpesaDB := &Model{
+	mpesaDB := &PaymentMpesa{
 		TxID:              MpesaPB.TxId,
 		TxType:            MpesaPB.TxType,
 		TxTimestamp:       MpesaPB.TxTimestamp,
@@ -53,7 +53,7 @@ func GetMpesaDB(MpesaPB *mpesapayment.MPESAPayment) (*Model, error) {
 }
 
 // GetMpesaPB returns the protobuf message of mpesa payment model
-func GetMpesaPB(MpesaDB *Model) (*mpesapayment.MPESAPayment, error) {
+func GetMpesaPB(MpesaDB *PaymentMpesa) (*mpesapayment.MPESAPayment, error) {
 	if MpesaDB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}

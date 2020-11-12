@@ -11,6 +11,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro"
 	"github.com/gidyon/micro/pkg/conn"
+	"github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/mocks"
 	"github.com/go-redis/redis"
@@ -64,9 +65,9 @@ var _ = BeforeSuite(func() {
 	db, err := startDB()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(db.Migrator().DropTable(MpesaTables)).ShouldNot(HaveOccurred())
+	Expect(db.Migrator().DropTable(MpesaPayments)).ShouldNot(HaveOccurred())
 
-	Expect(db.AutoMigrate(&Model{})).ShouldNot(HaveOccurred())
+	Expect(db.AutoMigrate(&PaymentMpesa{})).ShouldNot(HaveOccurred())
 
 	redisDB := conn.NewRedisClient(&redis.Options{
 		Addr: "localhost:6379",
@@ -74,10 +75,8 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("MPESAPayment_app")
 
-	stkOptions := &STKOptions{
+	stkOptions := &stk.OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
-		accessToken:       randomdata.RandStringRunes(32),
-		basicToken:        randomdata.RandStringRunes(32),
 		ConsumerKey:       randomdata.RandStringRunes(32),
 		ConsumerSecret:    randomdata.RandStringRunes(24),
 		BusinessShortCode: "174379",
@@ -91,12 +90,12 @@ var _ = BeforeSuite(func() {
 
 	httpClient := client(1)
 
-	opt := &Options{
+	opt := &stk.Options{
 		SQLDB:                     db,
 		RedisDB:                   redisDB,
 		Logger:                    logger,
 		JWTSigningKey:             []byte(randomdata.RandStringRunes(32)),
-		STKOptions:                stkOptions,
+		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Millisecond * 5,
 		WorkerDuration:            time.Millisecond + 10,
@@ -143,89 +142,9 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.HTTPClient = httpClient
-	opt.STKOptions = nil
+	opt.OptionsSTK = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions = stkOptions
-	opt.STKOptions.AccessTokenURL = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.AccessTokenURL = randomdata.IpV4Address()
-	opt.STKOptions.BusinessShortCode = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.BusinessShortCode = "174379"
-	opt.STKOptions.CallBackURL = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.CallBackURL = randomdata.IpV4Address()
-	opt.STKOptions.AccountReference = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.AccountReference = randomdata.Adjective()
-	opt.STKOptions.ConsumerKey = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.ConsumerKey = randomdata.RandStringRunes(32)
-	opt.STKOptions.ConsumerSecret = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.ConsumerSecret = randomdata.RandStringRunes(18)
-	opt.STKOptions.Password = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.Password = randomdata.RandStringRunes(64)
-	opt.STKOptions.PostURL = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.STKOptions.PostURL = randomdata.IpV4Address()
-	opt.STKOptions.Timestamp = ""
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	// Start worker
-	// go func() {
-	// 	defer func() {
-	// 		workerChan <- struct{}{}
-	// 	}()
-
-	// 	// Send some failed mpesa transactions
-	// 	for i := 0; i < 20; i++ {
-	// 		// Best case
-	// 		mpesaPayload := fakeMpesaPayment()
-	// 		bs, err := proto.Marshal(mpesaPayload)
-	// 		Expect(err).ShouldNot(HaveOccurred())
-	// 		Expect(redisReads.LPush(FailedTxList, bs).Err()).ShouldNot(HaveOccurred())
-
-	// 		// Empty message
-	// 		bs, err = proto.Marshal(&mpesapayment.MPESAPayment{})
-	// 		Expect(err).ShouldNot(HaveOccurred())
-	// 		Expect(redisWrites.LPush(FailedTxList, bs).Err()).ShouldNot(HaveOccurred())
-
-	// 		// Fake message
-	// 		bs, err = json.Marshal(&mpesapayment.MPESAPayment{})
-	// 		Expect(err).ShouldNot(HaveOccurred())
-	// 		Expect(redisWrites.LPush(FailedTxList, bs).Err()).ShouldNot(HaveOccurred())
-
-	// 		// Duplicate
-	// 		bs, err = proto.Marshal(mpesaPayload)
-	// 		Expect(err).ShouldNot(HaveOccurred())
-	// 		Expect(redisReads.LPush(FailedTxList, bs).Err()).ShouldNot(HaveOccurred())
-	// 	}
-
-	// 	n, err := redisReads.LLen(failedTxListv2).Result()
-	// 	Expect(err).ShouldNot(HaveOccurred())
-	// 	MpesaPaymentAPIServer.Logger.Infof("len of list is: %v", n)
-	// }()
 })
 
 var _ = AfterSuite(func() {

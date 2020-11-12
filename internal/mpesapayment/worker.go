@@ -2,11 +2,8 @@ package mpesapayment
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"net/http"
 	"strings"
 	"time"
 
@@ -14,47 +11,6 @@ import (
 	"github.com/go-redis/redis"
 	"google.golang.org/protobuf/proto"
 )
-
-func (mpesaAPI *mpesaAPIServer) updateAccessTokenWorker(ctx context.Context, dur time.Duration) {
-	var err error
-	for {
-		err = mpesaAPI.updateAccessToken()
-		if err != nil {
-			mpesaAPI.Logger.Errorf("failed to update access token: %v", err)
-		} else {
-			mpesaAPI.Logger.Infoln("access token updated")
-		}
-		select {
-		case <-ctx.Done():
-			return
-		case <-time.After(dur):
-		}
-	}
-}
-
-func (mpesaAPI *mpesaAPIServer) updateAccessToken() error {
-	req, err := http.NewRequest(http.MethodGet, mpesaAPI.STKOptions.AccessTokenURL, nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %v", err)
-	}
-
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", mpesaAPI.STKOptions.basicToken))
-
-	res, err := mpesaAPI.HTTPClient.Do(req)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("request failed: %v", err)
-	}
-
-	resTo := make(map[string]interface{}, 0)
-	err = json.NewDecoder(res.Body).Decode(&resTo)
-	if err != nil && !errors.Is(err, io.EOF) {
-		return fmt.Errorf("failed to json decode response: %v", err)
-	}
-
-	mpesaAPI.STKOptions.accessToken = fmt.Sprint(resTo["access_token"])
-
-	return nil
-}
 
 func (mpesaAPI *mpesaAPIServer) worker(ctx context.Context, dur time.Duration) {
 	ticker := time.NewTicker(dur)

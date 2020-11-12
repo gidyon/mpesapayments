@@ -95,11 +95,23 @@ var _ = Describe("Creating MPESA payment @create", func() {
 	})
 
 	Describe("Creating mpesa payment with well formed request", func() {
+		var TxID string
 		It("should succeed", func() {
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.OK))
 			Expect(createRes).ShouldNot(BeNil())
+			TxID = createReq.MpesaPayment.TxId
+		})
+
+		Describe("Creating duplicate transaction", func() {
+			It("should succeed since create is indepotent", func() {
+				createReq.MpesaPayment.TxId = TxID
+				createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(status.Code(err)).Should(Equal(codes.OK))
+				Expect(createRes).ShouldNot(BeNil())
+			})
 		})
 	})
 })

@@ -3,6 +3,7 @@ package mpesapayment
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
@@ -23,7 +24,7 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 		ctx = context.Background()
 	})
 
-	Describe("Publoshing mpesa payment with malformed request", func() {
+	Describe("Publishing mpesa payment with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			pubReq = nil
 			pubRes, err := MpesaPaymentAPI.PublishMpesaPayment(ctx, pubReq)
@@ -50,7 +51,8 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 			msgChan := MpesaPaymentAPIServer.RedisDB.Subscribe(publishChannel).Channel()
 
 			for msg := range msgChan {
-				paymentReceive = msg.Payload
+				strs := strings.Split(msg.Payload, ":")
+				paymentReceive = strs[1]
 				break
 			}
 			close(ch)
@@ -75,6 +77,7 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 				pubRes, err := MpesaPaymentAPI.PublishMpesaPayment(ctx, &mpesapayment.PublishMpesaPaymentRequest{
 					PaymentId:      paymentID,
 					ProcessedState: mpesapayment.ProcessedState_ANY,
+					InitiatorId:    randomdata.RandStringRunes(16),
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

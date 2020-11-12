@@ -1,18 +1,14 @@
 package mpesapayment
 
 import (
-	"bytes"
 	"context"
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/services/pkg/auth"
 	"github.com/gidyon/services/pkg/utils/encryption"
@@ -21,134 +17,39 @@ import (
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/grpclog"
-	"google.golang.org/protobuf/proto"
 	"gorm.io/gorm"
 )
 
+// FailedTxList is redis list for failed mpesa transactions
 const (
-	// FailedTxList is redis list for failed mpesa transactions
-	FailedTxList            = "mpesa:failedtx:list"
-	failedTxListv2          = "mpesa:failedtx:list"
-	unprocessedTxList       = "mpesa:failedtx:list:failed"
-	pendingConfirmationSet  = "mpesa:pendingtx:set"
-	pendingConfirmationList = "mpesa:pendingtx:list"
-	publishChannel          = "mpesa:pubsub"
+	FailedTxList            = "mpesa:payments:failedtx:list"
+	failedTxListv2          = "mpesa:payments:failedtx:list"
+	unprocessedTxList       = "mpesa:payments:failedtx:list:failed"
+	pendingConfirmationSet  = "mpesa:payments:pendingtx:set"
+	pendingConfirmationList = "mpesa:payments:pendingtx:list"
+	publishChannel          = "mpesa:payments:pubsub"
 )
-
-// HTTPClient makes mocking test easier
-type HTTPClient interface {
-	Do(*http.Request) (*http.Response, error)
-}
 
 type mpesaAPIServer struct {
 	authAPI             auth.Interface
 	hasher              *hashids.HashID
 	lastProcessedTxTime time.Time
-	*Options
-}
-
-// Options contain parameters passed to NewMpesaAPIService
-type Options struct {
-	SQLDB                     *gorm.DB
-	RedisDB                   *redis.Client
-	Logger                    grpclog.LoggerV2
-	JWTSigningKey             []byte
-	STKOptions                *STKOptions
-	HTTPClient                HTTPClient
-	UpdateAccessTokenDuration time.Duration
-	WorkerDuration            time.Duration
-	PublishChannel            string
-}
-
-func validateOptions(opt *Options) error {
-	var err error
-	switch {
-	case opt == nil:
-		err = errs.NilObject("options")
-	case opt.SQLDB == nil:
-		err = errs.NilObject("sql db")
-	case opt.RedisDB == nil:
-		err = errs.NilObject("redis db")
-	case opt.Logger == nil:
-		err = errs.NilObject("logger")
-	case len(opt.JWTSigningKey) == 0:
-		err = errs.NilObject("jwt signing key")
-	case opt.HTTPClient == nil:
-		err = errs.NilObject("http client")
-	case opt.STKOptions == nil:
-		err = errs.NilObject("stk options")
-	}
-	return err
-}
-
-// STKOptions contains options for sending push stk
-type STKOptions struct {
-	AccessTokenURL    string
-	ConsumerKey       string
-	ConsumerSecret    string
-	BusinessShortCode string
-	AccountReference  string
-	Timestamp         string
-	Password          string
-	CallBackURL       string
-	PostURL           string
-	QueryURL          string
-	accessToken       string
-	basicToken        string
-}
-
-func validateSTKOptions(opt *STKOptions) error {
-	var err error
-	switch {
-	case opt == nil:
-		err = errs.NilObject("stk options")
-	case opt.AccessTokenURL == "":
-		err = errs.MissingField("access token url")
-	case opt.ConsumerKey == "":
-		err = errs.MissingField("consumer key")
-	case opt.ConsumerSecret == "":
-		err = errs.MissingField("consumer secret")
-	case opt.BusinessShortCode == "":
-		err = errs.MissingField("business short code")
-	case opt.AccountReference == "":
-		err = errs.MissingField("account reference")
-	case opt.Timestamp == "":
-		err = errs.MissingField("timestamp")
-	case opt.Password == "":
-		err = errs.MissingField("password")
-	case opt.CallBackURL == "":
-		err = errs.MissingField("callback url")
-	case opt.PostURL == "":
-		err = errs.MissingField("post url")
-	case opt.QueryURL == "":
-	case opt.accessToken == "":
-	case opt.basicToken == "":
-	}
-	return err
+	*stk.Options
 }
 
 // NewAPIServerMPESA creates a singleton instance of mpesa API server
-func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMPESAServer, error) {
+func NewAPIServerMPESA(ctx context.Context, opt *stk.Options) (mpesapayment.LipaNaMPESAServer, error) {
 	// Validation
 	var err error
 	switch {
 	case ctx == nil:
 		return nil, errs.NilObject("context")
 	default:
-		err = validateOptions(opt)
-		if err != nil {
-			return nil, err
-		}
-		err = validateSTKOptions(opt.STKOptions)
+		err = stk.ValidateOptions(opt)
 		if err != nil {
 			return nil, err
 		}
 	}
-
-	opt.STKOptions.basicToken = base64.StdEncoding.EncodeToString([]byte(
-		opt.STKOptions.ConsumerKey + ":" + opt.STKOptions.ConsumerSecret,
-	))
 
 	// Authentication API
 	authAPI, err := auth.NewAPI(opt.JWTSigningKey, "Mpesa Payments", "trusted accounts")
@@ -169,8 +70,8 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 	}
 
 	// Auto migration
-	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaTables) {
-		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&Model{})
+	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaPayments) {
+		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&PaymentMpesa{})
 		if err != nil {
 			return nil, err
 		}
@@ -183,14 +84,6 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 
 	// Start worker for failed transactions
 	go mpesaAPI.worker(ctx, workerDur)
-
-	dur := time.Minute * 30
-	if opt.UpdateAccessTokenDuration > 0 {
-		dur = opt.UpdateAccessTokenDuration
-	}
-
-	// Worker for updating access token
-	go mpesaAPI.updateAccessTokenWorker(ctx, dur)
 
 	return mpesaAPI, nil
 }
@@ -215,135 +108,6 @@ func ValidateMPESAPayment(payment *mpesapayment.MPESAPayment) error {
 		err = errs.MissingField("transaction time")
 	}
 	return err
-}
-
-// GetMpesaSTKPushKey retrives hash storing details of an mpesa transaction
-func GetMpesaSTKPushKey(msisdn string) string {
-	return fmt.Sprintf("mpesa:stkpush:%s", msisdn)
-}
-
-func (mpesaAPI *mpesaAPIServer) InitiateSTKPush(
-	ctx context.Context, initReq *mpesapayment.InitiateSTKPushRequest,
-) (*mpesapayment.InitiateSTKPushResponse, error) {
-	// Authentication
-	err := mpesaAPI.authAPI.AuthenticateRequest(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validation
-	switch {
-	case initReq == nil:
-		return nil, errs.NilObject("initiate request")
-	case initReq.Phone == "":
-		return nil, errs.MissingField("phone")
-	case initReq.Amount == 0:
-		return nil, errs.MissingField("amount")
-	case initReq.PaidService == "":
-		return nil, errs.MissingField("paid service")
-	case initReq.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
-	}
-
-	txKey := GetMpesaSTKPushKey(initReq.Phone)
-
-	// Check whether another transaction is under way
-	exists, err := mpesaAPI.RedisDB.Exists(txKey).Result()
-	if err != nil {
-		return nil, errs.RedisCmdFailed(err, "exists")
-	}
-
-	if exists == 1 {
-		return &mpesapayment.InitiateSTKPushResponse{
-			Progress: false,
-			Message:  "Another MPESA transaction is currently underway. Please wait.",
-		}, nil
-	}
-
-	// Marshal initReq
-	bs, err := proto.Marshal(initReq)
-	if err != nil {
-		return nil, errs.FromProtoMarshal(err, "init request")
-	}
-
-	// Save transaction information in cache for 30 seconds
-	err = mpesaAPI.RedisDB.Set(txKey, bs, 30*time.Second).Err()
-	if err != nil {
-		return nil, errs.RedisCmdFailed(err, "set")
-	}
-
-	// Correct phone number
-	phoneNumber := strings.TrimSpace(initReq.Phone)
-	phoneNumber = strings.TrimPrefix(initReq.Phone, "+")
-	phoneNumber = strings.TrimPrefix(initReq.Phone, "0")
-	if strings.HasPrefix(phoneNumber, "7") {
-		phoneNumber = "254" + phoneNumber
-	}
-
-	// STK Payload
-	stkPayload := &STKRequestPayload{
-		BusinessShortCode: mpesaAPI.STKOptions.BusinessShortCode,
-		Password:          mpesaAPI.STKOptions.Password,
-		Timestamp:         mpesaAPI.STKOptions.Timestamp,
-		TransactionType:   "CustomerPayBillOnline",
-		Amount:            fmt.Sprint(initReq.Amount),
-		PartyA:            phoneNumber,
-		PartyB:            mpesaAPI.STKOptions.BusinessShortCode,
-		PhoneNumber:       phoneNumber,
-		CallBackURL:       mpesaAPI.STKOptions.CallBackURL,
-		AccountReference:  initReq.PaidService,
-		TransactionDesc:   "payment",
-	}
-
-	// Json Marshal
-	bs, err = json.Marshal(stkPayload)
-	if err != nil {
-		mpesaAPI.RedisDB.Del(txKey)
-		return nil, errs.FromJSONMarshal(err, "stkPayload")
-	}
-
-	// Create request
-	req, err := http.NewRequest(http.MethodPost, mpesaAPI.STKOptions.PostURL, bytes.NewReader(bs))
-	if err != nil {
-		mpesaAPI.RedisDB.Del(txKey)
-		return nil, errs.WrapMessage(codes.Internal, "failed to create new request")
-	}
-
-	// Update headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", mpesaAPI.STKOptions.accessToken))
-	req.Header.Set("Content-Type", "application/json")
-
-	go func() {
-		// Post to MPESA API
-		res, err := mpesaAPI.HTTPClient.Do(req)
-		if err != nil {
-			mpesaAPI.RedisDB.Del(txKey)
-			mpesaAPI.Logger.Errorf("failed to post stk payload to mpesa API: %v", err)
-			return
-		}
-
-		resData := make(map[string]interface{}, 0)
-
-		err = json.NewDecoder(res.Body).Decode(&resData)
-		if err != nil && err != io.EOF {
-			mpesaAPI.RedisDB.Del(txKey)
-			mpesaAPI.Logger.Errorf("failed to decode mpesa response: %v", err)
-			return
-		}
-
-		// Check for error
-		errMsg, ok := resData["errorMessage"]
-		if ok {
-			mpesaAPI.RedisDB.Del(txKey)
-			mpesaAPI.Logger.Errorf("error happened while sending stk push: %v", errMsg)
-			return
-		}
-	}()
-
-	return &mpesapayment.InitiateSTKPushResponse{
-		Progress: true,
-		Message:  "Processing. Pay popup will come shortly",
-	}, nil
 }
 
 func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
@@ -376,7 +140,7 @@ func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
 	switch {
 	case err == nil:
 	case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
-		mpesaAPI.Logger.Infoln("duplicate request skipped")
+		mpesaAPI.Logger.Warning("duplicate request skipped")
 		return &mpesapayment.CreateMPESAPaymentResponse{}, nil
 	default:
 		return nil, errs.FailedToSave("mpesa payment", err)
@@ -410,7 +174,7 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 		}
 	}
 
-	mpesaDB := &Model{}
+	mpesaDB := &PaymentMpesa{}
 
 	err = mpesaAPI.SQLDB.First(mpesaDB, "payment_id=?", paymentID).Error
 	switch {
@@ -474,7 +238,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		paymentID = uint(ids[0])
 	}
 
-	mpesapayments := make([]*Model, 0, pageSize)
+	mpesapayments := make([]*PaymentMpesa, 0, pageSize)
 
 	db := mpesaAPI.SQLDB.Limit(int(pageSize)).Order("payment_id DESC")
 
@@ -676,7 +440,7 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 
 	// Check if not already processed process
 	if mpesaPayment.Processed == false {
-		err = mpesaAPI.SQLDB.Model(&Model{}).Where("payment_id=?", processReq.PaymentId).Update("processed", true).Error
+		err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("payment_id=?", processReq.PaymentId).Update("processed", true).Error
 		switch {
 		case err == nil:
 		default:
@@ -714,7 +478,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 		return nil, err
 	}
 
-	publishPayload := fmt.Sprintf("%s:%s", pubReq.PaymentId, pubReq.InitiatorId)
+	publishPayload := fmt.Sprintf("PAYMENT:%s:%s", pubReq.PaymentId, pubReq.InitiatorId)
 
 	// Publish based on state
 	switch pubReq.ProcessedState {
