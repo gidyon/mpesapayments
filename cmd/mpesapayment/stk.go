@@ -162,7 +162,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		publish = false
 	}
 
-	// Delete the key to allow other transactions to proceeed
+	// Delete the key to allow future transactions to proceeed
 	defer func() {
 		gw.RedisDB.Del(key)
 	}()
@@ -182,8 +182,8 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 			// Publish the stk info to consumers
 			_, err = gw.stkAPI.PublishStkPayload(ctxExt, &stk.PublishStkPayloadRequest{
-				PayloadId:   createRes.PayloadId,
-				InitiatorId: payload.InitiatorId,
+				PayloadId: createRes.PayloadId,
+				Payload:   payload.Payload,
 			})
 			if err != nil {
 				gw.Logger.Errorf("failed to publish stk payment with id: %s", createRes.PayloadId)
@@ -216,22 +216,10 @@ type CallbackMeta struct {
 	} `json:"Item,omitempty"`
 }
 
-// GetTransTime returns the transaction time
-func (c *CallbackMeta) GetTransTime() time.Time {
-	if len(c.Item) != 5 {
-		return time.Now()
-	}
-
-	t, err := getTransactionTime(fmt.Sprint(c.Item[3].Value))
-	if err != nil {
-		t = time.Now()
-	}
-	return t
-}
-
 // GetAmount returns the transaction amount
 func (c *CallbackMeta) GetAmount() float32 {
-	if len(c.Item) != 5 {
+	itemsLen := len(c.Item)
+	if itemsLen != 5 && itemsLen != 4 {
 		return 0
 	}
 
@@ -239,26 +227,65 @@ func (c *CallbackMeta) GetAmount() float32 {
 	if !ok {
 		return 0
 	}
+
 	return float32(v)
-}
-
-// PhoneNumber returns the phone number
-func (c *CallbackMeta) PhoneNumber() string {
-	if len(c.Item) != 5 {
-		return ""
-	}
-
-	v, _ := c.Item[4].Value.(float64)
-	return fmt.Sprintf("%.0f", v)
 }
 
 // MpesaReceiptNumber returns the receipt number
 func (c *CallbackMeta) MpesaReceiptNumber() string {
-	if len(c.Item) != 5 {
+	itemsLen := len(c.Item)
+	if itemsLen != 5 && itemsLen != 4 {
 		return ""
 	}
 
 	return fmt.Sprint(c.Item[1].Value)
+}
+
+// GetTransTime returns the transaction time
+func (c *CallbackMeta) GetTransTime() time.Time {
+	itemsLen := len(c.Item)
+	if itemsLen != 5 && itemsLen != 4 {
+		return time.Now()
+	}
+
+	var (
+		t   time.Time
+		err error
+	)
+
+	switch itemsLen {
+	case 4:
+		t, err = getTransactionTime(fmt.Sprint(c.Item[2].Value))
+		if err != nil {
+			t = time.Now()
+		}
+	case 5:
+		t, err = getTransactionTime(fmt.Sprint(c.Item[3].Value))
+		if err != nil {
+			t = time.Now()
+		}
+	}
+
+	return t
+}
+
+// PhoneNumber returns the phone number
+func (c *CallbackMeta) PhoneNumber() string {
+	itemsLen := len(c.Item)
+	if itemsLen != 5 && itemsLen != 4 {
+		return ""
+	}
+
+	var v float64
+
+	switch itemsLen {
+	case 4:
+		v, _ = c.Item[3].Value.(float64)
+	case 5:
+		v, _ = c.Item[4].Value.(float64)
+	}
+
+	return fmt.Sprintf("%.0f", v)
 }
 
 // {
