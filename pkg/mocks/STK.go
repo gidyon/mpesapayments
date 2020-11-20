@@ -4,8 +4,8 @@ import (
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/mocks/mocks"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
 )
