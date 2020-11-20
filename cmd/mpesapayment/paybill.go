@@ -189,7 +189,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctxExt := metadata.NewIncomingContext(r.Context(), md)
 
 	// Save to database
-	_, err = gw.mpesaPaymentServer.CreateMPESAPayment(ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
+	createRes, err := gw.mpesaPaymentServer.CreateMPESAPayment(ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
 		MpesaPayment: mpesaPaymentPB,
 	})
 	if err != nil {
@@ -202,6 +202,18 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	go func() {
+		// Publish the transaction
+		_, err := gw.MpesaAPI.PublishMpesaPayment(ctxExt, &mpesapayment.PublishMpesaPaymentRequest{
+			PaymentId:   createRes.PaymentId,
+			InitiatorId: "",
+		})
+		if err != nil {
+			gw.Logger.Errorf("failed to publish lnm payment with id: %s", createRes.PaymentId)
+			return
+		}
+	}()
 
 	w.Write([]byte("mpesa transaction processed"))
 }
