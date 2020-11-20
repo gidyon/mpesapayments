@@ -37,14 +37,13 @@ message InitiateSTKPushRequest {
 		json_schema: {
 			title: "InitiateSTKPushRequest"
 			description: "Initiates a STK push payment to the specified phone number"
-			required: ["paid_service", "phone", "amount"]
+			required: ["phone", "amount", "payload"]
 		}
     };
 
-	string paid_service = 1 [(google.api.field_behavior) = REQUIRED];
-	string initiator_id = 2 [(google.api.field_behavior) = REQUIRED];
-	string phone = 3 [(google.api.field_behavior) = REQUIRED];
-	double amount = 4 [(google.api.field_behavior) = REQUIRED];
+	string phone = 1 [(google.api.field_behavior) = REQUIRED];
+	double amount = 2 [(google.api.field_behavior) = REQUIRED];
+	map<string, string> payload = 3 [(google.api.field_behavior) = REQUIRED];
 }
 
 message InitiateSTKPushResponse {
@@ -141,8 +140,8 @@ message PublishStkPayloadRequest {
 		}
 	};
 
-	string payload_id = 1;
-	string initiator_id = 2;
+	string payload_id = 1 [(google.api.field_behavior) = REQUIRED];
+	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
 	ProcessedState processed_state = 3;
 }
 
@@ -156,6 +155,18 @@ message PublishAllStkPayloadRequest {
 
 	int64 since_time_seconds = 1;
 	ProcessedState processed_state = 2;
+}
+
+message PublishMessage {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishMessage"
+			description: "Published stk message to consumers"
+		}
+	};
+
+	string payload_id = 1;
+	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 service StkPushAPI {
