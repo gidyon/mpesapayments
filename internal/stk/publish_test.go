@@ -78,7 +78,9 @@ var _ = Describe("Publishing stk payload @publish", func() {
 				pubRes, err := StkAPI.PublishStkPayload(ctx, &stk.PublishStkPayloadRequest{
 					PayloadId:      payloadID,
 					ProcessedState: mpesapayment.ProcessedState_ANY,
-					InitiatorId:    randomdata.RandStringRunes(16),
+					Payload: map[string]string{
+						"service_id": randomdata.RandStringRunes(32),
+					},
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

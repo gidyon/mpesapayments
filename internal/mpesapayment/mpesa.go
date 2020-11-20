@@ -31,6 +31,7 @@ const (
 )
 
 type mpesaAPIServer struct {
+	mpesapayment.UnimplementedLipaNaMPESAServer
 	authAPI             auth.Interface
 	hasher              *hashids.HashID
 	lastProcessedTxTime time.Time

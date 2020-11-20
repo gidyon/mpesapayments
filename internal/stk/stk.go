@@ -43,6 +43,7 @@ type HTTPClient interface {
 }
 
 type stkAPIServer struct {
+	stk.UnimplementedStkPushAPIServer
 	authAPI             auth.Interface
 	hasher              *hashids.HashID
 	lastProcessedTxTime time.Time
@@ -244,10 +245,8 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		return nil, errs.MissingField("phone")
 	case initReq.Amount <= 0:
 		return nil, errs.MissingField("amount")
-	case initReq.PaidService == "":
-		return nil, errs.MissingField("paid service")
-	case initReq.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
+	case initReq.Payload == nil:
+		return nil, errs.MissingField("stk payload")
 	}
 
 	txKey := GetMpesaSTKPushKey(initReq.Phone)
@@ -614,8 +613,8 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 		return nil, errs.NilObject("publish request")
 	case pubReq.PayloadId == "":
 		return nil, errs.MissingField("payload id")
-	case pubReq.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
+	case pubReq.Payload == nil:
+		return nil, errs.MissingField("stk payload")
 	}
 
 	// Get mpesa payload
@@ -626,27 +625,37 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 		return nil, err
 	}
 
-	publishPayload := fmt.Sprintf("STK:%s:%s", pubReq.PayloadId, pubReq.InitiatorId)
+	// Payload to be published
+	publishPayload := &stk.PublishMessage{
+		PayloadId: pubReq.PayloadId,
+		Payload:   pubReq.Payload,
+	}
+
+	// Marshal data
+	bs, err := proto.Marshal(publishPayload)
+	if err != nil {
+		return nil, errs.FromProtoMarshal(err, "publish message")
+	}
 
 	// Publish based on state
 	switch pubReq.ProcessedState {
 	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 		// Publish only if the processed state is false
 		if !mpesaPayload.Processed {
-			err = stkAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
+			err = stkAPI.RedisDB.Publish(publishChannel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
 	case mpesapayment.ProcessedState_ANY:
-		err = stkAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
+		err = stkAPI.RedisDB.Publish(publishChannel, bs).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
 	case mpesapayment.ProcessedState_UNPROCESSED_ONLY:
 		// Publish only if the processed state is false
 		if !mpesaPayload.Processed {
-			err = stkAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
+			err = stkAPI.RedisDB.Publish(publishChannel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
@@ -654,7 +663,7 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 	case mpesapayment.ProcessedState_PROCESSED_ONLY:
 		// Publish only if the processed state is true
 		if mpesaPayload.Processed {
-			err = stkAPI.RedisDB.Publish(publishChannel, publishPayload).Err()
+			err = stkAPI.RedisDB.Publish(publishChannel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}

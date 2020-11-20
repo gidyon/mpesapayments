@@ -5,7 +5,6 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -18,10 +17,11 @@ var _ = Describe("Initiating stk request @initiate", func() {
 
 	BeforeEach(func() {
 		initReq = &stk.InitiateSTKPushRequest{
-			PaidService: "test product",
-			InitiatorId: uuid.New().String(),
-			Phone:       randomdata.PhoneNumber()[:10],
-			Amount:      randomdata.Decimal(5, 10),
+			Phone:  randomdata.PhoneNumber()[:10],
+			Amount: randomdata.Decimal(5, 10),
+			Payload: map[string]string{
+				"client_id": randomdata.RandStringRunes(32),
+			},
 		}
 		ctx = context.Background()
 	})
@@ -34,15 +34,8 @@ var _ = Describe("Initiating stk request @initiate", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(initRes).Should(BeNil())
 		})
-		It("should fail when paid service is missing", func() {
-			initReq.PaidService = ""
-			initRes, err := StkAPI.InitiateSTKPush(ctx, initReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(initRes).Should(BeNil())
-		})
-		It("should fail when initiator is missing", func() {
-			initReq.InitiatorId = ""
+		It("should fail when stk payload", func() {
+			initReq.Payload = nil
 			initRes, err := StkAPI.InitiateSTKPush(ctx, initReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
