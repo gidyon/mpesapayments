@@ -18,14 +18,14 @@ teardown_dev: ## Tear down development environment for the emrs project
 	docker-compose down
 
 protoc_mpesa_payment:
-	@protoc -I=$(API_IN_PATH) -I=third_party --go_out=plugins=grpc:$(API_OUT_PATH)/mpesapayment --go_opt=paths=source_relative mpesa_payment.proto
+	@protoc -I=$(API_IN_PATH) -I=third_party --go-grpc_out=$(API_OUT_PATH)/mpesapayment --go-grpc_opt=paths=source_relative --go_out=$(API_OUT_PATH)/mpesapayment --go_opt=paths=source_relative mpesa_payment.proto
 	@protoc -I=$(API_IN_PATH) -I=third_party --grpc-gateway_out=logtostderr=true,paths=source_relative:$(API_OUT_PATH)/mpesapayment mpesa_payment.proto
-	@protoc -I=$(API_IN_PATH) -I=third_party --swagger_out=logtostderr=true:$(SWAGGER_DOC_OUT_PATH) mpesa_payment.proto
+	@protoc -I=$(API_IN_PATH) -I=third_party --openapiv2_out=logtostderr=true,repeated_path_param_separator=ssv:$(SWAGGER_DOC_OUT_PATH) mpesa_payment.proto
 
 protoc_mpesa_stk:
-	@protoc -I=$(API_IN_PATH) -I=third_party --go_out=plugins=grpc:$(API_OUT_PATH)/stk --go_opt=paths=source_relative stk.proto
+	@protoc -I=$(API_IN_PATH) -I=third_party --go-grpc_out=$(API_OUT_PATH)/stk --go-grpc_opt=paths=source_relative --go_out=$(API_OUT_PATH)/stk --go_opt=paths=source_relative stk.proto
 	@protoc -I=$(API_IN_PATH) -I=third_party --grpc-gateway_out=logtostderr=true,paths=source_relative:$(API_OUT_PATH)/stk stk.proto
-	@protoc -I=$(API_IN_PATH) -I=third_party --swagger_out=logtostderr=true:$(SWAGGER_DOC_OUT_PATH) stk.proto
+	@protoc -I=$(API_IN_PATH) -I=third_party --openapiv2_out=logtostderr=true,repeated_path_param_separator=ssv:$(SWAGGER_DOC_OUT_PATH) stk.proto
 
 protoc_all: protoc_mpesa_payment protoc_mpesa_stk
 
