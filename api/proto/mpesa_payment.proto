@@ -209,14 +209,6 @@ message PublishAllMpesaPaymentRequest {
 
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
-	// // Initiates mpesa payment.
-    // rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
-    //     option (google.api.http) = {
-    //         post: "/api/mpestx/initiate"
-    //         body: "*"
-    //     };
-	// };
-
 	// Creates a record of mpesa payment.
 	rpc CreateMPESAPayment (CreateMPESAPaymentRequest) returns (CreateMPESAPaymentResponse) {
 		option (google.api.http) = {
