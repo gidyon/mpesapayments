@@ -74,31 +74,31 @@ func init() {
 
 	// Unhealthy mock
 	UnhealthyStkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "initiating stk push failed"),
+		nil, errs.WrapMessage(codes.Unknown, "initiating stk push failed"),
 	)
 
 	UnhealthyStkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "getting stk payload failed"),
+		nil, errs.WrapMessage(codes.Unknown, "getting stk payload failed"),
 	)
 
 	UnhealthyStkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "creating stk payload failed"),
+		nil, errs.WrapMessage(codes.Unknown, "creating stk payload failed"),
 	)
 
 	UnhealthyStkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "listing stk payloads failed"),
+		nil, errs.WrapMessage(codes.Unknown, "listing stk payloads failed"),
 	)
 
 	UnhealthyStkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "processing failed"),
+		nil, errs.WrapMessage(codes.Unknown, "processing failed"),
 	)
 
 	UnhealthyStkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "publishing failed"),
+		nil, errs.WrapMessage(codes.Unknown, "publishing failed"),
 	)
 
 	UnhealthyStkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		nil, errs.WrapMessage(codes.Internal, "publishing failed"),
+		nil, errs.WrapMessage(codes.Unknown, "publishing failed"),
 	)
 }
 
