@@ -17,8 +17,8 @@ type STKAPIMock interface {
 	stk.StkPushAPIClient
 }
 
-// HealthStkAPI is mock object to be used for stk.StkPushAPIClient for successful scenarios
-var HealthStkAPI = &mocks.STKAPIMock{}
+// StkAPI is mock object to be used for stk.StkPushAPIClient for successful scenarios
+var StkAPI = &mocks.STKAPIMock{}
 
 // UnhealthyStkAPI is mock object to be used for stk.StkPushAPIClient for failing scenarios
 var UnhealthyStkAPI = &mocks.STKAPIMock{}
@@ -33,21 +33,26 @@ var UnhealthyStkAPI = &mocks.STKAPIMock{}
 
 func init() {
 	// Healthy mock
-	HealthStkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
+	StkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.InitiateSTKPushResponse{
 			Progress: true,
 			Message:  "please continue with transaction"}, nil,
 	)
 
-	HealthStkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	StkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		func(payload *stk.StkPayload, err error) (*stk.StkPayload, error) {
+			if err == nil {
+				return mockStkPayload(), nil
+			}
+			return payload, err
+		},
+	)
+
+	StkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockStkPayload(), nil,
 	)
 
-	HealthStkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		mockStkPayload(), nil,
-	)
-
-	HealthStkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
+	StkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.ListStkPayloadsResponse{
 			StkPayloads: []*stk.StkPayload{
 				mockStkPayload(),
@@ -60,16 +65,31 @@ func init() {
 		}, nil,
 	)
 
-	HealthStkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		&empty.Empty{}, nil,
+	StkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+			if err == nil {
+				return &empty.Empty{}, nil
+			}
+			return emp, err
+		},
 	)
 
-	HealthStkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		&empty.Empty{}, nil,
+	StkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+			if err == nil {
+				return &empty.Empty{}, nil
+			}
+			return emp, err
+		},
 	)
 
-	HealthStkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		&empty.Empty{}, nil,
+	StkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+			if err == nil {
+				return &empty.Empty{}, nil
+			}
+			return emp, err
+		},
 	)
 
 	// Unhealthy mock
