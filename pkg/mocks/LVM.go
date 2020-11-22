@@ -7,8 +7,10 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
+	"github.com/gidyon/services/pkg/utils/errs"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc/codes"
 )
 
 // LNMAPIMock is mock for mpesapayment.LipaNaMPESAClient
@@ -16,8 +18,11 @@ type LNMAPIMock interface {
 	mpesapayment.LipaNaMPESAClient
 }
 
-// LNMAPI is mock object for mpesapayment.LipaNaMPESAClient
-var LNMAPI = &mocks.LNMAPIMock{}
+// HealthyLNMAPI is mpesapayment.LipaNaMPESAClient mock object for successful scenarios
+var HealthyLNMAPI = &mocks.LNMAPIMock{}
+
+// UnhealthyLNMAPI is mpesapayment.LipaNaMPESAClient mock object for successful scenarios
+var UnhealthyLNMAPI = &mocks.LNMAPIMock{}
 
 // CreateMPESAPayment(context.Context, *CreateMPESAPaymentRequest) (*CreateMPESAPaymentResponse, error)
 // GetMPESAPayment(context.Context, *GetMPESAPaymentRequest) (*MPESAPayment, error)
@@ -29,17 +34,18 @@ var LNMAPI = &mocks.LNMAPIMock{}
 // PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*empty.Empty, error)
 
 func init() {
-	LNMAPI.On("CreateMPESAPayment", mock.Anything, mock.Anything).Return(
+	// Healthy mock
+	HealthyLNMAPI.On("CreateMPESAPayment", mock.Anything, mock.Anything).Return(
 		&mpesapayment.CreateMPESAPaymentResponse{
 			PaymentId: fmt.Sprint(randomdata.Number(1, 10)),
 		}, nil,
 	)
 
-	LNMAPI.On("GetMPESAPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("GetMPESAPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockMpesaPayment(), nil,
 	)
 
-	LNMAPI.On("ListMPESAPayments", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("ListMPESAPayments", mock.Anything, mock.Anything, mock.Anything).Return(
 		&mpesapayment.ListMPESAPaymentsResponse{
 			MpesaPayments: []*mpesapayment.MPESAPayment{
 				mockMpesaPayment(),
@@ -50,11 +56,11 @@ func init() {
 		}, nil,
 	)
 
-	LNMAPI.On("AddScopes", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("AddScopes", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("GetScopes", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("GetScopes", mock.Anything, mock.Anything, mock.Anything).Return(
 		&mpesapayment.GetScopesResponse{
 			Scopes: &mpesapayment.Scopes{
 				AllowedAccNumber: []string{randomdata.Adjective(), randomdata.Adjective()},
@@ -63,16 +69,49 @@ func init() {
 		}, nil,
 	)
 
-	LNMAPI.On("ProcessMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("ProcessMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("PublishMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("PublishMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("PublishAllMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthyLNMAPI.On("PublishAllMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
+	)
+
+	// UnHealthy mock
+	UnhealthyLNMAPI.On("CreateMPESAPayment", mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "creating mpesa payment failed"),
+	)
+
+	UnhealthyLNMAPI.On("GetMPESAPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "getting mpesa payment failed"),
+	)
+
+	UnhealthyLNMAPI.On("ListMPESAPayments", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "listing mpesa payments failed"),
+	)
+
+	UnhealthyLNMAPI.On("AddScopes", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "adding scopes failed"),
+	)
+
+	UnhealthyLNMAPI.On("GetScopes", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "getting scopes failed"),
+	)
+
+	UnhealthyLNMAPI.On("ProcessMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "processing failed"),
+	)
+
+	UnhealthyLNMAPI.On("PublishMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "publishing failed"),
+	)
+
+	UnhealthyLNMAPI.On("PublishAllMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Unknown, "publishing failed"),
 	)
 }
 
