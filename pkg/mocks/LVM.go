@@ -35,11 +35,11 @@ func init() {
 		}, nil,
 	)
 
-	LNMAPI.On("GetMPESAPayment", mock.Anything, mock.Anything).Return(
-		mockStkPayload(), nil,
+	LNMAPI.On("GetMPESAPayment", mock.Anything, mock.Anything, mock.Anything).Return(
+		mockMpesaPayment(), nil,
 	)
 
-	LNMAPI.On("ListMPESAPayments", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("ListMPESAPayments", mock.Anything, mock.Anything, mock.Anything).Return(
 		&mpesapayment.ListMPESAPaymentsResponse{
 			MpesaPayments: []*mpesapayment.MPESAPayment{
 				mockMpesaPayment(),
@@ -50,11 +50,11 @@ func init() {
 		}, nil,
 	)
 
-	LNMAPI.On("AddScopes", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("AddScopes", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("GetScopes", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("GetScopes", mock.Anything, mock.Anything, mock.Anything).Return(
 		&mpesapayment.GetScopesResponse{
 			Scopes: &mpesapayment.Scopes{
 				AllowedAccNumber: []string{randomdata.Adjective(), randomdata.Adjective()},
@@ -63,15 +63,15 @@ func init() {
 		}, nil,
 	)
 
-	LNMAPI.On("ProcessMpesaPayment", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("ProcessMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("PublishMpesaPayment", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("PublishMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	LNMAPI.On("PublishAllMpesaPayment", mock.Anything, mock.Anything).Return(
+	LNMAPI.On("PublishAllMpesaPayment", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 }
