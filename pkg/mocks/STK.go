@@ -27,21 +27,21 @@ var StkAPI = &mocks.STKAPIMock{}
 // PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 
 func init() {
-	StkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything).Return(
+	StkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.InitiateSTKPushResponse{
 			Progress: true,
 			Message:  "please continue with transaction"}, nil,
 	)
 
-	StkAPI.On("GetStkPayload", mock.Anything, mock.Anything).Return(
+	StkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockStkPayload(), nil,
 	)
 
-	StkAPI.On("CreateStkPayload", mock.Anything, mock.Anything).Return(
+	StkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockStkPayload(), nil,
 	)
 
-	StkAPI.On("ListStkPayloads", mock.Anything, mock.Anything).Return(
+	StkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.ListStkPayloadsResponse{
 			StkPayloads: []*stk.StkPayload{
 				mockStkPayload(),
@@ -54,15 +54,15 @@ func init() {
 		}, nil,
 	)
 
-	StkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything).Return(
+	StkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	StkAPI.On("PublishStkPayload", mock.Anything, mock.Anything).Return(
+	StkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	StkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything).Return(
+	StkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 }
