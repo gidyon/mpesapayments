@@ -5,8 +5,10 @@ package mocks
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
+	grpc "google.golang.org/grpc"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
+
+	mock "github.com/stretchr/testify/mock"
 
 	mpesapayment "github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 )
@@ -16,13 +18,20 @@ type LNMAPIMock struct {
 	mock.Mock
 }
 
-// AddScopes provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) AddScopes(_a0 context.Context, _a1 *mpesapayment.AddScopesRequest) (*emptypb.Empty, error) {
-	ret := _m.Called(_a0, _a1)
+// AddScopes provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) AddScopes(ctx context.Context, in *mpesapayment.AddScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.AddScopesRequest) *emptypb.Empty); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.AddScopesRequest, ...grpc.CallOption) *emptypb.Empty); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*emptypb.Empty)
@@ -30,8 +39,8 @@ func (_m *LNMAPIMock) AddScopes(_a0 context.Context, _a1 *mpesapayment.AddScopes
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.AddScopesRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.AddScopesRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -39,13 +48,20 @@ func (_m *LNMAPIMock) AddScopes(_a0 context.Context, _a1 *mpesapayment.AddScopes
 	return r0, r1
 }
 
-// CreateMPESAPayment provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) CreateMPESAPayment(_a0 context.Context, _a1 *mpesapayment.CreateMPESAPaymentRequest) (*mpesapayment.CreateMPESAPaymentResponse, error) {
-	ret := _m.Called(_a0, _a1)
+// CreateMPESAPayment provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) CreateMPESAPayment(ctx context.Context, in *mpesapayment.CreateMPESAPaymentRequest, opts ...grpc.CallOption) (*mpesapayment.CreateMPESAPaymentResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *mpesapayment.CreateMPESAPaymentResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.CreateMPESAPaymentRequest) *mpesapayment.CreateMPESAPaymentResponse); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.CreateMPESAPaymentRequest, ...grpc.CallOption) *mpesapayment.CreateMPESAPaymentResponse); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*mpesapayment.CreateMPESAPaymentResponse)
@@ -53,8 +69,8 @@ func (_m *LNMAPIMock) CreateMPESAPayment(_a0 context.Context, _a1 *mpesapayment.
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.CreateMPESAPaymentRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.CreateMPESAPaymentRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -62,13 +78,20 @@ func (_m *LNMAPIMock) CreateMPESAPayment(_a0 context.Context, _a1 *mpesapayment.
 	return r0, r1
 }
 
-// GetMPESAPayment provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) GetMPESAPayment(_a0 context.Context, _a1 *mpesapayment.GetMPESAPaymentRequest) (*mpesapayment.MPESAPayment, error) {
-	ret := _m.Called(_a0, _a1)
+// GetMPESAPayment provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) GetMPESAPayment(ctx context.Context, in *mpesapayment.GetMPESAPaymentRequest, opts ...grpc.CallOption) (*mpesapayment.MPESAPayment, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *mpesapayment.MPESAPayment
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetMPESAPaymentRequest) *mpesapayment.MPESAPayment); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetMPESAPaymentRequest, ...grpc.CallOption) *mpesapayment.MPESAPayment); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*mpesapayment.MPESAPayment)
@@ -76,8 +99,8 @@ func (_m *LNMAPIMock) GetMPESAPayment(_a0 context.Context, _a1 *mpesapayment.Get
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetMPESAPaymentRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetMPESAPaymentRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -85,13 +108,20 @@ func (_m *LNMAPIMock) GetMPESAPayment(_a0 context.Context, _a1 *mpesapayment.Get
 	return r0, r1
 }
 
-// GetScopes provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) GetScopes(_a0 context.Context, _a1 *mpesapayment.GetScopesRequest) (*mpesapayment.GetScopesResponse, error) {
-	ret := _m.Called(_a0, _a1)
+// GetScopes provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) GetScopes(ctx context.Context, in *mpesapayment.GetScopesRequest, opts ...grpc.CallOption) (*mpesapayment.GetScopesResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *mpesapayment.GetScopesResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetScopesRequest) *mpesapayment.GetScopesResponse); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetScopesRequest, ...grpc.CallOption) *mpesapayment.GetScopesResponse); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*mpesapayment.GetScopesResponse)
@@ -99,8 +129,8 @@ func (_m *LNMAPIMock) GetScopes(_a0 context.Context, _a1 *mpesapayment.GetScopes
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetScopesRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetScopesRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -108,13 +138,20 @@ func (_m *LNMAPIMock) GetScopes(_a0 context.Context, _a1 *mpesapayment.GetScopes
 	return r0, r1
 }
 
-// ListMPESAPayments provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) ListMPESAPayments(_a0 context.Context, _a1 *mpesapayment.ListMPESAPaymentsRequest) (*mpesapayment.ListMPESAPaymentsResponse, error) {
-	ret := _m.Called(_a0, _a1)
+// ListMPESAPayments provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) ListMPESAPayments(ctx context.Context, in *mpesapayment.ListMPESAPaymentsRequest, opts ...grpc.CallOption) (*mpesapayment.ListMPESAPaymentsResponse, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *mpesapayment.ListMPESAPaymentsResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.ListMPESAPaymentsRequest) *mpesapayment.ListMPESAPaymentsResponse); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.ListMPESAPaymentsRequest, ...grpc.CallOption) *mpesapayment.ListMPESAPaymentsResponse); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*mpesapayment.ListMPESAPaymentsResponse)
@@ -122,8 +159,8 @@ func (_m *LNMAPIMock) ListMPESAPayments(_a0 context.Context, _a1 *mpesapayment.L
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.ListMPESAPaymentsRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.ListMPESAPaymentsRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,13 +168,20 @@ func (_m *LNMAPIMock) ListMPESAPayments(_a0 context.Context, _a1 *mpesapayment.L
 	return r0, r1
 }
 
-// ProcessMpesaPayment provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) ProcessMpesaPayment(_a0 context.Context, _a1 *mpesapayment.ProcessMpesaPaymentRequest) (*emptypb.Empty, error) {
-	ret := _m.Called(_a0, _a1)
+// ProcessMpesaPayment provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) ProcessMpesaPayment(ctx context.Context, in *mpesapayment.ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.ProcessMpesaPaymentRequest) *emptypb.Empty); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.ProcessMpesaPaymentRequest, ...grpc.CallOption) *emptypb.Empty); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*emptypb.Empty)
@@ -145,8 +189,8 @@ func (_m *LNMAPIMock) ProcessMpesaPayment(_a0 context.Context, _a1 *mpesapayment
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.ProcessMpesaPaymentRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.ProcessMpesaPaymentRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -154,13 +198,20 @@ func (_m *LNMAPIMock) ProcessMpesaPayment(_a0 context.Context, _a1 *mpesapayment
 	return r0, r1
 }
 
-// PublishAllMpesaPayment provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) PublishAllMpesaPayment(_a0 context.Context, _a1 *mpesapayment.PublishAllMpesaPaymentRequest) (*emptypb.Empty, error) {
-	ret := _m.Called(_a0, _a1)
+// PublishAllMpesaPayment provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) PublishAllMpesaPayment(ctx context.Context, in *mpesapayment.PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest) *emptypb.Empty); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest, ...grpc.CallOption) *emptypb.Empty); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*emptypb.Empty)
@@ -168,8 +219,8 @@ func (_m *LNMAPIMock) PublishAllMpesaPayment(_a0 context.Context, _a1 *mpesapaym
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -177,13 +228,20 @@ func (_m *LNMAPIMock) PublishAllMpesaPayment(_a0 context.Context, _a1 *mpesapaym
 	return r0, r1
 }
 
-// PublishMpesaPayment provides a mock function with given fields: _a0, _a1
-func (_m *LNMAPIMock) PublishMpesaPayment(_a0 context.Context, _a1 *mpesapayment.PublishMpesaPaymentRequest) (*emptypb.Empty, error) {
-	ret := _m.Called(_a0, _a1)
+// PublishMpesaPayment provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) PublishMpesaPayment(ctx context.Context, in *mpesapayment.PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
 
 	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishMpesaPaymentRequest) *emptypb.Empty); ok {
-		r0 = rf(_a0, _a1)
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishMpesaPaymentRequest, ...grpc.CallOption) *emptypb.Empty); ok {
+		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*emptypb.Empty)
@@ -191,8 +249,8 @@ func (_m *LNMAPIMock) PublishMpesaPayment(_a0 context.Context, _a1 *mpesapayment
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishMpesaPaymentRequest) error); ok {
-		r1 = rf(_a0, _a1)
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishMpesaPaymentRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
 	}
