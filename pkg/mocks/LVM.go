@@ -11,12 +11,12 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// LNMAPIMock is mock for LipaNaMPESAServer
+// LNMAPIMock is mock for mpesapayment.LipaNaMPESAClient
 type LNMAPIMock interface {
-	mpesapayment.LipaNaMPESAServer
+	mpesapayment.LipaNaMPESAClient
 }
 
-// LNMAPI is mock object for mpesapayment.LipaNaMPESAServer
+// LNMAPI is mock object for mpesapayment.LipaNaMPESAClient
 var LNMAPI = &mocks.LNMAPIMock{}
 
 // CreateMPESAPayment(context.Context, *CreateMPESAPaymentRequest) (*CreateMPESAPaymentResponse, error)

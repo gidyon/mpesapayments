@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 )
 
-// STKAPIMock is mock for LipaNaMPESAServer
+// STKAPIMock is mock for stk.StkPushAPIClient
 type STKAPIMock interface {
 	stk.StkPushAPIClient
 }
