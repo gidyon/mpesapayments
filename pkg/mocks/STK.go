@@ -6,8 +6,10 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
+	"github.com/gidyon/services/pkg/utils/errs"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc/codes"
 )
 
 // STKAPIMock is mock for stk.StkPushAPIClient
@@ -15,8 +17,11 @@ type STKAPIMock interface {
 	stk.StkPushAPIClient
 }
 
-// StkAPI is mock object to be used for stk.StkPushAPIClient
-var StkAPI = &mocks.STKAPIMock{}
+// HealthStkAPI is mock object to be used for stk.StkPushAPIClient for successful scenarios
+var HealthStkAPI = &mocks.STKAPIMock{}
+
+// UnhealthyStkAPI is mock object to be used for stk.StkPushAPIClient for failing scenarios
+var UnhealthyStkAPI = &mocks.STKAPIMock{}
 
 // InitiateSTKPush(ctx context.Context, in *InitiateSTKPushRequest, opts ...grpc.CallOption) (*InitiateSTKPushResponse, error)
 // GetStkPayload(ctx context.Context, in *GetStkPayloadRequest, opts ...grpc.CallOption) (*StkPayload, error)
@@ -27,21 +32,22 @@ var StkAPI = &mocks.STKAPIMock{}
 // PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 
 func init() {
-	StkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
+	// Healthy mock
+	HealthStkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.InitiateSTKPushResponse{
 			Progress: true,
 			Message:  "please continue with transaction"}, nil,
 	)
 
-	StkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockStkPayload(), nil,
 	)
 
-	StkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		mockStkPayload(), nil,
 	)
 
-	StkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
 		&stk.ListStkPayloadsResponse{
 			StkPayloads: []*stk.StkPayload{
 				mockStkPayload(),
@@ -54,16 +60,45 @@ func init() {
 		}, nil,
 	)
 
-	StkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	StkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
 	)
 
-	StkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+	HealthStkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
 		&empty.Empty{}, nil,
+	)
+
+	// Unhealthy mock
+	UnhealthyStkAPI.On("InitiateSTKPush", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "initiating stk push failed"),
+	)
+
+	UnhealthyStkAPI.On("GetStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "getting stk payload failed"),
+	)
+
+	UnhealthyStkAPI.On("CreateStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "creating stk payload failed"),
+	)
+
+	UnhealthyStkAPI.On("ListStkPayloads", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "listing stk payloads failed"),
+	)
+
+	UnhealthyStkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "processing failed"),
+	)
+
+	UnhealthyStkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "publishing failed"),
+	)
+
+	UnhealthyStkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
+		nil, errs.WrapMessage(codes.Internal, "publishing failed"),
 	)
 }
 
