@@ -4,31 +4,50 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/gidyon/micro/pkg/grpc/auth"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/services/pkg/utils/errs"
+	redis "github.com/go-redis/redis/v8"
+	"google.golang.org/grpc/grpclog"
+	"gorm.io/gorm"
 )
 
-type validationAPI struct {
-	*Options
+// Options contains parameters passed to NewUSSDGateway
+type Options struct {
+	SQLDB               *gorm.DB
+	RedisDB             *redis.Client
+	Logger              grpclog.LoggerV2
+	AuthAPI             auth.API
+	MpesaAPI            mpesapayment.LipaNaMPESAServer
+	StkAPI              stk.StkPushAPIServer
+	DisableMpesaService bool
+	DisablePublishing   bool
 }
 
 func validateOptions(opt *Options) error {
-	// Validate
 	var err error
 	switch {
 	case opt == nil:
 		err = errs.NilObject("options")
 	case opt.SQLDB == nil:
 		err = errs.NilObject("sqlDB")
-	case opt.RedisDB == nil:
+	case opt.RedisDB == nil && !opt.DisablePublishing:
 		err = errs.NilObject("redisDB")
 	case opt.Logger == nil:
 		err = errs.NilObject("logger")
-	case opt.JWTSigningKey == nil:
-		err = errs.NilObject("jwt key")
+	case opt.AuthAPI == nil:
+		err = errs.NilObject("auth API")
+	case opt.StkAPI == nil:
+		err = errs.NilObject("stk API")
 	case opt.MpesaAPI == nil:
-		err = errs.NilObject("mpesa server")
+		err = errs.NilObject("mpesa API")
 	}
 	return err
+}
+
+type validationAPI struct {
+	*Options
 }
 
 // NewValidationAPI creates a validation API for paybill
