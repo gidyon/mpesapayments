@@ -112,7 +112,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Save only if the transaction was successful
 	if !stkPayloadPB.Succeeded {
 		w.Write([]byte("stk transaction not successful"))
-		gw.Logger.Infof("stk not successful: %s", stkPayloadPB.ResultDesc)
+		gw.Logger.Warningf("stk not successful: %s", stkPayloadPB.ResultDesc)
 		return
 	}
 
