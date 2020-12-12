@@ -8,77 +8,54 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gidyon/micro/pkg/grpc/auth"
+	"github.com/gidyon/micro/utils/errs"
 	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gidyon/services/pkg/auth"
-	"github.com/gidyon/services/pkg/utils/errs"
-	"github.com/go-redis/redis"
-	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
-	"gorm.io/gorm"
 )
 
-// Options contains parameters passed to NewUSSDGateway
-type Options struct {
-	SQLDB         *gorm.DB
-	RedisDB       *redis.Client
-	Logger        grpclog.LoggerV2
-	JWTSigningKey []byte
-	MpesaAPI      mpesapayment.LipaNaMPESAServer
-	StkAPI        stk.StkPushAPIServer
-}
-
 type gateway struct {
-	authAPI            auth.Interface
 	mpesaPaymentServer mpesapayment.LipaNaMPESAServer
+	ctxExt             context.Context
 	*Options
 }
 
 // NewPayBillGateway creates a new mpesa gateway
 func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) {
-	// Validate
-	var err error
-	switch {
-	case ctx == nil:
-		err = errs.NilObject("context")
-	case opt == nil:
-		err = errs.NilObject("options")
-	case opt.SQLDB == nil:
-		err = errs.NilObject("sqlDB")
-	case opt.RedisDB == nil:
-		err = errs.NilObject("redisDB")
-	case opt.Logger == nil:
-		err = errs.NilObject("logger")
-	case opt.JWTSigningKey == nil:
-		err = errs.NilObject("jwt key")
-	case opt.MpesaAPI == nil:
-		err = errs.NilObject("mpesa server")
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Authentication API
-	authAPI, err := auth.NewAPI(opt.JWTSigningKey, "USSD Channel API", "users")
+	err := validateOptions(opt)
 	if err != nil {
 		return nil, err
 	}
 
 	gw := &gateway{
-		authAPI:            authAPI,
 		mpesaPaymentServer: opt.MpesaAPI,
 		Options:            opt,
 	}
 
-	gw.printToken()
+	// Generate token
+	token, err := gw.AuthAPI.GenToken(
+		ctx, &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(10*365*24*time.Hour))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate auth token: %v", err)
+	}
+
+	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
+
+	ctxExt := metadata.NewIncomingContext(ctx, md)
+
+	// Authenticate the token
+	gw.ctxExt, err = gw.AuthAPI.AuthFunc(ctxExt)
+	if err != nil {
+		return nil, err
+	}
 
 	return gw, nil
 }
 
 func (gw *gateway) printToken() {
-	token, err := gw.authAPI.GenToken(context.Background(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Hour*365))
+	token, err := gw.AuthAPI.GenToken(context.Background(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Hour*24))
 	if err != nil {
 		gw.Logger.Errorf("failed to generate auth token: %v", err)
 		return
@@ -87,6 +64,11 @@ func (gw *gateway) printToken() {
 }
 
 func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if gw.DisableMpesaService {
+		http.Error(w, "receiving LNM transactions disabled", http.StatusServiceUnavailable)
+		return
+	}
+
 	gw.Logger.Infoln("received mpesa transaction transaction")
 
 	var err error
@@ -177,43 +159,22 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Processed:         false,
 	}
 
-	token, err := gw.authAPI.GenToken(r.Context(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Minute))
-	if err != nil {
-		gw.Logger.Errorf("failed to generate auth token: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
-
-	ctxExt := metadata.NewIncomingContext(r.Context(), md)
-
 	// Save to database
-	createRes, err := gw.mpesaPaymentServer.CreateMPESAPayment(ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
-		MpesaPayment: mpesaPaymentPB,
-	})
+	_, err = gw.mpesaPaymentServer.CreateMPESAPayment(
+		gw.ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
+			MpesaPayment: mpesaPaymentPB,
+		})
 	if err != nil {
 		gw.Logger.Errorf("failed to save mpesa payment: %v", err)
-		bs, err2 := proto.Marshal(mpesaPaymentPB)
-		if err2 == nil {
-			gw.Logger.Errorf("failed to push tx to redis: %v", err)
-			gw.RedisDB.LPush(mpesa.FailedTxList, bs)
+		bs, err := proto.Marshal(mpesaPaymentPB)
+		if err == nil {
+			if !gw.DisablePublishing {
+				gw.RedisDB.LPush(r.Context(), mpesa.FailedTxList, bs)
+			}
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	go func() {
-		// Publish the transaction
-		_, err := gw.MpesaAPI.PublishMpesaPayment(ctxExt, &mpesapayment.PublishMpesaPaymentRequest{
-			PaymentId:   createRes.PaymentId,
-			InitiatorId: "",
-		})
-		if err != nil {
-			gw.Logger.Errorf("failed to publish lnm payment with id: %s", createRes.PaymentId)
-			return
-		}
-	}()
 
 	w.Write([]byte("mpesa transaction processed"))
 }
