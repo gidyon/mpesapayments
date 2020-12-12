@@ -1,6 +1,7 @@
 package mocks
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
@@ -9,12 +10,19 @@ import (
 	"github.com/gidyon/services/pkg/utils/errs"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 )
 
 // STKAPIMock is mock for stk.StkPushAPIClient
 type STKAPIMock interface {
-	stk.StkPushAPIClient
+	InitiateSTKPush(context.Context, *stk.InitiateSTKPushRequest, ...grpc.CallOption) func(*stk.InitiateSTKPushResponse, error) (*stk.InitiateSTKPushResponse, error)
+	GetStkPayload(context.Context, *stk.GetStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)
+	CreateStkPayload(context.Context, *stk.CreateStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)
+	ListStkPayloads(context.Context, *stk.ListStkPayloadsRequest, ...grpc.CallOption) func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error)
+	ProcessStkPayload(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
+	PublishStkPayload(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
+	PublishAllStkPayload(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
 }
 
 // StkAPI is mock object to be used for stk.StkPushAPIClient for successful scenarios

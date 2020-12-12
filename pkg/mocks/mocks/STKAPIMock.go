@@ -18,212 +18,163 @@ type STKAPIMock struct {
 	mock.Mock
 }
 
-// CreateStkPayload provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) CreateStkPayload(ctx context.Context, in *stk.CreateStkPayloadRequest, opts ...grpc.CallOption) (*stk.StkPayload, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// CreateStkPayload provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) CreateStkPayload(_a0 context.Context, _a1 *stk.CreateStkPayloadRequest, _a2 ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *stk.StkPayload
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.CreateStkPayloadRequest, ...grpc.CallOption) *stk.StkPayload); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*stk.StkPayload, error) (*stk.StkPayload, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.CreateStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*stk.StkPayload)
+			r0 = ret.Get(0).(func(*stk.StkPayload, error) (*stk.StkPayload, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.CreateStkPayloadRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// GetStkPayload provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) GetStkPayload(ctx context.Context, in *stk.GetStkPayloadRequest, opts ...grpc.CallOption) (*stk.StkPayload, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// GetStkPayload provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) GetStkPayload(_a0 context.Context, _a1 *stk.GetStkPayloadRequest, _a2 ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *stk.StkPayload
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.GetStkPayloadRequest, ...grpc.CallOption) *stk.StkPayload); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*stk.StkPayload, error) (*stk.StkPayload, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.GetStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*stk.StkPayload)
+			r0 = ret.Get(0).(func(*stk.StkPayload, error) (*stk.StkPayload, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.GetStkPayloadRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// InitiateSTKPush provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) InitiateSTKPush(ctx context.Context, in *stk.InitiateSTKPushRequest, opts ...grpc.CallOption) (*stk.InitiateSTKPushResponse, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// InitiateSTKPush provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) InitiateSTKPush(_a0 context.Context, _a1 *stk.InitiateSTKPushRequest, _a2 ...grpc.CallOption) func(*stk.InitiateSTKPushResponse, error) (*stk.InitiateSTKPushResponse, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *stk.InitiateSTKPushResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.InitiateSTKPushRequest, ...grpc.CallOption) *stk.InitiateSTKPushResponse); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*stk.InitiateSTKPushResponse, error) (*stk.InitiateSTKPushResponse, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.InitiateSTKPushRequest, ...grpc.CallOption) func(*stk.InitiateSTKPushResponse, error) (*stk.InitiateSTKPushResponse, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*stk.InitiateSTKPushResponse)
+			r0 = ret.Get(0).(func(*stk.InitiateSTKPushResponse, error) (*stk.InitiateSTKPushResponse, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.InitiateSTKPushRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// ListStkPayloads provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) ListStkPayloads(ctx context.Context, in *stk.ListStkPayloadsRequest, opts ...grpc.CallOption) (*stk.ListStkPayloadsResponse, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// ListStkPayloads provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) ListStkPayloads(_a0 context.Context, _a1 *stk.ListStkPayloadsRequest, _a2 ...grpc.CallOption) func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *stk.ListStkPayloadsResponse
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.ListStkPayloadsRequest, ...grpc.CallOption) *stk.ListStkPayloadsResponse); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.ListStkPayloadsRequest, ...grpc.CallOption) func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*stk.ListStkPayloadsResponse)
+			r0 = ret.Get(0).(func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.ListStkPayloadsRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// ProcessStkPayload provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) ProcessStkPayload(ctx context.Context, in *stk.ProcessStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// ProcessStkPayload provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) ProcessStkPayload(_a0 context.Context, _a1 *stk.ProcessStkPayloadRequest, _a2 ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) *emptypb.Empty); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*emptypb.Empty, error) (*emptypb.Empty, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*emptypb.Empty)
+			r0 = ret.Get(0).(func(*emptypb.Empty, error) (*emptypb.Empty, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// PublishAllStkPayload provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) PublishAllStkPayload(ctx context.Context, in *stk.PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// PublishAllStkPayload provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) PublishAllStkPayload(_a0 context.Context, _a1 *stk.PublishAllStkPayloadRequest, _a2 ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) *emptypb.Empty); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*emptypb.Empty, error) (*emptypb.Empty, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*emptypb.Empty)
+			r0 = ret.Get(0).(func(*emptypb.Empty, error) (*emptypb.Empty, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
 
-// PublishStkPayload provides a mock function with given fields: ctx, in, opts
-func (_m *STKAPIMock) PublishStkPayload(ctx context.Context, in *stk.PublishStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	_va := make([]interface{}, len(opts))
-	for _i := range opts {
-		_va[_i] = opts[_i]
+// PublishStkPayload provides a mock function with given fields: _a0, _a1, _a2
+func (_m *STKAPIMock) PublishStkPayload(_a0 context.Context, _a1 *stk.PublishStkPayloadRequest, _a2 ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error) {
+	_va := make([]interface{}, len(_a2))
+	for _i := range _a2 {
+		_va[_i] = _a2[_i]
 	}
 	var _ca []interface{}
-	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _a0, _a1)
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) *emptypb.Empty); ok {
-		r0 = rf(ctx, in, opts...)
+	var r0 func(*emptypb.Empty, error) (*emptypb.Empty, error)
+	if rf, ok := ret.Get(0).(func(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)); ok {
+		r0 = rf(_a0, _a1, _a2...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*emptypb.Empty)
+			r0 = ret.Get(0).(func(*emptypb.Empty, error) (*emptypb.Empty, error))
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) error); ok {
-		r1 = rf(ctx, in, opts...)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+	return r0
 }
