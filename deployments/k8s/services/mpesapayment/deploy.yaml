@@ -99,32 +99,32 @@ spec:
         - name: MPESA_ACCESS_TOKEN
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: access-token
         - name: MPESA_ACCESS_TIMESTAMP
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: access-timestamp
         - name: MPESA_ACCESS_PASSWORD
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: access-password
         - name: SAF_CONSUMER_KEY
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: consumer-key
         - name: SAF_CONSUMER_SECRET
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: consumer-secret
         - name: BUSINESS_SHORT_CODE
           valueFrom:
               secretKeyRef:
-                name: mpesa-creds
+                name: mpesa-credentials
                 key: business-short-code
         - name: API_HASH_KEY
           valueFrom:
