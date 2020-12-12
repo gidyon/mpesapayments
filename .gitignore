@@ -1,3 +1,6 @@
 .DS_Store
 *.json
 !/api/swagger/*.json
+internal/testy
+certs/*
+!certs/localhost

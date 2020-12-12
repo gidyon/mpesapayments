@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gidyon/services/pkg/utils/errs"
 )
 
 // StkTable is table for mpesa payments

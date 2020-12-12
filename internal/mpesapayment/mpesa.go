@@ -86,7 +86,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *stk.Options) (mpesapayment.Lipa
 		opt.PublishChannelMpesa = publishChannel
 	}
 
-	mpesaAPI.Logger.Infof("Publishing to mpesa transaction to consumers on channel: %v", opt.PublishChannelMpesa)
+	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", opt.PublishChannelMpesa)
 
 	// Auto migration
 	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaPayments) {

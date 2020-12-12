@@ -5,9 +5,9 @@ import (
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
+	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
-	"github.com/gidyon/services/pkg/utils/errs"
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"

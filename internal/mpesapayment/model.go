@@ -3,8 +3,8 @@ package mpesapayment
 import (
 	"fmt"
 
+	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
-	"github.com/gidyon/services/pkg/utils/errs"
 )
 
 // MpesaPayments is table for mpesa payments

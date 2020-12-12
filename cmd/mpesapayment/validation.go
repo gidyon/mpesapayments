@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/gidyon/micro/pkg/grpc/auth"
+	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gidyon/services/pkg/utils/errs"
 	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/grpclog"
 	"gorm.io/gorm"
