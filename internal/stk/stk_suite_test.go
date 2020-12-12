@@ -11,9 +11,11 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro"
 	"github.com/gidyon/micro/pkg/conn"
+	"github.com/gidyon/micro/pkg/mocks"
+	"github.com/gidyon/micro/utils/encryption"
+	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gidyon/services/pkg/mocks"
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 
@@ -74,6 +76,11 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("MPESAPayment_app")
 
+	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
+	Expect(err).ShouldNot(HaveOccurred())
+
+	authAPI := mocks.AuthAPI
+
 	stkOptions := &OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
 		accessToken:       randomdata.RandStringRunes(32),
@@ -83,7 +90,7 @@ var _ = BeforeSuite(func() {
 		BusinessShortCode: "174379",
 		AccountReference:  randomdata.Adjective(),
 		Timestamp:         "3456789",
-		Password:          randomdata.RandStringRunes(64),
+		PassKey:           randomdata.RandStringRunes(64),
 		CallBackURL:       randomdata.IpV4Address(),
 		PostURL:           randomdata.IpV4Address(),
 		QueryURL:          randomdata.IpV4Address(),
@@ -95,106 +102,112 @@ var _ = BeforeSuite(func() {
 		SQLDB:                     db,
 		RedisDB:                   redisDB,
 		Logger:                    logger,
-		JWTSigningKey:             []byte(randomdata.RandStringRunes(32)),
+		AuthAPI:                   authAPI,
+		PaginationHasher:          paginationHasher,
 		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Second * 5,
 		WorkerDuration:            time.Second * 10,
 	}
 
+	mpesaAPI := mpesapayment.UnimplementedLipaNaMPESAServer{}
+
 	// Create STK API
-	StkAPI, err = NewStkAPI(ctx, opt)
+	StkAPI, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).ShouldNot(HaveOccurred())
 
 	var ok bool
 	StkAPIServer, ok = StkAPI.(*stkAPIServer)
 	Expect(ok).Should(BeTrue())
 
-	StkAPIServer.authAPI = mocks.AuthAPI
-
-	_, err = NewStkAPI(nil, opt)
+	_, err = NewStkAPI(nil, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
-	_, err = NewStkAPI(ctx, nil)
+	_, err = NewStkAPI(ctx, nil, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.RedisDB = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.RedisDB = redisDB
 	opt.SQLDB = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.SQLDB = db
 	opt.OptionsSTK = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK = stkOptions
 	opt.Logger = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.Logger = logger
-	opt.JWTSigningKey = nil
-	_, err = NewStkAPI(ctx, opt)
+	opt.AuthAPI = nil
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
-	opt.JWTSigningKey = []byte(randomdata.RandStringRunes(32))
+	opt.AuthAPI = authAPI
+	opt.PaginationHasher = nil
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
+	Expect(err).Should(HaveOccurred())
+
+	opt.PaginationHasher = paginationHasher
 	opt.HTTPClient = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.HTTPClient = httpClient
 	opt.OptionsSTK = nil
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK = stkOptions
 	opt.OptionsSTK.AccessTokenURL = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.AccessTokenURL = randomdata.IpV4Address()
 	opt.OptionsSTK.BusinessShortCode = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.BusinessShortCode = "174379"
 	opt.OptionsSTK.CallBackURL = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.CallBackURL = randomdata.IpV4Address()
 	opt.OptionsSTK.AccountReference = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.AccountReference = randomdata.Adjective()
 	opt.OptionsSTK.ConsumerKey = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.ConsumerKey = randomdata.RandStringRunes(32)
 	opt.OptionsSTK.ConsumerSecret = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.ConsumerSecret = randomdata.RandStringRunes(18)
-	opt.OptionsSTK.Password = ""
-	_, err = NewStkAPI(ctx, opt)
+	opt.OptionsSTK.PassKey = ""
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsSTK.Password = randomdata.RandStringRunes(64)
+	opt.OptionsSTK.PassKey = randomdata.RandStringRunes(64)
 	opt.OptionsSTK.PostURL = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsSTK.PostURL = randomdata.IpV4Address()
 	opt.OptionsSTK.Timestamp = ""
-	_, err = NewStkAPI(ctx, opt)
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 })
 

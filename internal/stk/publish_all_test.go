@@ -36,7 +36,7 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 		Context("Lets publish the stk payloads", func() {
 			It("should succeed", func() {
 				pubRes, err := StkAPI.PublishAllStkPayload(ctx, &stk.PublishAllStkPayloadRequest{
-					ProcessedState:   mpesapayment.ProcessedState_ANY,
+					ProcessedState:   mpesapayment.ProcessedState_NOT_PROCESSED,
 					SinceTimeSeconds: 100,
 				})
 				Expect(err).ShouldNot(HaveOccurred())

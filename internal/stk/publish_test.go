@@ -49,7 +49,7 @@ var _ = Describe("Publishing stk payload @publish", func() {
 		)
 
 		listenFn := func() {
-			msgChan := StkAPIServer.RedisDB.Subscribe(publishChannel).Channel()
+			msgChan := StkAPIServer.RedisDB.Subscribe(context.Background(), publishChannel).Channel()
 
 			for msg := range msgChan {
 				strs := strings.Split(msg.Payload, ":")
@@ -77,7 +77,7 @@ var _ = Describe("Publishing stk payload @publish", func() {
 			It("should succeed", func() {
 				pubRes, err := StkAPI.PublishStkPayload(ctx, &stk.PublishStkPayloadRequest{
 					PayloadId:      payloadID,
-					ProcessedState: mpesapayment.ProcessedState_ANY,
+					ProcessedState: mpesapayment.ProcessedState_NOT_PROCESSED,
 					Payload: map[string]string{
 						"service_id": randomdata.RandStringRunes(32),
 					},
