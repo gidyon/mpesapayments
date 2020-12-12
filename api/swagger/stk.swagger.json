@@ -66,9 +66,8 @@
             "type": "string",
             "enum": [
               "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED_ONLY",
-              "UNPROCESSED_ONLY",
-              "ANY"
+              "PROCESSED",
+              "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
           }
@@ -242,9 +241,8 @@
             "type": "string",
             "enum": [
               "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED_ONLY",
-              "UNPROCESSED_ONLY",
-              "ANY"
+              "PROCESSED",
+              "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
           }
@@ -287,9 +285,8 @@
             "type": "string",
             "enum": [
               "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED_ONLY",
-              "UNPROCESSED_ONLY",
-              "ANY"
+              "PROCESSED",
+              "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
           }
@@ -391,9 +388,8 @@
       "type": "string",
       "enum": [
         "PROCESS_STATE_UNSPECIFIED",
-        "PROCESSED_ONLY",
-        "UNPROCESSED_ONLY",
-        "ANY"
+        "PROCESSED",
+        "NOT_PROCESSED"
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
