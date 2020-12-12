@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/Pallinder/go-randomdata v1.2.0
 	github.com/gidyon/micro v1.10.6
-	github.com/gidyon/services v0.8.0
 	github.com/go-redis/redis/v8 v8.4.2
 	github.com/go-sql-driver/mysql v1.5.0
 	github.com/golang/protobuf v1.4.3
