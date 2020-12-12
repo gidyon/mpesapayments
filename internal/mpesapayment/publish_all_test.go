@@ -35,7 +35,6 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 		Context("Lets publish the mpesa payment", func() {
 			It("should succeed", func() {
 				pubRes, err := MpesaPaymentAPI.PublishAllMpesaPayment(ctx, &mpesapayment.PublishAllMpesaPaymentRequest{
-					ProcessedState:   mpesapayment.ProcessedState_ANY,
 					SinceTimeSeconds: 100,
 				})
 				Expect(err).ShouldNot(HaveOccurred())

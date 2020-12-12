@@ -48,7 +48,7 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 		)
 
 		listenFn := func() {
-			msgChan := MpesaPaymentAPIServer.RedisDB.Subscribe(publishChannel).Channel()
+			msgChan := MpesaPaymentAPIServer.RedisDB.Subscribe(ctx, publishChannel).Channel()
 
 			for msg := range msgChan {
 				strs := strings.Split(msg.Payload, ":")
@@ -75,9 +75,8 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 		Context("Lets publish the mpesa payment", func() {
 			It("should succeed", func() {
 				pubRes, err := MpesaPaymentAPI.PublishMpesaPayment(ctx, &mpesapayment.PublishMpesaPaymentRequest{
-					PaymentId:      paymentID,
-					ProcessedState: mpesapayment.ProcessedState_ANY,
-					InitiatorId:    randomdata.RandStringRunes(16),
+					PaymentId:   paymentID,
+					InitiatorId: randomdata.RandStringRunes(16),
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

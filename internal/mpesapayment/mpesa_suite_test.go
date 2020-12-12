@@ -11,10 +11,11 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro"
 	"github.com/gidyon/micro/pkg/conn"
+	"github.com/gidyon/micro/pkg/mocks"
 	"github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
-	"github.com/gidyon/services/pkg/mocks"
-	"github.com/go-redis/redis"
+	"github.com/gidyon/services/pkg/utils/encryption"
+	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
 	"gorm.io/gorm"
 
@@ -75,6 +76,11 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("MPESAPayment_app")
 
+	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
+	Expect(err).ShouldNot(HaveOccurred())
+
+	authAPI := mocks.AuthAPI
+
 	stkOptions := &stk.OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
 		ConsumerKey:       randomdata.RandStringRunes(32),
@@ -82,7 +88,7 @@ var _ = BeforeSuite(func() {
 		BusinessShortCode: "174379",
 		AccountReference:  randomdata.Adjective(),
 		Timestamp:         "3456789",
-		Password:          randomdata.RandStringRunes(64),
+		PassKey:           randomdata.RandStringRunes(64),
 		CallBackURL:       randomdata.IpV4Address(),
 		PostURL:           randomdata.IpV4Address(),
 		QueryURL:          randomdata.IpV4Address(),
@@ -94,7 +100,8 @@ var _ = BeforeSuite(func() {
 		SQLDB:                     db,
 		RedisDB:                   redisDB,
 		Logger:                    logger,
-		JWTSigningKey:             []byte(randomdata.RandStringRunes(32)),
+		AuthAPI:                   authAPI,
+		PaginationHasher:          paginationHasher,
 		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Millisecond * 5,
@@ -108,8 +115,6 @@ var _ = BeforeSuite(func() {
 	var ok bool
 	MpesaPaymentAPIServer, ok = MpesaPaymentAPI.(*mpesaAPIServer)
 	Expect(ok).Should(BeTrue())
-
-	MpesaPaymentAPIServer.authAPI = mocks.AuthAPI
 
 	_, err = NewAPIServerMPESA(nil, opt)
 	Expect(err).Should(HaveOccurred())
@@ -132,11 +137,16 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.Logger = logger
-	opt.JWTSigningKey = nil
+	opt.AuthAPI = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.JWTSigningKey = []byte(randomdata.RandStringRunes(32))
+	opt.AuthAPI = authAPI
+	opt.PaginationHasher = nil
+	_, err = NewAPIServerMPESA(ctx, opt)
+	Expect(err).Should(HaveOccurred())
+
+	opt.PaginationHasher = paginationHasher
 	opt.HTTPClient = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
