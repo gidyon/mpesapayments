@@ -9,13 +9,13 @@ services:
     networks:
       - frontend-bridge
     volumes:
-      - /Users/jessegitaka/mysql-storage/mpesaportal/:/var/lib/mysql
+      - /home/gideon/mysql-storage/mpesaportal/:/var/lib/mysql
     environment:
       MYSQL_HOST: localhost
       MYSQL_USER: root
       MYSQL_PASSWORD: hakty11
       MYSQL_ROOT_PASSWORD: hakty11
-      MYSQL_DATABASE: tracking-portal
+      MYSQL_DATABASE: mpesapayments
   
   redis:
     container_name: redis
