@@ -67,9 +67,8 @@ message GetMPESAPaymentRequest {
 
 enum ProcessedState {
 	PROCESS_STATE_UNSPECIFIED = 0;
-	PROCESSED_ONLY = 1;
-	UNPROCESSED_ONLY = 2;
-	ANY = 3;
+	PROCESSED = 1;
+	NOT_PROCESSED = 2;
 }
 
 message ListMPESAPaymentsFilter {
