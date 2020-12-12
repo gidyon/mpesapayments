@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -89,12 +89,15 @@ func (stkAPI *stkAPIServer) saveFailedStks() error {
 		}
 	}()
 
+loop:
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			res, err := stkAPI.RedisDB.BRPopLPush(FailedTxList, failedTxListv2, 0).Result()
+			res, err := stkAPI.RedisDB.BRPopLPush(
+				ctx, FailedTxList, failedTxListv2, 5*time.Minute,
+			).Result()
 			switch {
 			case err == nil:
 			case errors.Is(err, redis.Nil):
@@ -103,7 +106,7 @@ func (stkAPI *stkAPIServer) saveFailedStks() error {
 					return err
 				}
 				if res == "" {
-					return nil
+					goto loop
 				}
 			}
 
@@ -112,20 +115,20 @@ func (stkAPI *stkAPIServer) saveFailedStks() error {
 			err = proto.Unmarshal([]byte(res), stkPayload)
 			if err != nil {
 				stkAPI.Logger.Errorf("failed to proto unmarshal failed mpesa transaction: %v", err)
-				continue
+				goto loop
 			}
 
 			// Validation
 			err = ValidateStkPayload(stkPayload)
 			if err != nil {
-				stkAPI.Logger.Errorf("validation failed for mpesa transaction: %v", err)
-				continue
+				stkAPI.Logger.Errorf("validation failed for stk transaction: %v", err)
+				goto loop
 			}
 
 			stkPayloadDB, err := GetStkPayloadDB(stkPayload)
 			if err != nil {
 				stkAPI.Logger.Errorf("failed to get mpesa database model: %v", err)
-				continue
+				goto loop
 			}
 
 			// Save to database
@@ -135,11 +138,13 @@ func (stkAPI *stkAPIServer) saveFailedStks() error {
 				count++
 			case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 				stkAPI.Logger.Infoln("skipping mpesa transaction since it is available in database")
-				continue
+				goto loop
 			default:
 				stkAPI.Logger.Errorf("failed to save mpesa transaction: %v", err)
-				continue
+				goto loop
 			}
+
+			stkAPI.Logger.Infoln("stk payload saved in database")
 		}
 	}
 }
