@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
-	"github.com/go-redis/redis"
+	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -43,12 +43,13 @@ func (mpesaAPI *mpesaAPIServer) saveFailedTransactions() error {
 		mpesaAPI.Logger.Infof("%d failed transactions saved in database", count)
 	}()
 
+loop:
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			res, err := mpesaAPI.RedisDB.BRPopLPush(FailedTxList, failedTxListv2, 0).Result()
+			res, err := mpesaAPI.RedisDB.BRPopLPush(ctx, FailedTxList, failedTxListv2, 5*time.Minute).Result()
 			switch {
 			case err == nil:
 			case errors.Is(err, redis.Nil):
@@ -66,20 +67,20 @@ func (mpesaAPI *mpesaAPIServer) saveFailedTransactions() error {
 			err = proto.Unmarshal([]byte(res), mpesaTransaction)
 			if err != nil {
 				mpesaAPI.Logger.Errorf("failed to proto unmarshal failed mpesa transaction: %v", err)
-				continue
+				goto loop
 			}
 
 			// Validation
 			err = ValidateMPESAPayment(mpesaTransaction)
 			if err != nil {
 				mpesaAPI.Logger.Errorf("validation failed for mpesa transaction: %v", err)
-				continue
+				goto loop
 			}
 
 			mpesaDB, err := GetMpesaDB(mpesaTransaction)
 			if err != nil {
 				mpesaAPI.Logger.Errorf("failed to get mpesa database model: %v", err)
-				continue
+				goto loop
 			}
 
 			// Save to database
@@ -87,14 +88,15 @@ func (mpesaAPI *mpesaAPIServer) saveFailedTransactions() error {
 			switch {
 			case err == nil:
 				count++
-				continue
 			case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 				mpesaAPI.Logger.Infoln("skipping mpesa transaction since it is available in database")
-				continue
+				goto loop
 			default:
 				mpesaAPI.Logger.Errorf("failed to save mpesa transaction: %v", err)
-				continue
+				goto loop
 			}
+
+			mpesaAPI.Logger.Infoln("mpesa transaction saved in database")
 		}
 	}
 }
