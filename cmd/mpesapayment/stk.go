@@ -3,60 +3,50 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/gidyon/micro/pkg/grpc/auth"
 	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gidyon/services/pkg/auth"
-	"github.com/gidyon/services/pkg/utils/errs"
-	"github.com/go-redis/redis"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
 type stkGateway struct {
-	authAPI auth.Interface
-	stkAPI  stk.StkPushAPIServer
+	stkAPI stk.StkPushAPIServer
+	ctxExt context.Context
 	*Options
 }
 
 // NewSTKGateway creates a new mpesa stkGateway
 func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
-	// Validate
-	var err error
-	switch {
-	case ctx == nil:
-		err = errs.NilObject("context")
-	case opt == nil:
-		err = errs.NilObject("options")
-	case opt.SQLDB == nil:
-		err = errs.NilObject("sqlDB")
-	case opt.RedisDB == nil:
-		err = errs.NilObject("redisDB")
-	case opt.Logger == nil:
-		err = errs.NilObject("Logger")
-	case opt.JWTSigningKey == nil:
-		err = errs.NilObject("jwt key")
-	case opt.StkAPI == nil:
-		err = errs.NilObject("stk API")
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	// Authentication API
-	authAPI, err := auth.NewAPI(opt.JWTSigningKey, "USSD Channel API", "users")
+	err := validateOptions(opt)
 	if err != nil {
 		return nil, err
 	}
 
 	gw := &stkGateway{
-		authAPI: authAPI,
 		stkAPI:  opt.StkAPI,
 		Options: opt,
+	}
+
+	// Generate token
+	token, err := gw.AuthAPI.GenToken(
+		ctx, &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(10*365*24*time.Hour))
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate auth token: %v", err)
+	}
+
+	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
+
+	ctxExt := metadata.NewIncomingContext(ctx, md)
+
+	// Authenticate the token
+	gw.ctxExt, err = gw.AuthAPI.AuthFunc(ctxExt)
+	if err != nil {
+		return nil, err
 	}
 
 	return gw, nil
@@ -77,7 +67,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	stkPayload := &STKPayload{}
 
 	switch r.Header.Get("content-type") {
-	case "application/json":
+	case "application/json", "application/json;charset=UTF-8":
 		// Marshaling
 		err = json.NewDecoder(r.Body).Decode(stkPayload)
 		if err != nil {
@@ -107,10 +97,6 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if stkPayload.Body.STKCallback.ResultCode != 0 {
-		gw.Logger.Errorln("stk mpesa transaction failed")
-	}
-
 	stkPayloadPB := &stk.StkPayload{
 		MerchantRequestId:  stkPayload.Body.STKCallback.MerchantRequestID,
 		CheckoutRequestId:  stkPayload.Body.STKCallback.CheckoutRequestID,
@@ -123,73 +109,29 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Succeeded:          stkPayload.Body.STKCallback.ResultCode == 0,
 	}
 
-	token, err := gw.authAPI.GenToken(r.Context(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Minute))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		gw.Logger.Errorln(err.Error())
+	// Save only if the transaction was successful
+	if !stkPayloadPB.Succeeded {
+		w.Write([]byte("stk transaction not successful"))
+		gw.Logger.Infof("stk not successful: %s", stkPayloadPB.ResultDesc)
 		return
 	}
-
-	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
-
-	ctxExt := metadata.NewIncomingContext(r.Context(), md)
 
 	// Save to database
-	createRes, err := gw.stkAPI.CreateStkPayload(
-		ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
+	_, err = gw.stkAPI.CreateStkPayload(
+		gw.ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
 	)
 	if err != nil {
-		bs, err2 := proto.Marshal(stkPayloadPB)
-		if err2 == nil {
-			gw.RedisDB.LPush(stkapp.FailedTxList, bs)
-		}
-		gw.Logger.Errorln(err.Error())
+		gw.Logger.Errorf("failed to create stk payload: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		bs, err := proto.Marshal(stkPayloadPB)
+		if err == nil {
+			if !gw.DisablePublishing {
+				gw.RedisDB.LPush(r.Context(), stkapp.FailedTxList, bs)
+			}
+		}
+
 		return
-	}
-
-	publish := true
-
-	// Get the stk payload saved
-	key := stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber)
-	val, err := gw.RedisDB.Get(key).Result()
-	switch {
-	case err == nil:
-	case errors.Is(err, redis.Nil):
-		publish = false
-	default:
-		gw.Logger.Errorf("failed to get initiator payload from cache: %v", err)
-		publish = false
-	}
-
-	// Delete the key to allow future transactions to proceeed
-	defer func() {
-		gw.RedisDB.Del(key)
-	}()
-
-	// Publish stk success to consumers
-	if publish && stkPayloadPB.Succeeded {
-		gw.Logger.Infoln("publishing stk result to consumers")
-
-		go func() {
-			// Get stk push initiator payload
-			payload := &stk.InitiateSTKPushRequest{}
-			err = proto.Unmarshal([]byte(val), payload)
-			if err != nil {
-				gw.Logger.Errorf("failed unmarshal stk push payload: %v", err)
-				return
-			}
-
-			// Publish the stk info to consumers
-			_, err = gw.stkAPI.PublishStkPayload(ctxExt, &stk.PublishStkPayloadRequest{
-				PayloadId: createRes.PayloadId,
-				Payload:   payload.Payload,
-			})
-			if err != nil {
-				gw.Logger.Errorf("failed to publish stk payment with id: %s", createRes.PayloadId)
-				return
-			}
-		}()
 	}
 
 	w.Write([]byte("mpesa stk processed"))
