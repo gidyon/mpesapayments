@@ -281,14 +281,10 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 			db = db.Where("tx_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 		}
 		if len(listReq.Filter.Msisdns) > 0 {
-			if payload.Group == auth.AdminGroup() {
-				db = db.Where("msisdn IN(?)", listReq.Filter.Msisdns)
-			}
+			db = db.Where("msisdn IN(?)", listReq.Filter.Msisdns)
 		}
 		if len(listReq.Filter.AccountsNumber) > 0 {
-			if payload.Group == auth.AdminGroup() {
-				db = db.Where("tx_ref_number IN(?)", listReq.Filter.AccountsNumber)
-			}
+			db = db.Where("tx_ref_number IN(?)", listReq.Filter.AccountsNumber)
 		}
 		if listReq.Filter.ProcessState != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 			switch listReq.Filter.ProcessState {
