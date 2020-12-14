@@ -356,7 +356,7 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 	}
 
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.AdminGroup())
+	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
 	if err != nil {
 		return nil, err
 	}
