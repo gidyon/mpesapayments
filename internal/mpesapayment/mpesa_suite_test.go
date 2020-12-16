@@ -13,7 +13,6 @@ import (
 	"github.com/gidyon/micro/pkg/conn"
 	"github.com/gidyon/micro/pkg/mocks"
 	"github.com/gidyon/micro/utils/encryption"
-	"github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
@@ -81,31 +80,12 @@ var _ = BeforeSuite(func() {
 
 	authAPI := mocks.AuthAPI
 
-	stkOptions := &stk.OptionsSTK{
-		AccessTokenURL:    randomdata.IpV4Address(),
-		ConsumerKey:       randomdata.RandStringRunes(32),
-		ConsumerSecret:    randomdata.RandStringRunes(24),
-		BusinessShortCode: "174379",
-		AccountReference:  randomdata.Adjective(),
-		Timestamp:         "3456789",
-		PassKey:           randomdata.RandStringRunes(64),
-		CallBackURL:       randomdata.IpV4Address(),
-		PostURL:           randomdata.IpV4Address(),
-		QueryURL:          randomdata.IpV4Address(),
-	}
-
-	httpClient := client(1)
-
-	opt := &stk.Options{
-		SQLDB:                     db,
-		RedisDB:                   redisDB,
-		Logger:                    logger,
-		AuthAPI:                   authAPI,
-		PaginationHasher:          paginationHasher,
-		OptionsSTK:                stkOptions,
-		HTTPClient:                httpClient,
-		UpdateAccessTokenDuration: time.Millisecond * 5,
-		WorkerDuration:            time.Millisecond + 10,
+	opt := &Options{
+		SQLDB:            db,
+		RedisDB:          redisDB,
+		Logger:           logger,
+		AuthAPI:          authAPI,
+		PaginationHasher: paginationHasher,
 	}
 
 	// Create MPESA payments API
@@ -143,16 +123,6 @@ var _ = BeforeSuite(func() {
 
 	opt.AuthAPI = authAPI
 	opt.PaginationHasher = nil
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.PaginationHasher = paginationHasher
-	opt.HTTPClient = nil
-	_, err = NewAPIServerMPESA(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.HTTPClient = httpClient
-	opt.OptionsSTK = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 })
