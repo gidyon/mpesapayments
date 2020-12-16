@@ -8,17 +8,18 @@ import (
 
 	"github.com/gidyon/micro/pkg/grpc/auth"
 	"github.com/gidyon/micro/utils/errs"
-	"github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/golang/protobuf/ptypes/empty"
+	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 	"gorm.io/gorm"
 )
 
-// FailedTxList is redis list for failed mpesa transactions
+// FailedTxList is redis list for failed mpesa transactionsCount
 const (
 	FailedTxList            = "mpesa:payments:failedtx:list"
 	failedTxListv2          = "mpesa:payments:failedtx:list"
@@ -32,29 +33,60 @@ const (
 type mpesaAPIServer struct {
 	mpesapayment.UnimplementedLipaNaMPESAServer
 	lastProcessedTxTime time.Time
-	*stk.Options
+	*Options
 	insertChan    chan *PaymentMpesa
 	insertTimeOut time.Duration
 	ctxAdmin      context.Context
 }
 
+// Options contains options for starting mpesa service
+type Options struct {
+	PublishChannel    string
+	SQLDB             *gorm.DB
+	RedisDB           *redis.Client
+	Logger            grpclog.LoggerV2
+	AuthAPI           auth.API
+	PaginationHasher  *hashids.HashID
+	DisablePublishing bool
+}
+
+// ValidateOptions validates options required by stk service
+func ValidateOptions(opt *Options) error {
+	var err error
+	switch {
+	case opt == nil:
+		err = errs.NilObject("options")
+	case opt.SQLDB == nil:
+		err = errs.NilObject("sql db")
+	case opt.RedisDB == nil && !opt.DisablePublishing:
+		err = errs.NilObject("redis db")
+	case opt.Logger == nil:
+		err = errs.NilObject("logger")
+	case opt.AuthAPI == nil:
+		err = errs.NilObject("auth API")
+	case opt.PaginationHasher == nil:
+		err = errs.NilObject("pagination PaginationHasher")
+	}
+	return err
+}
+
 // NewAPIServerMPESA creates a singleton instance of mpesa API server
-func NewAPIServerMPESA(ctx context.Context, opt *stk.Options) (mpesapayment.LipaNaMPESAServer, error) {
+func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMPESAServer, error) {
 	// Validation
 	var err error
 	switch {
 	case ctx == nil:
 		return nil, errs.NilObject("context")
 	default:
-		err = stk.ValidateOptions(opt)
+		err = ValidateOptions(opt)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Update publish channel
-	if opt.PublishChannelSTK == "" {
-		opt.PublishChannelSTK = publishChannel
+	if opt.PublishChannel == "" {
+		opt.PublishChannel = publishChannel
 	}
 
 	// Generate jwt for API
@@ -81,12 +113,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *stk.Options) (mpesapayment.Lipa
 		ctxAdmin:      ctxAdmin,
 	}
 
-	// Update publish channel
-	if opt.PublishChannelMpesa == "" {
-		opt.PublishChannelMpesa = publishChannel
-	}
-
-	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", opt.PublishChannelMpesa)
+	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", opt.PublishChannel)
 
 	// Auto migration
 	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaPayments) {
@@ -101,7 +128,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *stk.Options) (mpesapayment.Lipa
 	// 	workerDur = opt.WorkerDuration
 	// }
 
-	// // Start worker for failed transactions
+	// // Start worker for failed transactionsCount
 	// go mpesaAPI.worker(ctx, workerDur)
 
 	// Insert worker
@@ -126,6 +153,8 @@ func ValidateMPESAPayment(payment *mpesapayment.MPESAPayment) error {
 		err = errs.MissingField("transaction type")
 	case payment.TxAmount == 0:
 		err = errs.MissingField("transaction amount")
+	case payment.TxId == "":
+		err = errs.MissingField("transaction id")
 	case payment.TxTimestamp == 0:
 		err = errs.MissingField("transaction time")
 	}
@@ -458,36 +487,33 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 	case err == nil:
 	case status.Code(err) == codes.NotFound:
 		// Update mpesa processed state when it comes
-		paymentID := processReq.PaymentId
+		go func(paymentID string) {
+			mpesaAPI.Logger.Infoln("started goroutine to update mpesa payment once its received")
 
-		if !mpesaAPI.DisableMpesaService {
-			go func() {
-				mpesaAPI.Logger.Infoln("started goroutine to update mpesa payment once its received")
+			updateFn := func() int64 {
+				return mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("tx_id=?", paymentID).Update("processed", true).RowsAffected
+			}
 
-				updateFn := func() int64 {
-					return mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("tx_id=?", paymentID).Update("processed", true).RowsAffected
+			timer := time.NewTimer(5 * time.Second)
+			count := 0
+		loop:
+			for range timer.C {
+				if count == 5 {
+					break loop
 				}
-
-				timer := time.NewTimer(5 * time.Second)
-				count := 0
-			loop:
-				for range timer.C {
-					if count == 5 {
-						break loop
+				res := updateFn()
+				if res > 0 {
+					mpesaAPI.Logger.Infoln("updated processed state of mpesa payment to true")
+					if !timer.Stop() {
+						<-timer.C
 					}
-					res := updateFn()
-					if res > 0 {
-						mpesaAPI.Logger.Infoln("updated processed state of mpesa payment to true")
-						if !timer.Stop() {
-							<-timer.C
-						}
-						break loop
-					}
-					count++
+					break loop
 				}
-			}()
-		}
-		return nil, err
+				count++
+			}
+		}(processReq.PaymentId)
+
+		return &empty.Empty{}, nil
 	default:
 		return nil, err
 	}
@@ -538,7 +564,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 
 	publishPayload := fmt.Sprintf("PAYMENT:%s:%s", pubReq.PaymentId, pubReq.InitiatorId)
 
-	err = mpesaAPI.RedisDB.Publish(ctx, mpesaAPI.PublishChannelMpesa, publishPayload).Err()
+	err = mpesaAPI.RedisDB.Publish(ctx, mpesaAPI.PublishChannel, publishPayload).Err()
 	if err != nil {
 		return nil, errs.RedisCmdFailed(err, "PUBSUB")
 	}
@@ -605,7 +631,7 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 		)
 
 		for shouldContinue {
-			// List transactions
+			// List transactionsCount
 			listRes, err := mpesaAPI.ListMPESAPayments(ctx, &mpesapayment.ListMPESAPaymentsRequest{
 				PageToken: nextPageToken,
 				PageSize:  pageSize,
@@ -622,9 +648,9 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 			}
 			nextPageToken = listRes.NextPageToken
 
-			// Publish the mpesa transactions to listeners
+			// Publish the mpesa transactionsCount to listeners
 			for _, mpesaPB := range listRes.MpesaPayments {
-				err := mpesaAPI.RedisDB.Publish(ctx, mpesaAPI.PublishChannelMpesa, mpesaPB.PaymentId).Err()
+				err := mpesaAPI.RedisDB.Publish(ctx, mpesaAPI.PublishChannel, mpesaPB.PaymentId).Err()
 				if err != nil {
 					return nil, err
 				}
@@ -633,4 +659,59 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 	}
 
 	return &empty.Empty{}, nil
+}
+
+type transactionsCountSummary struct {
+}
+
+func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
+	ctx context.Context, getReq *mpesapayment.GetTransactionsCountRequest,
+) (*mpesapayment.TransactionsSummary, error) {
+	// Authentication
+	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case getReq == nil:
+		return nil, errs.NilObject("get transactionsCount count")
+	case getReq.Amount == 0:
+		return nil, errs.NilObject("amount")
+	default:
+		if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
+			if getReq.StartTimeSeconds > getReq.EndTimeSeconds {
+				return nil, errs.WrapMessage(codes.InvalidArgument, "start time cannot be greater than end time")
+			}
+		}
+	}
+
+	db := mpesaAPI.SQLDB.Table(MpesaPayments).Where("tx_amount=?", getReq.Amount)
+
+	// Apply filters
+	if len(getReq.AccountsNumber) > 0 {
+		db = db.Where("tx_ref_number IN ?", getReq.AccountsNumber)
+	}
+	if len(getReq.Msisdns) > 0 {
+		db = db.Where("msisdn IN ?", getReq.Msisdns)
+	}
+
+	// Apply date filters
+	if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
+		db = db.Where("tx_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
+	}
+
+	var transactionsCount int64
+
+	// Count results
+	err = db.Count(&transactionsCount).Error
+	if err != nil {
+		return nil, errs.FailedToFind("transactionsCount", err)
+	}
+
+	return &mpesapayment.TransactionsSummary{
+		TotalAmount:       float32(transactionsCount) * getReq.Amount,
+		TransactionsCount: int32(transactionsCount),
+	}, nil
 }
