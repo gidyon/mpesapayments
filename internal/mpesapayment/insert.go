@@ -34,12 +34,14 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 				// By value because the slice will be reset
 				go func(paymentDB PaymentMpesa) {
 					if !mpesaAPI.DisablePublishing {
-						mpesaAPI.Logger.Infof("publishing lnm payment %s to consumers", paymentDB.TxID)
+						paymentID := valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TxID)
+
+						mpesaAPI.Logger.Infof("publishing lnm payment %s to consumers", paymentID)
 
 						// Publish the transaction
 						_, err := mpesaAPI.PublishMpesaPayment(
 							mpesaAPI.ctxAdmin, &mpesapayment.PublishMpesaPaymentRequest{
-								PaymentId:   valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TxID),
+								PaymentId:   paymentID,
 								InitiatorId: paymentDB.MSISDN,
 							})
 						if err != nil {
