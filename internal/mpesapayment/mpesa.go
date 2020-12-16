@@ -19,7 +19,7 @@ import (
 	"gorm.io/gorm"
 )
 
-// FailedTxList is redis list for failed mpesa transactionsCount
+// FailedTxList is redis list for failed mpesa transactions
 const (
 	FailedTxList            = "mpesa:payments:failedtx:list"
 	failedTxListv2          = "mpesa:payments:failedtx:list"
@@ -128,7 +128,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 	// 	workerDur = opt.WorkerDuration
 	// }
 
-	// // Start worker for failed transactionsCount
+	// // Start worker for failed transactions
 	// go mpesaAPI.worker(ctx, workerDur)
 
 	// Insert worker
@@ -631,7 +631,7 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 		)
 
 		for shouldContinue {
-			// List transactionsCount
+			// List transactions
 			listRes, err := mpesaAPI.ListMPESAPayments(ctx, &mpesapayment.ListMPESAPaymentsRequest{
 				PageToken: nextPageToken,
 				PageSize:  pageSize,
@@ -648,7 +648,7 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 			}
 			nextPageToken = listRes.NextPageToken
 
-			// Publish the mpesa transactionsCount to listeners
+			// Publish the mpesa transactions to listeners
 			for _, mpesaPB := range listRes.MpesaPayments {
 				err := mpesaAPI.RedisDB.Publish(ctx, mpesaAPI.PublishChannel, mpesaPB.PaymentId).Err()
 				if err != nil {
@@ -661,7 +661,7 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 	return &empty.Empty{}, nil
 }
 
-type transactionsCountSummary struct {
+type transactionsSummary struct {
 }
 
 func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
@@ -676,7 +676,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	// Validation
 	switch {
 	case getReq == nil:
-		return nil, errs.NilObject("get transactionsCount count")
+		return nil, errs.NilObject("get transactions count")
 	case getReq.Amount == 0:
 		return nil, errs.NilObject("amount")
 	default:
@@ -702,16 +702,16 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		db = db.Where("tx_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
 	}
 
-	var transactionsCount int64
+	var transactions int64
 
 	// Count results
-	err = db.Count(&transactionsCount).Error
+	err = db.Count(&transactions).Error
 	if err != nil {
-		return nil, errs.FailedToFind("transactionsCount", err)
+		return nil, errs.FailedToFind("transactions", err)
 	}
 
 	return &mpesapayment.TransactionsSummary{
-		TotalAmount:       float32(transactionsCount) * getReq.Amount,
-		TransactionsCount: int32(transactionsCount),
+		TotalAmount:       float32(transactions) * getReq.Amount,
+		TransactionsCount: int32(transactions),
 	}, nil
 }
