@@ -696,14 +696,14 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		}
 	}
 
-	db := mpesaAPI.SQLDB.Table(MpesaPayments).Where("tx_amount=?", getReq.Amount)
+	db := mpesaAPI.SQLDB.Table(MpesaPayments).Where("tx_amount BETWEEN ? AND ?", getReq.Amount-1, getReq.Amount+1)
 
 	// Apply filters
 	if len(getReq.AccountsNumber) > 0 {
-		db = db.Where("tx_ref_number IN ?", getReq.AccountsNumber)
+		db = db.Where("tx_ref_number IN (?)", getReq.AccountsNumber)
 	}
 	if len(getReq.Msisdns) > 0 {
-		db = db.Where("msisdn IN ?", getReq.Msisdns)
+		db = db.Where("msisdn IN (?)", getReq.Msisdns)
 	}
 
 	// Apply date filters
