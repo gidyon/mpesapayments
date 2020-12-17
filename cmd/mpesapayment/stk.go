@@ -53,6 +53,11 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 }
 
 func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if gw.DisableSTKService {
+		http.Error(w, "receiving stk transactions disabled", http.StatusServiceUnavailable)
+		return
+	}
+
 	var err error
 
 	gw.Logger.Infoln("received stk request from mpesa")
@@ -114,6 +119,12 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("stk transaction not successful"))
 		gw.Logger.Warningf("stk not successful: %s", stkPayloadPB.ResultDesc)
 		return
+	}
+
+	// Update initiator id
+	stkPayloadPB.InitiatorId, err = gw.RedisDB.Get(r.Context(), stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber)).Result()
+	if err != nil {
+		gw.Logger.Warningf("failed to get initiator id for stk: %v", err)
 	}
 
 	// Save to database
