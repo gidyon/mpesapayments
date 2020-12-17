@@ -206,6 +206,33 @@ message PublishAllMpesaPaymentRequest {
 	ProcessedState processed_state = 2;
 }
 
+message GetTransactionsCountRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetTransactionsCountRequest"
+			description: "Request to retrieve transactions information"
+		}
+	};
+
+	repeated string accounts_number = 1;
+	repeated string msisdns = 2;
+	int64 start_time_seconds = 3;
+	int64 end_time_seconds = 4;
+	float amount = 5 [(google.api.field_behavior) = REQUIRED];
+}
+
+message TransactionsSummary {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "TransactionsSummary"
+			description: "Transactions summary"
+		}
+	};
+
+	float total_amount = 1;
+	int32 transactions_count = 2;
+}
+
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
 	// Creates a record of mpesa payment.
@@ -263,6 +290,13 @@ service LipaNaMPESA {
 	rpc PublishAllMpesaPayment (PublishAllMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			get: "/api/mpestx/payments/actions/publishall"
+		};
+	};
+
+	// Get transactions count summary
+	rpc GetTransactionsCount (GetTransactionsCountRequest) returns (TransactionsSummary) {
+		option (google.api.http) = {
+			get: "/api/mpestx/payments/actions/transactions"
 		};
 	};
 
