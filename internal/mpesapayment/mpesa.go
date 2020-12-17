@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gidyon/micro/pkg/grpc/auth"
@@ -217,7 +218,11 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 
 	mpesaDB := &PaymentMpesa{}
 
-	err = mpesaAPI.SQLDB.First(mpesaDB, "payment_id=? OR tx_id=?", paymentID, paymentID).Error
+	if _, err := strconv.Atoi(getReq.PaymentId); err == nil {
+		err = mpesaAPI.SQLDB.First(mpesaDB, "payment_id=?", paymentID).Error
+	} else {
+		err = mpesaAPI.SQLDB.First(mpesaDB, "tx_id=?", paymentID).Error
+	}
 	switch {
 	case err == nil:
 	case errors.Is(err, gorm.ErrRecordNotFound):
@@ -520,7 +525,11 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 
 	// Check if not already processed process
 	if mpesaPayment.Processed == false {
-		err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("payment_id=?", processReq.PaymentId).Update("processed", true).Error
+		if _, err := strconv.Atoi(processReq.PaymentId); err == nil {
+			err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("payment_id=?", processReq.PaymentId).Update("processed", true).Error
+		} else {
+			err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("tx_id=?", processReq.PaymentId).Update("processed", true).Error
+		}
 		switch {
 		case err == nil:
 		default:
