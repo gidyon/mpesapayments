@@ -36,7 +36,7 @@ var (
 
 const (
 	dbAddress = "localhost:3306"
-	schema    = "tracking-portal"
+	schema    = "mpesapayments"
 )
 
 func startDB() (*gorm.DB, error) {
