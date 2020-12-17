@@ -245,6 +245,12 @@
               "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
+          },
+          {
+            "name": "fromCache",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -314,6 +320,9 @@
     "mpesaInitiateSTKPushRequest": {
       "type": "object",
       "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
         "phone": {
           "type": "string"
         },
@@ -396,6 +405,9 @@
     "mpesaStkPayload": {
       "type": "object",
       "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
         "payloadId": {
           "type": "string"
         },

@@ -262,6 +262,72 @@
         ]
       }
     },
+    "/api/mpestx/payments/actions/transactions": {
+      "get": {
+        "summary": "Get transactions count summary",
+        "operationId": "LipaNaMPESA_GetTransactionsCount",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaTransactionsSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "accountsNumber",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "msisdns",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "startTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "endTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "amount",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "float"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/payments/{paymentId}": {
       "get": {
         "summary": "Retrieves MPESA payment.",
@@ -521,6 +587,21 @@
         "NOT_PROCESSED"
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
+    },
+    "mpesaTransactionsSummary": {
+      "type": "object",
+      "properties": {
+        "totalAmount": {
+          "type": "number",
+          "format": "float"
+        },
+        "transactionsCount": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Transactions summary",
+      "title": "TransactionsSummary"
     },
     "protobufAny": {
       "type": "object",
