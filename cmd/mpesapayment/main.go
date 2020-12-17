@@ -17,11 +17,13 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gorilla/securecookie"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	httpmiddleware "github.com/gidyon/micro/pkg/http"
 
 	app_grpc_middleware "github.com/gidyon/micro/pkg/grpc/middleware"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
 func main() {
@@ -83,54 +85,78 @@ func main() {
 
 	app.AddHTTPMiddlewares(httpmiddleware.SupportCORS)
 
+	app.AddServeMuxOptions(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			EmitUnpopulated: true,
+		},
+	}))
+
 	app.Start(ctx, func() error {
 		// Pagination hasher
 		paginationHasher, err := encryption.NewHasher(string(jwtKey))
 		errs.Panic(err)
 
-		stkOption := &stkapp.OptionsSTK{
-			AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-			ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
-			ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
-			BusinessShortCode: os.Getenv("BUSINESS_SHORT_CODE"),
-			AccountReference:  os.Getenv("MPESA_ACCOUNT_REFERENCE"),
-			Timestamp:         os.Getenv("MPESA_ACCESS_TIMESTAMP"),
-			PassKey:           os.Getenv("LNM_PASSKEY"),
-			CallBackURL:       os.Getenv("MPESA_CALLBACK_URL"),
-			PostURL:           os.Getenv("MPESA_POST_URL"),
-			QueryURL:          os.Getenv("MPESA_QUERY_URL"),
+		var (
+			disableSTKAPI   = os.Getenv("DISABLE_STK_SERVICE") != ""
+			disablePub      = os.Getenv("DISABLE_REDIS") != ""
+			disableMpesaAPI = os.Getenv("DISABLE_MPESA_SERVICE") != ""
+			mpesaAPI        mpesapayment.LipaNaMPESAServer
+			stkAPI          stk.StkPushAPIServer
+		)
+
+		if !disableMpesaAPI {
+			opt := mpesa.Options{
+				PublishChannel:    os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
+				SQLDB:             app.GormDBByName("sqlWrites"),
+				RedisDB:           app.RedisClientByName("redisWrites"),
+				Logger:            app.Logger(),
+				AuthAPI:           authAPI,
+				PaginationHasher:  paginationHasher,
+				DisablePublishing: disablePub,
+			}
+			// MPESA API
+			mpesaAPI, err = mpesa.NewAPIServerMPESA(ctx, &opt)
+			errs.Panic(err)
+
+			mpesapayment.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
+			errs.Panic(mpesapayment.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
-		disablePub := os.Getenv("DISABLE_REDIS") != ""
-		disableMpesaAPI := os.Getenv("DISABLE_MPESA_SERVICE") != ""
+		if !disableSTKAPI {
+			stkOption := &stkapp.OptionsSTK{
+				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+				ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
+				ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
+				BusinessShortCode: os.Getenv("BUSINESS_SHORT_CODE"),
+				AccountReference:  os.Getenv("MPESA_ACCOUNT_REFERENCE"),
+				Timestamp:         os.Getenv("MPESA_ACCESS_TIMESTAMP"),
+				PassKey:           os.Getenv("LNM_PASSKEY"),
+				CallBackURL:       os.Getenv("MPESA_CALLBACK_URL"),
+				PostURL:           os.Getenv("MPESA_POST_URL"),
+				QueryURL:          os.Getenv("MPESA_QUERY_URL"),
+			}
 
-		opt := stkapp.Options{
-			SQLDB:               app.GormDBByName("sqlWrites"),
-			RedisDB:             app.RedisClientByName("redisWrites"),
-			Logger:              app.Logger(),
-			AuthAPI:             authAPI,
-			PaginationHasher:    paginationHasher,
-			HTTPClient:          http.DefaultClient,
-			OptionsSTK:          stkOption,
-			PublishChannelSTK:   os.Getenv("PUBLISH_CHANNEL_STK"),
-			PublishChannelMpesa: os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
-			DisableMpesaService: disableMpesaAPI,
-			DisablePublishing:   disablePub,
+			opt := stkapp.Options{
+				SQLDB:               app.GormDBByName("sqlWrites"),
+				RedisDB:             app.RedisClientByName("redisWrites"),
+				Logger:              app.Logger(),
+				AuthAPI:             authAPI,
+				PaginationHasher:    paginationHasher,
+				HTTPClient:          http.DefaultClient,
+				OptionsSTK:          stkOption,
+				PublishChannelSTK:   os.Getenv("PUBLISH_CHANNEL_STK"),
+				PublishChannelMpesa: os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
+				DisableMpesaService: disableMpesaAPI,
+				DisablePublishing:   disablePub,
+			}
+
+			// STK Push API
+			stkAPI, err = stkapp.NewStkAPI(ctx, &opt, mpesaAPI)
+			errs.Panic(err)
+
+			stk.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
+			errs.Panic(stk.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
-
-		// MPESA API
-		mpesaAPI, err := mpesa.NewAPIServerMPESA(ctx, &opt)
-		errs.Panic(err)
-
-		mpesapayment.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
-		errs.Panic(mpesapayment.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
-
-		// STK Push API
-		stkAPI, err := stkapp.NewStkAPI(ctx, &opt, mpesaAPI)
-		errs.Panic(err)
-
-		stk.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
-		errs.Panic(stk.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 
 		// Options for gateways
 		optGateway := &Options{
@@ -142,32 +168,39 @@ func main() {
 			StkAPI:              stkAPI,
 			DisablePublishing:   disablePub,
 			DisableMpesaService: disableMpesaAPI,
+			DisableSTKService:   disableSTKAPI,
 		}
 
-		// MPESA Paybill confirmation gateway
-		paybillGW, err := NewPayBillGateway(ctx, optGateway)
-		errs.Panic(err)
+		if !disableMpesaAPI {
+			// MPESA Paybill confirmation gateway
+			paybillGW, err := NewPayBillGateway(ctx, optGateway)
+			errs.Panic(err)
 
-		// MPESA Validation gateway
-		validationGw, err := NewValidationAPI(ctx, optGateway)
-		errs.Panic(err)
+			// MPESA Validation gateway
+			validationGw, err := NewValidationAPI(ctx, optGateway)
+			errs.Panic(err)
 
-		// MPESA STK Push gateway
-		stkGateway, err := NewSTKGateway(ctx, optGateway)
-		errs.Panic(err)
+			validationPath := firstVal(os.Getenv("VALIDATION_URL_PATH"), "/api/mpestx/validation")
+			confirmationPath := firstVal(os.Getenv("CONFIRMATION_URL_PATH"), "/api/mpestx/confirmation")
 
-		validationPath := firstVal(os.Getenv("VALIDATION_URL_PATH"), "/api/mpestx/validation")
-		confirmationPath := firstVal(os.Getenv("CONFIRMATION_URL_PATH"), "/api/mpestx/confirmation")
-		stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/incoming/stkpush")
+			app.AddEndpoint(validationPath, validationGw)
+			app.AddEndpoint(confirmationPath, paybillGW)
 
-		// Register gateways
-		app.AddEndpoint(validationPath, validationGw)
-		app.AddEndpoint(confirmationPath, paybillGW)
-		app.AddEndpoint(stkCallback, stkGateway)
+			app.Logger().Infof("Mpesa validation path: %v", validationPath)
+			app.Logger().Infof("Mpesa confirmation path: %v", confirmationPath)
+		}
 
-		app.Logger().Infof("Mpesa validation path: %v", validationPath)
-		app.Logger().Infof("Mpesa confirmation path: %v", confirmationPath)
-		app.Logger().Infof("STK callback path: %v", stkCallback)
+		if !disableSTKAPI {
+			// MPESA STK Push gateway
+			stkGateway, err := NewSTKGateway(ctx, optGateway)
+			errs.Panic(err)
+
+			stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/incoming/stkpush")
+
+			app.AddEndpoint(stkCallback, stkGateway)
+
+			app.Logger().Infof("STK callback path: %v", stkCallback)
+		}
 
 		return nil
 	})
