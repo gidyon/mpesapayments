@@ -292,12 +292,17 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	db := mpesaAPI.SQLDB.Limit(int(pageSize)).Order("payment_id DESC")
 
+	// Apply filters
 	if len(allowedAccNo) > 0 {
 		db = db.Where("tx_ref_number IN(?)", allowedAccNo)
 	}
 
 	if len(allowedPhones) > 0 {
 		db = db.Where("msisdn IN(?)", allowedPhones)
+	}
+
+	if int(listReq.GetFilter().GetAmount()) > 0 {
+		db = db.Where("tx_amount BETWEEN ? AND ?", listReq.Filter.Amount-0.5, listReq.Filter.Amount)
 	}
 
 	// Apply payment id filter
@@ -673,11 +678,20 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 type transactionsSummary struct {
 }
 
+func inGroup(group string, groups []string) bool {
+	for _, grp := range groups {
+		if grp == group {
+			return true
+		}
+	}
+	return false
+}
+
 func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	ctx context.Context, getReq *mpesapayment.GetTransactionsCountRequest,
 ) (*mpesapayment.TransactionsSummary, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	payload, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -686,7 +700,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	switch {
 	case getReq == nil:
 		return nil, errs.NilObject("get transactions count")
-	case getReq.Amount == 0:
+	case getReq.Amount == 0 && !inGroup(payload.Group, auth.Admins()):
 		return nil, errs.NilObject("amount")
 	default:
 		if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
@@ -696,9 +710,12 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		}
 	}
 
-	db := mpesaAPI.SQLDB.Table(MpesaPayments).Where("tx_amount BETWEEN ? AND ?", getReq.Amount-1, getReq.Amount+1)
+	db := mpesaAPI.SQLDB.Table(MpesaPayments)
 
 	// Apply filters
+	if getReq.Amount > 0 {
+		db = db.Where("tx_amount BETWEEN ? AND ?", getReq.Amount-0.5, getReq.Amount)
+	}
 	if len(getReq.AccountsNumber) > 0 {
 		db = db.Where("tx_ref_number IN (?)", getReq.AccountsNumber)
 	}

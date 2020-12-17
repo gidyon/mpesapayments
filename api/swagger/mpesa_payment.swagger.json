@@ -94,6 +94,13 @@
               "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
+          },
+          {
+            "name": "filter.amount",
+            "in": "query",
+            "required": false,
+            "type": "number",
+            "format": "float"
           }
         ],
         "tags": [
@@ -514,6 +521,10 @@
         },
         "processState": {
           "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "amount": {
+          "type": "number",
+          "format": "float"
         }
       },
       "description": "Filter payload for querying payments",
