@@ -18,18 +18,19 @@ message StkPayload {
 		}
     };
 
-    string payload_id = 1;
-    string merchant_request_id = 2;
-    string checkout_request_id = 3;
-    string result_code = 4;
-    string result_desc = 5;
-    string amount = 6;
-    string mpesa_receipt_number = 7;
-    string balance = 8;
-    string transaction_date = 9;
-    string phone_number = 10;
-    bool succeeded = 11;
-    bool processed = 12;
+    string initiator_id = 1;
+    string payload_id = 2;
+    string merchant_request_id = 3;
+    string checkout_request_id = 4;
+    string result_code = 5;
+    string result_desc = 6;
+    string amount = 7;
+    string mpesa_receipt_number = 8;
+    string balance = 9;
+    string transaction_date = 10;
+    string phone_number = 11;
+    bool succeeded = 12;
+    bool processed = 13;
 }
 
 message InitiateSTKPushRequest {
@@ -41,9 +42,10 @@ message InitiateSTKPushRequest {
 		}
     };
 
-	string phone = 1 [(google.api.field_behavior) = REQUIRED];
-	double amount = 2 [(google.api.field_behavior) = REQUIRED];
-	map<string, string> payload = 3 [(google.api.field_behavior) = REQUIRED];
+	string initiator_id = 1 [(google.api.field_behavior) = REQUIRED];
+	string phone = 2 [(google.api.field_behavior) = REQUIRED];
+	double amount = 3 [(google.api.field_behavior) = REQUIRED];
+	map<string, string> payload = 4 [(google.api.field_behavior) = REQUIRED];
 }
 
 message InitiateSTKPushResponse {
@@ -143,6 +145,7 @@ message PublishStkPayloadRequest {
 	string payload_id = 1 [(google.api.field_behavior) = REQUIRED];
 	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
 	ProcessedState processed_state = 3;
+	bool from_cache = 4;
 }
 
 message PublishAllStkPayloadRequest {
