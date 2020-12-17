@@ -22,6 +22,7 @@ type Options struct {
 	MpesaAPI            mpesapayment.LipaNaMPESAServer
 	StkAPI              stk.StkPushAPIServer
 	DisableMpesaService bool
+	DisableSTKService   bool
 	DisablePublishing   bool
 }
 
@@ -38,9 +39,9 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("logger")
 	case opt.AuthAPI == nil:
 		err = errs.NilObject("auth API")
-	case opt.StkAPI == nil:
+	case opt.StkAPI == nil && !opt.DisableSTKService:
 		err = errs.NilObject("stk API")
-	case opt.MpesaAPI == nil:
+	case opt.MpesaAPI == nil && !opt.DisableMpesaService:
 		err = errs.NilObject("mpesa API")
 	}
 	return err
