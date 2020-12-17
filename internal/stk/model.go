@@ -14,6 +14,7 @@ const StkTable = "mpesa_stk_results"
 // PayloadStk contains mpesa transaction details
 type PayloadStk struct {
 	PayloadID          uint   `gorm:"primaryKey;autoIncrement"`
+	InitiatorID        string `gorm:"type:varchar(50);not null"`
 	MerchantRequestID  string `gorm:"type:varchar(50);not null"`
 	CheckoutRequestID  string `gorm:"type:varchar(50);not null;unique"`
 	ResultCode         string `gorm:"type:varchar(5);not null"`
@@ -39,6 +40,7 @@ func GetStkPayloadDB(stkPayloadPB *stk.StkPayload) (*PayloadStk, error) {
 	}
 
 	stkPayloadDB := &PayloadStk{
+		InitiatorID:        stkPayloadPB.InitiatorId,
 		MerchantRequestID:  stkPayloadPB.MerchantRequestId,
 		CheckoutRequestID:  stkPayloadPB.CheckoutRequestId,
 		ResultCode:         stkPayloadPB.ResultCode,
@@ -62,6 +64,7 @@ func GetStkPayloadPB(stkPayloadDB *PayloadStk) (*stk.StkPayload, error) {
 
 	mpesaPB := &stk.StkPayload{
 		PayloadId:          fmt.Sprint(stkPayloadDB.PayloadID),
+		InitiatorId:        stkPayloadDB.InitiatorID,
 		MerchantRequestId:  stkPayloadDB.MerchantRequestID,
 		CheckoutRequestId:  stkPayloadDB.CheckoutRequestID,
 		ResultCode:         stkPayloadDB.ResultCode,
