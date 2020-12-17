@@ -48,13 +48,26 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 
 					publish := false
 
-					// Get STK payload
-					val, err := stkAPI.RedisDB.Get(ctx, key).Result()
+					// Get STK initiator key
+					initiatorKey, err := stkAPI.RedisDB.Get(ctx, key).Result()
 					switch {
 					case err == nil:
 						publish = true
 					case errors.Is(err, redis.Nil):
-						stkAPI.Logger.Warningln("no value set in key")
+						stkAPI.Logger.Warningln("no value set in key (initiator key)")
+						return
+					default:
+						stkAPI.Logger.Errorf("failed to get initiator key from cache: %v", err)
+						return
+					}
+
+					// Get initiator payload
+					val, err := stkAPI.RedisDB.Get(ctx, initiatorKey).Result()
+					switch {
+					case err == nil:
+						publish = true
+					case errors.Is(err, redis.Nil):
+						stkAPI.Logger.Warningln("no value set in key (initiator payload)")
 						publish = false
 					default:
 						stkAPI.Logger.Errorf("failed to get initiator payload from cache: %v", err)
@@ -62,7 +75,8 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 					}
 
 					if publish && stkPayload.Succeeded {
-						stkAPI.Logger.Infof("publishing stk %s to consumers", stkPayload.MpesaReceiptNumber)
+						payloadID := valFunc(fmt.Sprint(stkPayload.PayloadID), stkPayload.MpesaReceiptNumber)
+						stkAPI.Logger.Infof("publishing stk %s to consumers", payloadID)
 
 						// Get stk push initiator payload
 						payload := &stk.InitiateSTKPushRequest{}
@@ -75,7 +89,7 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 						// Publish the stk payment to consumers
 						_, err = stkAPI.PublishStkPayload(
 							stkAPI.ctxAdmin, &stk.PublishStkPayloadRequest{
-								PayloadId: valFunc(fmt.Sprint(stkPayload.PayloadID), stkPayload.MpesaReceiptNumber),
+								PayloadId: payloadID,
 								Payload:   payload.Payload,
 							})
 						if err != nil {
