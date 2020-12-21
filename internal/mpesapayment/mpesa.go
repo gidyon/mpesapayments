@@ -290,7 +290,11 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	mpesapayments := make([]*PaymentMpesa, 0, pageSize)
 
-	db := mpesaAPI.SQLDB.Limit(int(pageSize)).Order("payment_id DESC")
+	// Add filter from request filters
+	allowedAccNo = append(allowedAccNo, listReq.GetFilter().GetAccountsNumber()...)
+	allowedPhones = append(allowedPhones, listReq.GetFilter().GetMsisdns()...)
+
+	db := mpesaAPI.SQLDB.Limit(int(pageSize + 1)).Order("payment_id DESC")
 
 	// Apply filters
 	if len(allowedAccNo) > 0 {
@@ -312,19 +316,23 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	// Apply filters
 	if listReq.Filter != nil {
-		if listReq.Filter.TxDate != "" {
-			t, err := getTime(listReq.Filter.TxDate)
-			if err != nil {
-				return nil, err
+		startTimestamp := listReq.Filter.GetStartTimestamp()
+		endTimestamp := listReq.Filter.GetEndTimestamp()
+
+		// Timestamp filter
+		if endTimestamp > startTimestamp {
+			db = db.Where("tx_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
+		} else {
+			// Date filter
+			if listReq.Filter.TxDate != "" {
+				t, err := getTime(listReq.Filter.TxDate)
+				if err != nil {
+					return nil, err
+				}
+				db = db.Where("tx_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 			}
-			db = db.Where("tx_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 		}
-		if len(listReq.Filter.Msisdns) > 0 {
-			db = db.Where("msisdn IN(?)", listReq.Filter.Msisdns)
-		}
-		if len(listReq.Filter.AccountsNumber) > 0 {
-			db = db.Where("tx_ref_number IN(?)", listReq.Filter.AccountsNumber)
-		}
+
 		if listReq.Filter.ProcessState != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 			switch listReq.Filter.ProcessState {
 			case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
@@ -343,19 +351,24 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		return nil, errs.FailedToFind("ussd channels", err)
 	}
 
-	paymentPaymentsPB := make([]*mpesapayment.MPESAPayment, 0, len(mpesapayments))
+	paymentsPB := make([]*mpesapayment.MPESAPayment, 0, len(mpesapayments))
 
-	for _, paymentPaymentDB := range mpesapayments {
-		paymentPaymenPB, err := GetMpesaPB(paymentPaymentDB)
+	for i, paymentDB := range mpesapayments {
+		paymentPaymenPB, err := GetMpesaPB(paymentDB)
 		if err != nil {
 			return nil, err
 		}
-		paymentPaymentsPB = append(paymentPaymentsPB, paymentPaymenPB)
-		paymentID = paymentPaymentDB.PaymentID
+		paymentsPB = append(paymentsPB, paymentPaymenPB)
+		paymentID = paymentDB.PaymentID
+
+		// Ignore the last element
+		if (i + 1) == int(pageSize)+1 {
+			break
+		}
 	}
 
 	var token string
-	if len(mpesapayments) >= int(pageSize) {
+	if len(mpesapayments) > int(pageSize) {
 		// Next page token
 		token, err = mpesaAPI.PaginationHasher.EncodeInt64([]int64{int64(paymentID)})
 		if err != nil {
@@ -365,7 +378,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	return &mpesapayment.ListMPESAPaymentsResponse{
 		NextPageToken: token,
-		MpesaPayments: paymentPaymentsPB,
+		MpesaPayments: paymentsPB,
 	}, nil
 }
 
