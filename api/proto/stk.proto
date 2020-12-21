@@ -95,6 +95,8 @@ message ListStkPayloadFilter {
 	string tx_date = 1;
 	repeated string msisdns = 2;
 	gidyon.mpesa.ProcessedState process_state = 3;
+	int64 start_timestamp = 4;
+	int64 end_timestamp = 5;
 }
 
 message ListStkPayloadsRequest {

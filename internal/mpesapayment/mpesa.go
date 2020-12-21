@@ -362,7 +362,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		paymentID = paymentDB.PaymentID
 
 		// Ignore the last element
-		if (i + 1) == int(pageSize)+1 {
+		if i == int(pageSize) {
 			break
 		}
 	}

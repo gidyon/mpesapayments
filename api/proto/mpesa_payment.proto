@@ -84,6 +84,8 @@ message ListMPESAPaymentsFilter {
 	repeated string accounts_number = 3;
 	ProcessedState process_state = 4;
 	float amount = 5;
+	int64 start_timestamp = 6;
+	int64 end_timestamp = 7;
 }
 
 message ListMPESAPaymentsRequest {

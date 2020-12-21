@@ -550,7 +550,7 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 
 	mpesapayloads := make([]*PayloadStk, 0, pageSize)
 
-	db := stkAPI.SQLDB.Limit(int(pageSize)).Order("payload_id DESC")
+	db := stkAPI.SQLDB.Limit(int(pageSize) + 1).Order("payload_id DESC")
 
 	if len(allowedPhones) > 0 {
 		db = db.Where("phone_number IN(?)", allowedPhones)
@@ -563,13 +563,23 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 
 	// Apply filters
 	if listReq.Filter != nil {
-		if listReq.Filter.TxDate != "" {
-			t, err := getTime(listReq.Filter.TxDate)
-			if err != nil {
-				return nil, err
+		startTimestamp := listReq.Filter.GetStartTimestamp()
+		endTimestamp := listReq.Filter.GetEndTimestamp()
+
+		// Timestamp filter
+		if endTimestamp > startTimestamp {
+			db = db.Where("created_at BETWEEN ? AND ?", startTimestamp, endTimestamp)
+		} else {
+			// Date filter
+			if listReq.Filter.TxDate != "" {
+				t, err := getTime(listReq.Filter.TxDate)
+				if err != nil {
+					return nil, err
+				}
+				db = db.Where("created_at BETWEEN ? AND ?", t, t.Add(time.Hour*24).Unix())
 			}
-			db = db.Where("created_at BETWEEN ? AND ?", t, t.Add(time.Hour*24).Unix())
 		}
+
 		if len(listReq.Filter.Msisdns) > 0 {
 			if payload.Group == auth.AdminGroup() {
 				db = db.Where("phone_number IN(?)", listReq.Filter.Msisdns)
@@ -595,17 +605,21 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 
 	payloadPayloadsPB := make([]*stk.StkPayload, 0, len(mpesapayloads))
 
-	for _, payloadPayloadDB := range mpesapayloads {
+	for i, payloadPayloadDB := range mpesapayloads {
 		payloadPaymenPB, err := GetStkPayloadPB(payloadPayloadDB)
 		if err != nil {
 			return nil, err
 		}
 		payloadPayloadsPB = append(payloadPayloadsPB, payloadPaymenPB)
 		payloadID = payloadPayloadDB.PayloadID
+
+		if i == int(pageSize) {
+			break
+		}
 	}
 
 	var token string
-	if len(mpesapayloads) >= int(pageSize) {
+	if len(mpesapayloads) > int(pageSize) {
 		// Next page token
 		token, err = stkAPI.PaginationHasher.EncodeInt64([]int64{int64(payloadID)})
 		if err != nil {

@@ -70,6 +70,20 @@
               "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
+          },
+          {
+            "name": "filter.startTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -372,6 +386,14 @@
         },
         "processState": {
           "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "description": "Filter payload for querying stk payloads",

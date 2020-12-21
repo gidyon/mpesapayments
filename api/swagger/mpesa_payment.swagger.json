@@ -101,6 +101,20 @@
             "required": false,
             "type": "number",
             "format": "float"
+          },
+          {
+            "name": "filter.startTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
           }
         ],
         "tags": [
@@ -525,6 +539,14 @@
         "amount": {
           "type": "number",
           "format": "float"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "description": "Filter payload for querying payments",
