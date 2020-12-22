@@ -760,7 +760,7 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 	ctx context.Context, getReq *mpesapayment.GetRandomTransactionRequest,
 ) (*mpesapayment.MPESAPayment, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, append(auth.Admins(), "PRESENTER")...)
 	if err != nil {
 		return nil, err
 	}
