@@ -36,6 +36,8 @@ type LipaNaMPESAClient interface {
 	PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(ctx context.Context, in *GetTransactionsCountRequest, opts ...grpc.CallOption) (*TransactionsSummary, error)
+	// Retrives a random transaction using RM=NG algorithm
+	GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
 }
 
 type lipaNaMPESAClient struct {
@@ -127,6 +129,15 @@ func (c *lipaNaMPESAClient) GetTransactionsCount(ctx context.Context, in *GetTra
 	return out, nil
 }
 
+func (c *lipaNaMPESAClient) GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error) {
+	out := new(MPESAPayment)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetRandomTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LipaNaMPESAServer is the server API for LipaNaMPESA service.
 // All implementations must embed UnimplementedLipaNaMPESAServer
 // for forward compatibility
@@ -149,6 +160,8 @@ type LipaNaMPESAServer interface {
 	PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*empty.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error)
+	// Retrives a random transaction using RM=NG algorithm
+	GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error)
 	mustEmbedUnimplementedLipaNaMPESAServer()
 }
 
@@ -182,6 +195,9 @@ func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayment(context.Context, *P
 }
 func (UnimplementedLipaNaMPESAServer) GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionsCount not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetRandomTransaction not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) mustEmbedUnimplementedLipaNaMPESAServer() {}
 
@@ -358,6 +374,24 @@ func _LipaNaMPESA_GetTransactionsCount_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LipaNaMPESA_GetRandomTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetRandomTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).GetRandomTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/GetRandomTransaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).GetRandomTransaction(ctx, req.(*GetRandomTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.LipaNaMPESA",
 	HandlerType: (*LipaNaMPESAServer)(nil),
@@ -397,6 +431,10 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTransactionsCount",
 			Handler:    _LipaNaMPESA_GetTransactionsCount_Handler,
+		},
+		{
+			MethodName: "GetRandomTransaction",
+			Handler:    _LipaNaMPESA_GetRandomTransaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

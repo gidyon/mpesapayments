@@ -303,6 +303,26 @@ service LipaNaMPESA {
 		};
 	};
 
+	// Retrives a random transaction using RM=NG algorithm
+	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (MPESAPayment) {
+		option (google.api.http) = {
+			get: "/api/mpestx/payments/actions/get-random-transaction"
+		};
+	};
+}
+
+message GetRandomTransactionRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "RandomTransactionRequest"
+			description: "Request to a random transaction information"
+		}
+	};
+
+	repeated string accounts_number = 1;
+	int64 start_time_seconds = 2;
+	int64 end_time_seconds = 3;
+	float amount = 4 [(google.api.field_behavior) = REQUIRED];
 }
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
