@@ -15,7 +15,7 @@ import (
 const maxCap = 10000
 
 func valFunc(v1, v2 string) string {
-	if v1 == "" {
+	if v1 == "" || v1 == "0" {
 		return v2
 	}
 	return v1

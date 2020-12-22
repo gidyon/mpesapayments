@@ -610,12 +610,13 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 		if err != nil {
 			return nil, err
 		}
-		payloadPayloadsPB = append(payloadPayloadsPB, payloadPaymenPB)
-		payloadID = payloadPayloadDB.PayloadID
 
 		if i == int(pageSize) {
 			break
 		}
+
+		payloadPayloadsPB = append(payloadPayloadsPB, payloadPaymenPB)
+		payloadID = payloadPayloadDB.PayloadID
 	}
 
 	var token string
