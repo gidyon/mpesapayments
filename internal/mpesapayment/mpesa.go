@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"strconv"
 	"time"
 
@@ -207,7 +208,6 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 	}
 
 	// Validation
-	var paymentID int
 	switch {
 	case getReq == nil:
 		return nil, errs.NilObject("GetMPESAPaymentRequest")
@@ -218,10 +218,10 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 
 	mpesaDB := &PaymentMpesa{}
 
-	if _, err := strconv.Atoi(getReq.PaymentId); err == nil {
+	if paymentID, err := strconv.Atoi(getReq.PaymentId); err == nil && paymentID != 0 {
 		err = mpesaAPI.SQLDB.First(mpesaDB, "payment_id=?", paymentID).Error
 	} else {
-		err = mpesaAPI.SQLDB.First(mpesaDB, "tx_id=?", paymentID).Error
+		err = mpesaAPI.SQLDB.First(mpesaDB, "tx_id=?", getReq.PaymentId).Error
 	}
 	switch {
 	case err == nil:
@@ -358,13 +358,14 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		if err != nil {
 			return nil, err
 		}
-		paymentsPB = append(paymentsPB, paymentPaymenPB)
-		paymentID = paymentDB.PaymentID
 
 		// Ignore the last element
 		if i == int(pageSize) {
 			break
 		}
+
+		paymentsPB = append(paymentsPB, paymentPaymenPB)
+		paymentID = paymentDB.PaymentID
 	}
 
 	var token string
@@ -753,4 +754,85 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		TotalAmount:       float32(transactions) * getReq.Amount,
 		TransactionsCount: int32(transactions),
 	}, nil
+}
+
+func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
+	ctx context.Context, getReq *mpesapayment.GetRandomTransactionRequest,
+) (*mpesapayment.MPESAPayment, error) {
+	// Authentication
+	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case getReq == nil:
+		return nil, errs.NilObject("get request")
+	}
+
+	// Get Max and Min Ids
+	var (
+		pageToken  string
+		next       = true
+		lastResult = true
+		min, max   int
+	)
+
+	for next {
+		listRes, err := mpesaAPI.ListMPESAPayments(ctx, &mpesapayment.ListMPESAPaymentsRequest{
+			PageToken: pageToken,
+			PageSize:  defaultPageSize,
+			Filter: &mpesapayment.ListMPESAPaymentsFilter{
+				AccountsNumber: getReq.GetAccountsNumber(),
+				Amount:         getReq.GetAmount(),
+				StartTimestamp: getReq.GetStartTimeSeconds(),
+				EndTimestamp:   getReq.GetEndTimeSeconds(),
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		itemsPresent := len(listRes.MpesaPayments) > 0
+		pageToken = listRes.NextPageToken
+
+		if listRes.NextPageToken == "" {
+			next = false
+		}
+
+		// First result
+		if listRes.NextPageToken == "" && itemsPresent {
+			min, err = strconv.Atoi(listRes.MpesaPayments[len(listRes.MpesaPayments)-1].PaymentId)
+			if err != nil {
+				return nil, errs.ConvertingType(err, "string", "int")
+			}
+		}
+
+		// Last result
+		if lastResult && itemsPresent {
+			max, err = strconv.Atoi(listRes.MpesaPayments[0].PaymentId)
+			if err != nil {
+				return nil, errs.ConvertingType(err, "string", "int")
+			}
+			lastResult = false
+		}
+	}
+
+	rand.Seed(time.Now().UnixNano())
+
+	if max <= min {
+		return nil, errs.WrapMessage(codes.FailedPrecondition, "no mpesa payments found")
+	}
+
+	// Random winner using RNG
+	winnerID := rand.Intn(max-min) + min
+
+	if winnerID == 0 {
+		winnerID = max
+	}
+
+	return mpesaAPI.GetMPESAPayment(ctx, &mpesapayment.GetMPESAPaymentRequest{
+		PaymentId: fmt.Sprint(winnerID),
+	})
 }
