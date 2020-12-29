@@ -113,6 +113,7 @@ func main() {
 				AuthAPI:           authAPI,
 				PaginationHasher:  paginationHasher,
 				DisablePublishing: disablePub,
+				RedisKeyPrefix:    os.Getenv("REDIS_KEY_PREFIX"),
 			}
 			// MPESA API
 			mpesaAPI, err = mpesa.NewAPIServerMPESA(ctx, &opt)
@@ -144,8 +145,8 @@ func main() {
 				PaginationHasher:    paginationHasher,
 				HTTPClient:          http.DefaultClient,
 				OptionsSTK:          stkOption,
-				PublishChannelSTK:   os.Getenv("PUBLISH_CHANNEL_STK"),
-				PublishChannelMpesa: os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
+				PublishChannel:      os.Getenv("PUBLISH_CHANNEL_STK"),
+				RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
 				DisableMpesaService: disableMpesaAPI,
 				DisablePublishing:   disablePub,
 			}
