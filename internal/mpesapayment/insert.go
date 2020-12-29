@@ -36,8 +36,6 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 					if !mpesaAPI.DisablePublishing {
 						paymentID := valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TxID)
 
-						mpesaAPI.Logger.Infof("publishing lnm payment %s to consumers", paymentID)
-
 						// Publish the transaction
 						_, err := mpesaAPI.PublishMpesaPayment(
 							mpesaAPI.ctxAdmin, &mpesapayment.PublishMpesaPaymentRequest{
