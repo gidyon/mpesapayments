@@ -10,6 +10,7 @@ import (
 	"github.com/gidyon/micro/pkg/grpc/auth"
 	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	"github.com/gidyon/mpesapayments/pkg/payload"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -69,7 +70,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stkPayload := &STKPayload{}
+	stkPayload := &payload.STKPayload{}
 
 	switch r.Header.Get("content-type") {
 	case "application/json", "application/json;charset=UTF-8":
@@ -101,6 +102,8 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	gw.Logger.Infof("phone: %s", stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber())
 
 	stkPayloadPB := &stk.StkPayload{
 		MerchantRequestId:  stkPayload.Body.STKCallback.MerchantRequestID,
@@ -147,133 +150,3 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte("mpesa stk processed"))
 }
-
-// STKPayload sent from stk push
-type STKPayload struct {
-	Body struct {
-		STKCallback struct {
-			MerchantRequestID string       `json:"MerchantRequestID,omitempty"`
-			CheckoutRequestID string       `json:"CheckoutRequestID,omitempty"`
-			ResultCode        int          `json:"ResultCode,omitempty"`
-			ResultDesc        string       `json:"ResultDesc,omitempty"`
-			CallbackMetadata  CallbackMeta `json:"CallbackMetadata,omitempty"`
-		} `json:"stkCallback,omitempty"`
-	} `json:"Body,omitempty"`
-}
-
-// CallbackMeta is response body for successful response
-type CallbackMeta struct {
-	Item []struct {
-		Name  string      `json:"Name,omitempty"`
-		Value interface{} `json:"Value,omitempty"`
-	} `json:"Item,omitempty"`
-}
-
-// GetAmount returns the transaction amount
-func (c *CallbackMeta) GetAmount() float32 {
-	itemsLen := len(c.Item)
-	if itemsLen != 5 && itemsLen != 4 {
-		return 0
-	}
-
-	v, ok := c.Item[0].Value.(float64)
-	if !ok {
-		return 0
-	}
-
-	return float32(v)
-}
-
-// MpesaReceiptNumber returns the receipt number
-func (c *CallbackMeta) MpesaReceiptNumber() string {
-	itemsLen := len(c.Item)
-	if itemsLen != 5 && itemsLen != 4 {
-		return ""
-	}
-
-	return fmt.Sprint(c.Item[1].Value)
-}
-
-// GetTransTime returns the transaction time
-func (c *CallbackMeta) GetTransTime() time.Time {
-	itemsLen := len(c.Item)
-	if itemsLen != 5 && itemsLen != 4 {
-		return time.Now()
-	}
-
-	var (
-		t   time.Time
-		err error
-	)
-
-	switch itemsLen {
-	case 4:
-		t, err = getTransactionTime(fmt.Sprint(c.Item[2].Value))
-		if err != nil {
-			t = time.Now()
-		}
-	case 5:
-		t, err = getTransactionTime(fmt.Sprint(c.Item[3].Value))
-		if err != nil {
-			t = time.Now()
-		}
-	}
-
-	return t
-}
-
-// PhoneNumber returns the phone number
-func (c *CallbackMeta) PhoneNumber() string {
-	itemsLen := len(c.Item)
-	if itemsLen != 5 && itemsLen != 4 {
-		return ""
-	}
-
-	var v float64
-
-	switch itemsLen {
-	case 4:
-		v, _ = c.Item[3].Value.(float64)
-	case 5:
-		v, _ = c.Item[4].Value.(float64)
-	}
-
-	return fmt.Sprintf("%.0f", v)
-}
-
-// {
-// 	"Body":
-// 	{"stkCallback":
-// 	 {
-// 	  "MerchantRequestID": "21605-295434-4",
-// 	  "CheckoutRequestID": "ws_CO_04112017184930742",
-// 	  "ResultCode": 0,
-// 	  "ResultDesc": "The service request is processed successfully.",
-// 	  "CallbackMetadata":
-// 	   {
-// 		"Item":
-// 		[
-// 		{
-// 		  "Name": "Amount",
-// 		  "Value": 1
-// 		},
-// 		{
-// 		  "Name": "MpesaReceiptNumber",
-// 		  "Value": "LK451H35OP"
-// 		},
-// 		{
-// 		  "Name": "Balance"
-// 		},
-// 		{
-// 		  "Name": "TransactionDate",
-// 		  "Value": 20171104184944
-// 		 },
-// 		{
-// 		  "Name": "PhoneNumber",
-// 		  "Value": 254727894083
-// 		}
-// 		]
-// 	   }
-// 	 }
-// 	}
-//    }

@@ -12,6 +12,7 @@ import (
 	"github.com/gidyon/micro/utils/errs"
 	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/payload"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -78,7 +79,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mpesaPayload := &MpesaPayload{}
+	mpesaPayload := &payload.MpesaPayload{}
 
 	// Marshaling
 	switch ctype := r.Header.Get("content-type"); ctype {
@@ -197,36 +198,3 @@ func getTransactionTime(transactionTimeStr string) (time.Time, error) {
 
 	return time.Parse(time.RFC3339, timeRFC3339Str)
 }
-
-// MpesaPayload contains mpesa transaction payload for paybill
-type MpesaPayload struct {
-	TransactionType   string
-	TransID           string
-	TransTime         string
-	TransAmount       string
-	BusinessShortCode string
-	BillRefNumber     string
-	InvoiceNumber     string
-	OrgAccountBalance string
-	ThirdPartyTransID string
-	MSISDN            string
-	FirstName         string
-	MiddleName        string
-	LastName          string
-}
-
-// [
-// 	BillRefNumber:pwo
-// 	BusinessShortCode:4045065
-// 	FirstName:GIDEON
-// 	InvoiceNumber:
-// 	LastName:NG'ANG'A
-// 	MSISDN:254716484395
-// 	MiddleName:KAMAU
-// 	OrgAccountBalance:26.00
-// 	ThirdPartyTransID:
-// 	TransAmount:2.00
-// 	TransID:OIU61LFLVC
-// 	TransTime:20200930171653
-// 	TransactionType:Pay Bill
-// ]
