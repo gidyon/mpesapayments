@@ -4,10 +4,10 @@ package mpesapayment
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -25,15 +25,15 @@ type LipaNaMPESAClient interface {
 	// Retrieves a collection of MPESA payments.
 	ListMPESAPayments(ctx context.Context, in *ListMPESAPaymentsRequest, opts ...grpc.CallOption) (*ListMPESAPaymentsResponse, error)
 	// Adds scopes to a user.
-	AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(ctx context.Context, in *GetScopesRequest, opts ...grpc.CallOption) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
-	ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
-	PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(ctx context.Context, in *GetTransactionsCountRequest, opts ...grpc.CallOption) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
@@ -75,8 +75,8 @@ func (c *lipaNaMPESAClient) ListMPESAPayments(ctx context.Context, in *ListMPESA
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *lipaNaMPESAClient) AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/AddScopes", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -93,8 +93,8 @@ func (c *lipaNaMPESAClient) GetScopes(ctx context.Context, in *GetScopesRequest,
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *lipaNaMPESAClient) ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ProcessMpesaPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -102,8 +102,8 @@ func (c *lipaNaMPESAClient) ProcessMpesaPayment(ctx context.Context, in *Process
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *lipaNaMPESAClient) PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishMpesaPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -111,8 +111,8 @@ func (c *lipaNaMPESAClient) PublishMpesaPayment(ctx context.Context, in *Publish
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *lipaNaMPESAClient) PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -149,15 +149,15 @@ type LipaNaMPESAServer interface {
 	// Retrieves a collection of MPESA payments.
 	ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error)
 	// Adds scopes to a user.
-	AddScopes(context.Context, *AddScopesRequest) (*empty.Empty, error)
+	AddScopes(context.Context, *AddScopesRequest) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
-	ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*empty.Empty, error)
+	ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*emptypb.Empty, error)
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
-	PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*empty.Empty, error)
+	PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*empty.Empty, error)
+	PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
@@ -178,19 +178,19 @@ func (UnimplementedLipaNaMPESAServer) GetMPESAPayment(context.Context, *GetMPESA
 func (UnimplementedLipaNaMPESAServer) ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMPESAPayments not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) AddScopes(context.Context, *AddScopesRequest) (*empty.Empty, error) {
+func (UnimplementedLipaNaMPESAServer) AddScopes(context.Context, *AddScopesRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AddScopes not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetScopes not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*empty.Empty, error) {
+func (UnimplementedLipaNaMPESAServer) ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessMpesaPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*empty.Empty, error) {
+func (UnimplementedLipaNaMPESAServer) PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishMpesaPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*empty.Empty, error) {
+func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishAllMpesaPayment not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error) {

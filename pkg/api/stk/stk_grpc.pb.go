@@ -4,10 +4,10 @@ package stk
 
 import (
 	context "context"
-	empty "github.com/golang/protobuf/ptypes/empty"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -27,11 +27,11 @@ type StkPushAPIClient interface {
 	// Retrieves a collection of stk push payloads
 	ListStkPayloads(ctx context.Context, in *ListStkPayloadsRequest, opts ...grpc.CallOption) (*ListStkPayloadsResponse, error)
 	// Processes stk push payload updating its status
-	ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publishes stk push payload for consumers
-	PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publihses all stk push payloads to consumers
-	PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+	PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type stkPushAPIClient struct {
@@ -78,8 +78,8 @@ func (c *stkPushAPIClient) ListStkPayloads(ctx context.Context, in *ListStkPaylo
 	return out, nil
 }
 
-func (c *stkPushAPIClient) ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *stkPushAPIClient) ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/ProcessStkPayload", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -87,8 +87,8 @@ func (c *stkPushAPIClient) ProcessStkPayload(ctx context.Context, in *ProcessStk
 	return out, nil
 }
 
-func (c *stkPushAPIClient) PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *stkPushAPIClient) PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/PublishStkPayload", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -96,8 +96,8 @@ func (c *stkPushAPIClient) PublishStkPayload(ctx context.Context, in *PublishStk
 	return out, nil
 }
 
-func (c *stkPushAPIClient) PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error) {
-	out := new(empty.Empty)
+func (c *stkPushAPIClient) PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/PublishAllStkPayload", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -118,11 +118,11 @@ type StkPushAPIServer interface {
 	// Retrieves a collection of stk push payloads
 	ListStkPayloads(context.Context, *ListStkPayloadsRequest) (*ListStkPayloadsResponse, error)
 	// Processes stk push payload updating its status
-	ProcessStkPayload(context.Context, *ProcessStkPayloadRequest) (*empty.Empty, error)
+	ProcessStkPayload(context.Context, *ProcessStkPayloadRequest) (*emptypb.Empty, error)
 	// Publishes stk push payload for consumers
-	PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*empty.Empty, error)
+	PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*emptypb.Empty, error)
 	// Publihses all stk push payloads to consumers
-	PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*empty.Empty, error)
+	PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStkPushAPIServer()
 }
 
@@ -142,13 +142,13 @@ func (UnimplementedStkPushAPIServer) CreateStkPayload(context.Context, *CreateSt
 func (UnimplementedStkPushAPIServer) ListStkPayloads(context.Context, *ListStkPayloadsRequest) (*ListStkPayloadsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStkPayloads not implemented")
 }
-func (UnimplementedStkPushAPIServer) ProcessStkPayload(context.Context, *ProcessStkPayloadRequest) (*empty.Empty, error) {
+func (UnimplementedStkPushAPIServer) ProcessStkPayload(context.Context, *ProcessStkPayloadRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessStkPayload not implemented")
 }
-func (UnimplementedStkPushAPIServer) PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*empty.Empty, error) {
+func (UnimplementedStkPushAPIServer) PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishStkPayload not implemented")
 }
-func (UnimplementedStkPushAPIServer) PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*empty.Empty, error) {
+func (UnimplementedStkPushAPIServer) PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishAllStkPayload not implemented")
 }
 func (UnimplementedStkPushAPIServer) mustEmbedUnimplementedStkPushAPIServer() {}
