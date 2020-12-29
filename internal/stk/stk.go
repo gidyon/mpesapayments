@@ -215,7 +215,7 @@ func NewStkAPI(
 		ctxAdmin:      ctxAdmin,
 	}
 
-	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.PublishChannel)
+	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.addPrefix(stkAPI.PublishChannel))
 
 	// Auto migration
 	if !stkAPI.SQLDB.Migrator().HasTable(StkTable) {
@@ -517,7 +517,14 @@ const defaultPageSize = 20
 func userAllowedPhonesSet(userID string) string {
 	return fmt.Sprintf("user:%s:allowedphones", userID)
 }
-
+func inGroup(group string, groups []string) bool {
+	for _, grp := range groups {
+		if grp == group {
+			return true
+		}
+	}
+	return false
+}
 func (stkAPI *stkAPIServer) ListStkPayloads(
 	ctx context.Context, listReq *stk.ListStkPayloadsRequest,
 ) (*stk.ListStkPayloadsResponse, error) {
@@ -531,6 +538,8 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 	switch {
 	case listReq == nil:
 		return nil, errs.NilObject("list request")
+	case listReq.PageSize < 0:
+		return nil, errs.IncorrectVal("page size")
 	}
 
 	// Read from redis list of phone numbers
@@ -546,7 +555,9 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 
 	pageSize := listReq.GetPageSize()
 	if pageSize <= 0 || pageSize > defaultPageSize {
-		pageSize = defaultPageSize
+		if !inGroup(payload.Group, auth.Admins()) {
+			pageSize = defaultPageSize
+		}
 	}
 
 	var payloadID uint
