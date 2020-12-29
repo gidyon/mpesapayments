@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -18,12 +19,12 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
@@ -65,8 +66,8 @@ type Options struct {
 	UpdateAccessTokenDuration time.Duration
 	WorkerDuration            time.Duration
 	InitiatorExpireDuration   time.Duration
-	PublishChannelSTK         string
-	PublishChannelMpesa       string
+	RedisKeyPrefix            string
+	PublishChannel            string
 	DisableMpesaService       bool
 	DisablePublishing         bool
 }
@@ -89,6 +90,8 @@ func ValidateOptions(opt *Options) error {
 		err = errs.NilObject("pagination PaginationHasher")
 	case opt.HTTPClient == nil:
 		err = errs.NilObject("http client")
+	case opt.RedisKeyPrefix == "":
+		err = errs.MissingField("keys prefix")
 	case opt.OptionsSTK == nil:
 		err = errs.NilObject("stk options")
 	}
@@ -177,8 +180,8 @@ func NewStkAPI(
 	))
 
 	// Update publish channel
-	if opt.PublishChannelSTK == "" {
-		opt.PublishChannelSTK = publishChannel
+	if opt.PublishChannel == "" {
+		opt.PublishChannel = publishChannel
 	}
 
 	// Update expiration duration for stk payloads
@@ -212,7 +215,7 @@ func NewStkAPI(
 		ctxAdmin:      ctxAdmin,
 	}
 
-	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.PublishChannelSTK)
+	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.PublishChannel)
 
 	// Auto migration
 	if !stkAPI.SQLDB.Migrator().HasTable(StkTable) {
@@ -278,6 +281,10 @@ func GetMpesaSTKPayloadKey(initiatorID string) string {
 	return fmt.Sprintf("mpesa:stkpayload:%s", initiatorID)
 }
 
+func (stkAPI *stkAPIServer) addPrefix(key string) string {
+	return fmt.Sprintf("%s:%s", stkAPI.RedisKeyPrefix, key)
+}
+
 func (stkAPI *stkAPIServer) InitiateSTKPush(
 	ctx context.Context, initReq *stk.InitiateSTKPushRequest,
 ) (*stk.InitiateSTKPushResponse, error) {
@@ -299,7 +306,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		return nil, errs.MissingField("stk payload")
 	}
 
-	txKey := GetMpesaSTKPushKey(initReq.Phone)
+	txKey := stkAPI.addPrefix(GetMpesaSTKPushKey(initReq.Phone))
 
 	// Marshal initReq
 	bs, err := proto.Marshal(initReq)
@@ -324,7 +331,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	pipeliner := stkAPI.RedisDB.TxPipeline()
 
 	// Key to payload
-	txKey2 := GetMpesaSTKPayloadKey(initReq.GetInitiatorId())
+	txKey2 := stkAPI.addPrefix(GetMpesaSTKPayloadKey(initReq.GetInitiatorId()))
 
 	// Save initiator key in cache for 100 seconds
 	err = pipeliner.Set(ctx, txKey, txKey2, 100*time.Second).Err()
@@ -456,10 +463,10 @@ func (stkAPI *stkAPIServer) CreateStkPayload(
 
 	if !stkAPI.DisableMpesaService {
 		// Update mpesa payment
-		stkAPI.mpesaAPI.ProcessMpesaPayment(ctx, &mpesapayment.ProcessMpesaPaymentRequest{
-			PaymentId: stkPayloadDB.MpesaReceiptNumber,
-			State:     true,
-		})
+		// stkAPI.mpesaAPI.ProcessMpesaPayment(ctx, &mpesapayment.ProcessMpesaPaymentRequest{
+		// 	PaymentId: stkPayloadDB.MpesaReceiptNumber,
+		// 	State:     true,
+		// })
 	}
 
 	return &stk.StkPayload{
@@ -486,13 +493,16 @@ func (stkAPI *stkAPIServer) GetStkPayload(
 	case getReq.PayloadId == "":
 		return nil, errs.MissingField("payload id")
 	default:
+		payloadID, _ = strconv.Atoi(getReq.PayloadId)
 	}
 
 	stkPayloadDB := &PayloadStk{}
 
-	err = stkAPI.SQLDB.First(
-		stkPayloadDB, "payload_id=? OR mpesa_receipt_number=?", payloadID, payloadID,
-	).Error
+	if payloadID != 0 {
+		err = stkAPI.SQLDB.First(stkPayloadDB, "payload_id=?", payloadID).Error
+	} else {
+		err = stkAPI.SQLDB.First(stkPayloadDB, "mpesa_receipt_number=?", getReq.PayloadId).Error
+	}
 	switch {
 	case err == nil:
 	case errors.Is(err, gorm.ErrRecordNotFound):
@@ -526,7 +536,9 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 	// Read from redis list of phone numbers
 	var allowedPhones []string
 	if stkAPI.DisablePublishing {
-		allowedPhones, err = stkAPI.RedisDB.SMembers(ctx, userAllowedPhonesSet(payload.ID)).Result()
+		allowedPhones, err = stkAPI.RedisDB.SMembers(
+			ctx, stkAPI.addPrefix(userAllowedPhonesSet(payload.ID)),
+		).Result()
 		if err != nil && !errors.Is(err, redis.Nil) {
 			return nil, errs.RedisCmdFailed(err, "smembers")
 		}
@@ -543,7 +555,9 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 	if pageToken != "" {
 		ids, err := stkAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
 		if err != nil {
-			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
+			return nil, errs.WrapErrorWithCodeAndMsg(
+				codes.InvalidArgument, err, "failed to parse page token",
+			)
 		}
 		payloadID = uint(ids[0])
 	}
@@ -650,7 +664,7 @@ func getTime(dateStr string) (time.Time, error) {
 
 func (stkAPI *stkAPIServer) ProcessStkPayload(
 	ctx context.Context, processReq *stk.ProcessStkPayloadRequest,
-) (*empty.Empty, error) {
+) (*emptypb.Empty, error) {
 	// Authorization
 	_, err := stkAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
 	if err != nil {
@@ -658,38 +672,35 @@ func (stkAPI *stkAPIServer) ProcessStkPayload(
 	}
 
 	// Validation
+	var payloadID int
 	switch {
 	case processReq == nil:
 		return nil, errs.NilObject("process request")
 	case processReq.PayloadId == "":
 		return nil, errs.MissingField("payload id")
+	default:
+		payloadID, _ = strconv.Atoi(processReq.PayloadId)
 	}
 
-	// Get mpesa payload
-	mpesaPayload, err := stkAPI.GetStkPayload(ctx, &stk.GetStkPayloadRequest{
-		PayloadId: processReq.PayloadId,
-	})
-	if err != nil {
-		return nil, err
+	if payloadID != 0 {
+		err = stkAPI.SQLDB.Model(&PayloadStk{}).Unscoped().Where("payload_id=?", payloadID).
+			Update("processed", processReq.Processed).Error
+	} else {
+		err = stkAPI.SQLDB.Model(&PayloadStk{}).Unscoped().Where("mpesa_receipt_number=?", processReq.PayloadId).
+			Update("processed", processReq.Processed).Error
+	}
+	switch {
+	case err == nil:
+	default:
+		return nil, errs.FailedToUpdate("stk payload", err)
 	}
 
-	// Check if not already processed process
-	if mpesaPayload.Processed == false {
-		err = stkAPI.SQLDB.Model(&PayloadStk{}).Where("payload_id=?", processReq.PayloadId).
-			Update("processed", true).Error
-		switch {
-		case err == nil:
-		default:
-			return nil, errs.FailedToUpdate("mpesa payload", err)
-		}
-	}
-
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (stkAPI *stkAPIServer) PublishStkPayload(
 	ctx context.Context, pubReq *stk.PublishStkPayloadRequest,
-) (*empty.Empty, error) {
+) (*emptypb.Empty, error) {
 	if stkAPI.DisablePublishing {
 		return nil, errs.WrapMessage(codes.PermissionDenied, "publishing stk payload disabled")
 	}
@@ -727,9 +738,13 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 	// Get payload from cache
 	if pubReq.FromCache {
 		// Get key
-		txKey := GetMpesaSTKPayloadKey(mpesaPayload.PhoneNumber)
+		txKey := stkAPI.addPrefix(GetMpesaSTKPayloadKey(mpesaPayload.PhoneNumber))
 		val, err := stkAPI.RedisDB.Get(ctx, txKey).Result()
-		if err != nil {
+		switch {
+		case err == nil:
+		case errors.Is(err, redis.Nil):
+			return nil, errs.WrapMessage(codes.NotFound, "publish payload not found in cache")
+		default:
 			return nil, errs.RedisCmdFailed(err, "get")
 		}
 
@@ -750,18 +765,19 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 		return nil, errs.FromProtoMarshal(err, "publish message")
 	}
 
+	channel := stkAPI.addPrefix(stkAPI.PublishChannel)
+
 	// Publish based on state
 	switch pubReq.ProcessedState {
 	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-		err = stkAPI.RedisDB.Publish(ctx, stkAPI.PublishChannelSTK, bs).Err()
+		err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
 	case mpesapayment.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
 		if mpesaPayload.Processed {
-			stkAPI.Logger.Infoln("publisging inside process state processed")
-			err = stkAPI.RedisDB.Publish(ctx, stkAPI.PublishChannelSTK, bs).Err()
+			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
@@ -769,19 +785,19 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 	case mpesapayment.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
 		if !mpesaPayload.Processed {
-			err = stkAPI.RedisDB.Publish(ctx, stkAPI.PublishChannelSTK, bs).Err()
+			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
 	}
 
-	return &empty.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 func (stkAPI *stkAPIServer) PublishAllStkPayload(
 	ctx context.Context, pubReq *stk.PublishAllStkPayloadRequest,
-) (*empty.Empty, error) {
+) (*emptypb.Empty, error) {
 	if stkAPI.DisablePublishing {
 		return nil, errs.WrapMessage(codes.PermissionDenied, "publishing stk payload disabled")
 	}
@@ -796,61 +812,73 @@ func (stkAPI *stkAPIServer) PublishAllStkPayload(
 	switch {
 	case pubReq == nil:
 		return nil, errs.NilObject("publish all request")
-	}
-
-	var startDate time.Time
-	if pubReq.SinceTimeSeconds != 0 {
-		startDate = time.Unix(pubReq.SinceTimeSeconds, 0)
-	} else {
-		startDate = stkAPI.lastProcessedTxTime
-	}
-
-	for currDate := startDate; currDate.Unix() >= time.Now().Unix(); currDate = currDate.Add(24 * time.Hour) {
-		var (
-			nextPageToken  string
-			pageSize       int32 = 1000
-			shouldContinue bool
-		)
-
-		for shouldContinue {
-			// List transactions
-			listRes, err := stkAPI.ListStkPayloads(ctx, &stk.ListStkPayloadsRequest{
-				PageToken: nextPageToken,
-				PageSize:  pageSize,
-				Filter: &stk.ListStkPayloadFilter{
-					TxDate:       currDate.String()[:10],
-					ProcessState: pubReq.ProcessedState,
-				},
-			})
-			if err != nil {
-				return nil, err
+	case pubReq.StartTimestamp > time.Now().Unix() || pubReq.EndTimestamp > time.Now().Unix():
+		return nil, errs.WrapMessage(codes.InvalidArgument, "cannot work with future times")
+	default:
+		if pubReq.EndTimestamp != 0 || pubReq.StartTimestamp != 0 {
+			if pubReq.EndTimestamp < pubReq.StartTimestamp {
+				return nil, errs.WrapMessage(
+					codes.InvalidArgument, "start timestamp cannot be greater than end timestamp",
+				)
 			}
-			if listRes.NextPageToken == "" {
-				shouldContinue = false
-			}
-			nextPageToken = listRes.NextPageToken
-
-			wg := &sync.WaitGroup{}
-
-			// Publish the mpesa transactions to listeners
-			for _, mpesaPB := range listRes.StkPayloads {
-				wg.Add(1)
-
-				go func(mpesaPB *stk.StkPayload) {
-					defer wg.Done()
-
-					// Publish to consumers
-					stkAPI.PublishStkPayload(stkAPI.ctxAdmin, &stk.PublishStkPayloadRequest{
-						PayloadId: mpesaPB.PayloadId,
-						FromCache: true,
-					})
-
-				}(mpesaPB)
-			}
-
-			wg.Wait()
 		}
 	}
 
-	return &empty.Empty{}, nil
+	if pubReq.StartTimestamp == 0 {
+		if pubReq.EndTimestamp == 0 {
+			pubReq.EndTimestamp = time.Now().Unix()
+		}
+		pubReq.StartTimestamp = pubReq.EndTimestamp - int64(7*24*60*60)
+		if pubReq.StartTimestamp < 0 {
+			pubReq.StartTimestamp = 0
+		}
+	}
+
+	var (
+		pageToken string
+		pageSize  int32 = 1000
+		next            = true
+	)
+
+	for next {
+		// List transactions
+		listRes, err := stkAPI.ListStkPayloads(ctx, &stk.ListStkPayloadsRequest{
+			PageToken: pageToken,
+			PageSize:  pageSize,
+			Filter: &stk.ListStkPayloadFilter{
+				ProcessState:   pubReq.ProcessedState,
+				StartTimestamp: pubReq.StartTimestamp,
+				EndTimestamp:   pubReq.StartTimestamp,
+			},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if listRes.NextPageToken == "" {
+			next = false
+		}
+		pageToken = listRes.NextPageToken
+
+		wg := &sync.WaitGroup{}
+
+		// Publish the mpesa transactions to listeners
+		for _, mpesaPB := range listRes.StkPayloads {
+			wg.Add(1)
+
+			go func(mpesaPB *stk.StkPayload) {
+				defer wg.Done()
+
+				// Publish to consumers
+				stkAPI.PublishStkPayload(stkAPI.ctxAdmin, &stk.PublishStkPayloadRequest{
+					PayloadId: mpesaPB.PayloadId,
+					FromCache: pubReq.FromCache,
+				})
+
+			}(mpesaPB)
+		}
+
+		wg.Wait()
+	}
+
+	return &emptypb.Empty{}, nil
 }
