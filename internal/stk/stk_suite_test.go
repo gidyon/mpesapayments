@@ -37,7 +37,7 @@ var (
 
 const (
 	dbAddress = "localhost:3306"
-	schema    = "tracking-portal"
+	schema    = "mpesapayments"
 )
 
 func startDB() (*gorm.DB, error) {
@@ -108,6 +108,7 @@ var _ = BeforeSuite(func() {
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Second * 5,
 		WorkerDuration:            time.Second * 10,
+		RedisKeyPrefix:            "test",
 	}
 
 	mpesaAPI := mpesapayment.UnimplementedLipaNaMPESAServer{}
@@ -212,8 +213,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = AfterSuite(func() {
-	// <-workerChan
-	// time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 })
 
 // Declarations for Ginkgo DSL
