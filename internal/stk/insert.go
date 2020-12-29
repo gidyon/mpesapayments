@@ -27,9 +27,9 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 
 	stkPayloads := make([]*PayloadStk, 0, bulkInsertSize)
 
-	callback := func() {
+	callback := func(publish bool) {
 
-		if !stkAPI.DisablePublishing {
+		if !stkAPI.DisablePublishing && publish {
 
 			// Publish to consumers
 			stkAPI.Logger.Infof("publishing %d stk result to consumers", len(stkPayloads))
@@ -123,10 +123,10 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 				switch {
 				case err == nil:
 					stkAPI.Logger.Infof("bulk inserted %d stk payloads (from ticker)", len(stkPayloads))
-					callback()
+					callback(true)
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 					stkAPI.Logger.Infoln("insert of duplicate stk payloads skipped (from ticker)")
-					callback()
+					callback(false)
 				default:
 					stkAPI.Logger.Errorf("failed to save stk paylods (from ticker): %v", err)
 				}
@@ -139,10 +139,10 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 				switch {
 				case err == nil:
 					stkAPI.Logger.Infof("bulk inserted %d stk payloads (from channel)", len(stkPayloads))
-					callback()
+					callback(true)
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 					stkAPI.Logger.Infoln("insert of duplicate stk payloads skipped (from channel)")
-					callback()
+					callback(false)
 				default:
 					stkAPI.Logger.Errorf("failed to save stk paylods (from channel): %v", err)
 				}
