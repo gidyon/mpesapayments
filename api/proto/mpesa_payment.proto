@@ -182,6 +182,7 @@ message ProcessMpesaPaymentRequest {
 
 	string payment_id = 1;
 	bool state = 2;
+	bool retry = 3;
 }
 
 message PublishMpesaPaymentRequest {
@@ -204,9 +205,10 @@ message PublishAllMpesaPaymentRequest {
 			description: "Update Mpesa tx processed state to either true or false"
 		}
 	};
-
-	int64 since_time_seconds = 1;
-	ProcessedState processed_state = 2;
+	
+	ProcessedState processed_state = 1;
+	int64 start_timestamp = 2;
+	int64 end_timestamp = 3;
 }
 
 message GetTransactionsCountRequest {
@@ -278,21 +280,24 @@ service LipaNaMPESA {
 	// Updates Mpesa transaction processed state to either true or false.
 	rpc ProcessMpesaPayment (ProcessMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/payments/actions/process"
+			post: "/api/mpestx/payments/actions/process"
+			body: "*"
 		};
 	};
 
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
 	rpc PublishMpesaPayment (PublishMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/payments/actions/publish"
+			post: "/api/mpestx/payments/actions/publish"
+			body: "*"
 		};
 	};
 
 	// Publish all failed Mpesa transaction for listeners to process.
 	rpc PublishAllMpesaPayment (PublishAllMpesaPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/payments/actions/publishall"
+			post: "/api/mpestx/payments/actions/publishall"
+			body: "*"
 		};
 	};
 
