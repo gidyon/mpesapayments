@@ -49,7 +49,12 @@ loop:
 		case <-ctx.Done():
 			return ctx.Err()
 		default:
-			res, err := mpesaAPI.RedisDB.BRPopLPush(ctx, FailedTxList, failedTxListv2, 5*time.Minute).Result()
+			res, err := mpesaAPI.RedisDB.BRPopLPush(
+				ctx,
+				mpesaAPI.addPrefix(FailedTxList),
+				mpesaAPI.addPrefix(failedTxListv2),
+				5*time.Minute,
+			).Result()
 			switch {
 			case err == nil:
 			case errors.Is(err, redis.Nil):
