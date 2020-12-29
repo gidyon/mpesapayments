@@ -2,6 +2,7 @@ package stk
 
 import (
 	"context"
+	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
@@ -17,7 +18,8 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 
 	BeforeEach(func() {
 		pubReq = &stk.PublishAllStkPayloadRequest{
-			SinceTimeSeconds: 100,
+			StartTimestamp: time.Now().Unix() - int64(time.Minute)/1000,
+			EndTimestamp:   time.Now().Unix(),
 		}
 		ctx = context.Background()
 	})
@@ -36,8 +38,7 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 		Context("Lets publish the stk payloads", func() {
 			It("should succeed", func() {
 				pubRes, err := StkAPI.PublishAllStkPayload(ctx, &stk.PublishAllStkPayloadRequest{
-					ProcessedState:   mpesapayment.ProcessedState_NOT_PROCESSED,
-					SinceTimeSeconds: 100,
+					ProcessedState: mpesapayment.ProcessedState_NOT_PROCESSED,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
