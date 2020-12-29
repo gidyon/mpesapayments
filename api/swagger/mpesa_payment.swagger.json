@@ -210,7 +210,7 @@
       }
     },
     "/api/mpestx/payments/actions/process": {
-      "get": {
+      "post": {
         "summary": "Updates Mpesa transaction processed state to either true or false.",
         "operationId": "LipaNaMPESA_ProcessMpesaPayment",
         "responses": {
@@ -229,16 +229,12 @@
         },
         "parameters": [
           {
-            "name": "paymentId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "state",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaProcessMpesaPaymentRequest"
+            }
           }
         ],
         "tags": [
@@ -247,7 +243,7 @@
       }
     },
     "/api/mpestx/payments/actions/publish": {
-      "get": {
+      "post": {
         "summary": "Publishes Mpesa statement for listeners to process. Safe to be called many times.",
         "operationId": "LipaNaMPESA_PublishMpesaPayment",
         "responses": {
@@ -266,28 +262,12 @@
         },
         "parameters": [
           {
-            "name": "paymentId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "initiatorId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "processedState",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED",
-              "NOT_PROCESSED"
-            ],
-            "default": "PROCESS_STATE_UNSPECIFIED"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishMpesaPaymentRequest"
+            }
           }
         ],
         "tags": [
@@ -296,7 +276,7 @@
       }
     },
     "/api/mpestx/payments/actions/publishall": {
-      "get": {
+      "post": {
         "summary": "Publish all failed Mpesa transaction for listeners to process.",
         "operationId": "LipaNaMPESA_PublishAllMpesaPayment",
         "responses": {
@@ -315,23 +295,12 @@
         },
         "parameters": [
           {
-            "name": "sinceTimeSeconds",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "int64"
-          },
-          {
-            "name": "processedState",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED",
-              "NOT_PROCESSED"
-            ],
-            "default": "PROCESS_STATE_UNSPECIFIED"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishAllMpesaPaymentRequest"
+            }
           }
         ],
         "tags": [
@@ -668,6 +637,22 @@
       "description": "Lipa na MPESA Payment information",
       "title": "MPESAPayment"
     },
+    "mpesaProcessMpesaPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "state": {
+          "type": "boolean"
+        },
+        "retry": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to update Mpesa transaction processed state",
+      "title": "ProcessMpesaPaymentRequest"
+    },
     "mpesaProcessedState": {
       "type": "string",
       "enum": [
@@ -676,6 +661,40 @@
         "NOT_PROCESSED"
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
+    },
+    "mpesaPublishAllMpesaPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Update Mpesa tx processed state to either true or false",
+      "title": "PublishAllMpesaPaymentRequest"
+    },
+    "mpesaPublishMpesaPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        }
+      },
+      "description": "Request to publish an mpesa transaction for listerners to process",
+      "title": "PublishMpesaPaymentRequest"
     },
     "mpesaTransactionsSummary": {
       "type": "object",

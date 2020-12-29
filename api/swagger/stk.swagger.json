@@ -122,38 +122,7 @@
         ]
       }
     },
-    "/api/mpestx/stkpush/{payloadId}": {
-      "get": {
-        "summary": "Retrieves a single stk payload",
-        "operationId": "StkPushAPI_GetStkPayload",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/mpesaStkPayload"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "payloadId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "StkPushAPI"
-        ]
-      }
-    },
-    "/api/mpestx/stkpush:initiate": {
+    "/api/mpestx/stkpush/action/initiate": {
       "post": {
         "summary": "Initiates mpesa payment.",
         "operationId": "StkPushAPI_InitiateSTKPush",
@@ -186,8 +155,8 @@
         ]
       }
     },
-    "/api/mpestx/stkpush:process": {
-      "get": {
+    "/api/mpestx/stkpush/action/process": {
+      "post": {
         "summary": "Processes stk push payload updating its status",
         "operationId": "StkPushAPI_ProcessStkPayload",
         "responses": {
@@ -206,16 +175,12 @@
         },
         "parameters": [
           {
-            "name": "payloadId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "processed",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaProcessStkPayloadRequest"
+            }
           }
         ],
         "tags": [
@@ -223,8 +188,8 @@
         ]
       }
     },
-    "/api/mpestx/stkpush:publish": {
-      "get": {
+    "/api/mpestx/stkpush/action/publish": {
+      "post": {
         "summary": "Publishes stk push payload for consumers",
         "operationId": "StkPushAPI_PublishStkPayload",
         "responses": {
@@ -243,28 +208,12 @@
         },
         "parameters": [
           {
-            "name": "payloadId",
-            "in": "query",
-            "required": false,
-            "type": "string"
-          },
-          {
-            "name": "processedState",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED",
-              "NOT_PROCESSED"
-            ],
-            "default": "PROCESS_STATE_UNSPECIFIED"
-          },
-          {
-            "name": "fromCache",
-            "in": "query",
-            "required": false,
-            "type": "boolean"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishStkPayloadRequest"
+            }
           }
         ],
         "tags": [
@@ -272,8 +221,8 @@
         ]
       }
     },
-    "/api/mpestx/stkpush:publishall": {
-      "get": {
+    "/api/mpestx/stkpush/action/publishall": {
+      "post": {
         "summary": "Publihses all stk push payloads to consumers",
         "operationId": "StkPushAPI_PublishAllStkPayload",
         "responses": {
@@ -292,23 +241,43 @@
         },
         "parameters": [
           {
-            "name": "sinceTimeSeconds",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "format": "int64"
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishAllStkPayloadRequest"
+            }
+          }
+        ],
+        "tags": [
+          "StkPushAPI"
+        ]
+      }
+    },
+    "/api/mpestx/stkpush/{payloadId}": {
+      "get": {
+        "summary": "Retrieves a single stk payload",
+        "operationId": "StkPushAPI_GetStkPayload",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStkPayload"
+            }
           },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
           {
-            "name": "processedState",
-            "in": "query",
-            "required": false,
-            "type": "string",
-            "enum": [
-              "PROCESS_STATE_UNSPECIFIED",
-              "PROCESSED",
-              "NOT_PROCESSED"
-            ],
-            "default": "PROCESS_STATE_UNSPECIFIED"
+            "name": "payloadId",
+            "in": "path",
+            "required": true,
+            "type": "string"
           }
         ],
         "tags": [
@@ -415,6 +384,19 @@
       "description": "Reponse containing a collection of stk push payloads",
       "title": "ListStkPayloadsResponse"
     },
+    "mpesaProcessStkPayloadRequest": {
+      "type": "object",
+      "properties": {
+        "payloadId": {
+          "type": "string"
+        },
+        "processed": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to update stk push processed state",
+      "title": "ProcessStkPayloadRequest"
+    },
     "mpesaProcessedState": {
       "type": "string",
       "enum": [
@@ -423,6 +405,49 @@
         "NOT_PROCESSED"
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
+    },
+    "mpesaPublishAllStkPayloadRequest": {
+      "type": "object",
+      "properties": {
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "fromCache": {
+          "type": "boolean"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Request to publish all stk push payloads",
+      "title": "PublishAllStkPayloadRequest"
+    },
+    "mpesaPublishStkPayloadRequest": {
+      "type": "object",
+      "properties": {
+        "payloadId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "fromCache": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to publish a stk push payload",
+      "title": "PublishStkPayloadRequest"
     },
     "mpesaStkPayload": {
       "type": "object",
