@@ -8,10 +8,10 @@ import (
 	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/stretchr/testify/mock"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // STKAPIMock is mock for stk.StkPushAPIClient
@@ -20,9 +20,9 @@ type STKAPIMock interface {
 	GetStkPayload(context.Context, *stk.GetStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)
 	CreateStkPayload(context.Context, *stk.CreateStkPayloadRequest, ...grpc.CallOption) func(*stk.StkPayload, error) (*stk.StkPayload, error)
 	ListStkPayloads(context.Context, *stk.ListStkPayloadsRequest, ...grpc.CallOption) func(*stk.ListStkPayloadsResponse, error) (*stk.ListStkPayloadsResponse, error)
-	ProcessStkPayload(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
-	PublishStkPayload(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
-	PublishAllStkPayload(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) func(*empty.Empty, error) (*empty.Empty, error)
+	ProcessStkPayload(context.Context, *stk.ProcessStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)
+	PublishStkPayload(context.Context, *stk.PublishStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)
+	PublishAllStkPayload(context.Context, *stk.PublishAllStkPayloadRequest, ...grpc.CallOption) func(*emptypb.Empty, error) (*emptypb.Empty, error)
 }
 
 // StkAPI is mock object to be used for stk.StkPushAPIClient for successful scenarios
@@ -35,9 +35,9 @@ var UnhealthyStkAPI = &mocks.STKAPIMock{}
 // GetStkPayload(ctx context.Context, in *GetStkPayloadRequest, opts ...grpc.CallOption) (*StkPayload, error)
 // CreateStkPayload(ctx context.Context, in *CreateStkPayloadRequest, opts ...grpc.CallOption) (*StkPayload, error)
 // ListStkPayloads(ctx context.Context, in *ListStkPayloadsRequest, opts ...grpc.CallOption) (*ListStkPayloadsResponse, error)
-// ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-// PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
-// PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*empty.Empty, error)
+// ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+// PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+// PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 
 func init() {
 	// Healthy mock
@@ -74,27 +74,27 @@ func init() {
 	)
 
 	StkAPI.On("ProcessStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+		func(emp *emptypb.Empty, err error) (*emptypb.Empty, error) {
 			if err == nil {
-				return &empty.Empty{}, nil
+				return &emptypb.Empty{}, nil
 			}
 			return emp, err
 		},
 	)
 
 	StkAPI.On("PublishStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+		func(emp *emptypb.Empty, err error) (*emptypb.Empty, error) {
 			if err == nil {
-				return &empty.Empty{}, nil
+				return &emptypb.Empty{}, nil
 			}
 			return emp, err
 		},
 	)
 
 	StkAPI.On("PublishAllStkPayload", mock.Anything, mock.Anything, mock.Anything).Return(
-		func(emp *empty.Empty, err error) (*empty.Empty, error) {
+		func(emp *emptypb.Empty, err error) (*emptypb.Empty, error) {
 			if err == nil {
-				return &empty.Empty{}, nil
+				return &emptypb.Empty{}, nil
 			}
 			return emp, err
 		},
