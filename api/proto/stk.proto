@@ -158,8 +158,10 @@ message PublishAllStkPayloadRequest {
 		}
 	};
 
-	int64 since_time_seconds = 1;
-	ProcessedState processed_state = 2;
+	ProcessedState processed_state = 1;
+	bool from_cache = 2;
+	int64 start_timestamp = 3;
+	int64 end_timestamp = 4;
 }
 
 message PublishMessage {
@@ -178,7 +180,7 @@ service StkPushAPI {
     // Initiates mpesa payment.
     rpc InitiateSTKPush (InitiateSTKPushRequest) returns (InitiateSTKPushResponse) {
         option (google.api.http) = {
-            post: "/api/mpestx/stkpush:initiate"
+            post: "/api/mpestx/stkpush/action/initiate"
             body: "*"
         };
     };
@@ -208,21 +210,24 @@ service StkPushAPI {
 	// Processes stk push payload updating its status
 	rpc ProcessStkPayload (ProcessStkPayloadRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/stkpush:process"
+			post: "/api/mpestx/stkpush/action/process"
+			body: "*"
 		};
 	};
 
 	// Publishes stk push payload for consumers
 	rpc PublishStkPayload (PublishStkPayloadRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/stkpush:publish"
+			post: "/api/mpestx/stkpush/action/publish"
+			body: "*"
 		};
 	};
 
 	// Publihses all stk push payloads to consumers
 	rpc PublishAllStkPayload (PublishAllStkPayloadRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/stkpush:publishall"
+			post: "/api/mpestx/stkpush/action/publishall"
+			body: "*"
 		};
 	};
 }
