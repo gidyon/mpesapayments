@@ -121,7 +121,7 @@ spec:
       - Authorization
       - Content-Type
       - Access-Control-Allow-Origin
-      - Access-Control-Expose-Headers
+      - Access-Control-Expose-Headers 
       allowCredentials: true
       maxAge: "24h"
   - match:
