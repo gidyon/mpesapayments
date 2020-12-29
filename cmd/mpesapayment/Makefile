@@ -34,6 +34,7 @@ run:
 	MPESA_QUERY_URL=https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query \
 	PUBLISH_CHANNEL_STK=mpesa:stk:pub \
 	PUBLISH_CHANNEL_PAYBILL=mpesa:pyabill:pubsub \
+	REDIS_KEY_PREFIX="test" \
 	./service -config-file=./config.yaml
 
 gotest:
