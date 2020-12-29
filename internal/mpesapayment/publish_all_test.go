@@ -2,6 +2,7 @@ package mpesapayment
 
 import (
 	"context"
+	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"google.golang.org/grpc/codes"
@@ -16,7 +17,8 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 
 	BeforeEach(func() {
 		pubReq = &mpesapayment.PublishAllMpesaPaymentRequest{
-			SinceTimeSeconds: 100,
+			StartTimestamp: time.Now().Unix() - int64(time.Minute)/1000,
+			EndTimestamp:   time.Now().Unix(),
 		}
 		ctx = context.Background()
 	})
@@ -34,9 +36,7 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 	Describe("Publishing mpesa payment with well-formed request", func() {
 		Context("Lets publish the mpesa payment", func() {
 			It("should succeed", func() {
-				pubRes, err := MpesaPaymentAPI.PublishAllMpesaPayment(ctx, &mpesapayment.PublishAllMpesaPaymentRequest{
-					SinceTimeSeconds: 100,
-				})
+				pubRes, err := MpesaPaymentAPI.PublishAllMpesaPayment(ctx, &mpesapayment.PublishAllMpesaPaymentRequest{})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
 				Expect(pubRes).ShouldNot(BeNil())
