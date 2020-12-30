@@ -39,7 +39,7 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 				// By value because the slice will be reset
 				go func(stkPayload PayloadStk) {
 					// Get payload key
-					key := GetMpesaSTKPushKey(stkPayload.PhoneNumber)
+					key := GetMpesaSTKPushKey(stkPayload.PhoneNumber, stkAPI.RedisKeyPrefix)
 
 					// Delete key to allow other STK transactions to proceed
 					defer func() {

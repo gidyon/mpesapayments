@@ -272,12 +272,12 @@ func ValidateStkPayload(payload *stk.StkPayload) error {
 }
 
 // GetMpesaSTKPushKey retrives key storing initiator key
-func GetMpesaSTKPushKey(msisdn string) string {
+func GetMpesaSTKPushKey(msisdn, keyPrefix string) string {
 	return fmt.Sprintf("mpesa:stkpush:%s", msisdn)
 }
 
 // GetMpesaSTKPayloadKey retrives key storing payload of stk initiator
-func GetMpesaSTKPayloadKey(initiatorID string) string {
+func GetMpesaSTKPayloadKey(initiatorID, keyPrefix string) string {
 	return fmt.Sprintf("mpesa:stkpayload:%s", initiatorID)
 }
 
@@ -306,7 +306,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		return nil, errs.MissingField("stk payload")
 	}
 
-	txKey := stkAPI.addPrefix(GetMpesaSTKPushKey(initReq.Phone))
+	txKey := GetMpesaSTKPushKey(initReq.Phone, stkAPI.RedisKeyPrefix)
 
 	// Marshal initReq
 	bs, err := proto.Marshal(initReq)
@@ -331,7 +331,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	pipeliner := stkAPI.RedisDB.TxPipeline()
 
 	// Key to payload
-	txKey2 := stkAPI.addPrefix(GetMpesaSTKPayloadKey(initReq.GetInitiatorId()))
+	txKey2 := GetMpesaSTKPayloadKey(initReq.GetInitiatorId(), stkAPI.RedisKeyPrefix)
 
 	// Save initiator key in cache for 100 seconds
 	err = pipeliner.Set(ctx, txKey, txKey2, 100*time.Second).Err()
@@ -749,7 +749,7 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 	// Get payload from cache
 	if pubReq.FromCache {
 		// Get key
-		txKey := stkAPI.addPrefix(GetMpesaSTKPayloadKey(mpesaPayload.PhoneNumber))
+		txKey := GetMpesaSTKPayloadKey(mpesaPayload.PhoneNumber, stkAPI.RedisKeyPrefix)
 		val, err := stkAPI.RedisDB.Get(ctx, txKey).Result()
 		switch {
 		case err == nil:
