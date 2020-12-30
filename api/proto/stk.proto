@@ -30,7 +30,8 @@ message StkPayload {
     string transaction_date = 10;
     string phone_number = 11;
     bool succeeded = 12;
-    bool processed = 13;
+	bool processed = 13;
+	int64 create_timestamp = 14;
 }
 
 message InitiateSTKPushRequest {

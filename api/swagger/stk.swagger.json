@@ -490,6 +490,10 @@
         },
         "processed": {
           "type": "boolean"
+        },
+        "createTimestamp": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "description": "Stk Push payload callback",

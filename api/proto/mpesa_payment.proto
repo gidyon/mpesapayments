@@ -24,10 +24,11 @@ message MPESAPayment {
 	string names = 5;
 	string tx_ref_number = 6;
 	int64 tx_timestamp = 7;
-	float tx_amount = 8;
-	float org_balance = 9;
-	int32 business_short_code = 10;
-	bool processed = 11;
+	int64 create_timestamp = 8;
+	float tx_amount = 9;
+	float org_balance = 10;
+	int32 business_short_code = 11;
+	bool processed = 12;
 }
 
 message CreateMPESAPaymentRequest {

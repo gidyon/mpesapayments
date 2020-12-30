@@ -618,6 +618,10 @@
           "type": "string",
           "format": "int64"
         },
+        "createTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
         "txAmount": {
           "type": "number",
           "format": "float"
