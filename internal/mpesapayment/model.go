@@ -23,6 +23,7 @@ type PaymentMpesa struct {
 	OrgAccountBalance float32 `gorm:"type:float(10)"`
 	BusinessShortCode int32   `gorm:"index;type:varchar(10);not null"`
 	Processed         bool    `gorm:"type:tinyint(1);not null;default:0"`
+	CreatedAt         int64   `gorm:"autoCreateTime"`
 }
 
 // TableName returns the name of the table
@@ -70,6 +71,7 @@ func GetMpesaPB(MpesaDB *PaymentMpesa) (*mpesapayment.MPESAPayment, error) {
 		OrgBalance:        MpesaDB.OrgAccountBalance,
 		BusinessShortCode: MpesaDB.BusinessShortCode,
 		Processed:         MpesaDB.Processed,
+		CreateTimestamp:   MpesaDB.CreatedAt,
 	}
 
 	return mpesaPB, nil
