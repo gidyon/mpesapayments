@@ -2,7 +2,6 @@ package stk
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
@@ -25,7 +24,7 @@ type PayloadStk struct {
 	PhoneNumber        string `gorm:"type:varchar(50);not null"`
 	Succeeded          bool   `gorm:"type:tinyint(1)"`
 	Processed          bool   `gorm:"type:tinyint(1)"`
-	CreatedAt          time.Time
+	CreatedAt          int64  `gorm:"autoCreateTime"`
 }
 
 // TableName returns the name of the table
@@ -75,6 +74,7 @@ func GetStkPayloadPB(stkPayloadDB *PayloadStk) (*stk.StkPayload, error) {
 		PhoneNumber:        stkPayloadDB.PhoneNumber,
 		Succeeded:          stkPayloadDB.Succeeded,
 		Processed:          stkPayloadDB.Processed,
+		CreateTimestamp:    stkPayloadDB.CreatedAt,
 	}
 
 	return mpesaPB, nil
