@@ -273,12 +273,12 @@ func ValidateStkPayload(payload *stk.StkPayload) error {
 
 // GetMpesaSTKPushKey retrives key storing initiator key
 func GetMpesaSTKPushKey(msisdn, keyPrefix string) string {
-	return fmt.Sprintf("mpesa:stkpush:%s", msisdn)
+	return fmt.Sprintf("%s:mpesa:stkpush:%s", keyPrefix, msisdn)
 }
 
 // GetMpesaSTKPayloadKey retrives key storing payload of stk initiator
 func GetMpesaSTKPayloadKey(initiatorID, keyPrefix string) string {
-	return fmt.Sprintf("mpesa:stkpayload:%s", initiatorID)
+	return fmt.Sprintf("%s:mpesa:stkpayload:%s", keyPrefix, initiatorID)
 }
 
 func (stkAPI *stkAPIServer) addPrefix(key string) string {
@@ -330,15 +330,15 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 
 	pipeliner := stkAPI.RedisDB.TxPipeline()
 
-	// Key to payload
-	txKey2 := GetMpesaSTKPayloadKey(initReq.GetInitiatorId(), stkAPI.RedisKeyPrefix)
-
 	// Save initiator key in cache for 100 seconds
-	err = pipeliner.Set(ctx, txKey, txKey2, 100*time.Second).Err()
+	err = pipeliner.Set(ctx, txKey, initReq.InitiatorId, 100*time.Second).Err()
 	if err != nil {
 		stkAPI.RedisDB.Del(ctx, txKey)
 		return nil, errs.RedisCmdFailed(err, "set")
 	}
+
+	// Key to payload
+	txKey2 := GetMpesaSTKPayloadKey(initReq.GetInitiatorId(), stkAPI.RedisKeyPrefix)
 
 	// Save initiator payload in cache for ne week
 	err = pipeliner.Set(ctx, txKey2, bs, stkAPI.InitiatorExpireDuration).Err()
@@ -463,10 +463,10 @@ func (stkAPI *stkAPIServer) CreateStkPayload(
 
 	if !stkAPI.DisableMpesaService {
 		// Update mpesa payment
-		// stkAPI.mpesaAPI.ProcessMpesaPayment(ctx, &mpesapayment.ProcessMpesaPaymentRequest{
-		// 	PaymentId: stkPayloadDB.MpesaReceiptNumber,
-		// 	State:     true,
-		// })
+		stkAPI.mpesaAPI.ProcessMpesaPayment(ctx, &mpesapayment.ProcessMpesaPaymentRequest{
+			PaymentId: stkPayloadDB.MpesaReceiptNumber,
+			State:     true,
+		})
 	}
 
 	return &stk.StkPayload{

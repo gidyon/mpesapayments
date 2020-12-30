@@ -48,8 +48,8 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 
 					publish := false
 
-					// Get STK initiator key
-					initiatorKey, err := stkAPI.RedisDB.Get(ctx, key).Result()
+					// Get STK initiator id
+					initiatorID, err := stkAPI.RedisDB.Get(ctx, key).Result()
 					switch {
 					case err == nil:
 						publish = true
@@ -60,6 +60,9 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 						stkAPI.Logger.Errorf("failed to get initiator key from cache: %v", err)
 						return
 					}
+
+					// Initiator payload key
+					initiatorKey := GetMpesaSTKPayloadKey(initiatorID, stkAPI.RedisKeyPrefix)
 
 					// Get initiator payload
 					val, err := stkAPI.RedisDB.Get(ctx, initiatorKey).Result()
