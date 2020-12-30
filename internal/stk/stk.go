@@ -594,15 +594,13 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 		// Timestamp filter
 		if endTimestamp > startTimestamp {
 			db = db.Where("created_at BETWEEN ? AND ?", startTimestamp, endTimestamp)
-		} else {
+		} else if listReq.Filter.TxDate != "" {
 			// Date filter
-			if listReq.Filter.TxDate != "" {
-				t, err := getTime(listReq.Filter.TxDate)
-				if err != nil {
-					return nil, err
-				}
-				db = db.Where("created_at BETWEEN ? AND ?", t, t.Add(time.Hour*24).Unix())
+			t, err := getTime(listReq.Filter.TxDate)
+			if err != nil {
+				return nil, err
 			}
+			db = db.Where("created_at BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 		}
 
 		if len(listReq.Filter.Msisdns) > 0 {
