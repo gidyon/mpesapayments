@@ -107,13 +107,13 @@ func main() {
 		if !disableMpesaAPI {
 			opt := mpesa.Options{
 				PublishChannel:    os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
+				RedisKeyPrefix:    os.Getenv("REDIS_KEY_PREFIX"),
 				SQLDB:             app.GormDBByName("sqlWrites"),
 				RedisDB:           app.RedisClientByName("redisWrites"),
 				Logger:            app.Logger(),
 				AuthAPI:           authAPI,
 				PaginationHasher:  paginationHasher,
 				DisablePublishing: disablePub,
-				RedisKeyPrefix:    os.Getenv("REDIS_KEY_PREFIX"),
 			}
 			// MPESA API
 			mpesaAPI, err = mpesa.NewAPIServerMPESA(ctx, &opt)
@@ -170,6 +170,7 @@ func main() {
 			DisablePublishing:   disablePub,
 			DisableMpesaService: disableMpesaAPI,
 			DisableSTKService:   disableSTKAPI,
+			RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
 		}
 
 		if !disableMpesaAPI {

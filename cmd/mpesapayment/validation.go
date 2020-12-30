@@ -24,6 +24,7 @@ type Options struct {
 	DisableMpesaService bool
 	DisableSTKService   bool
 	DisablePublishing   bool
+	RedisKeyPrefix      string
 }
 
 func validateOptions(opt *Options) error {
@@ -43,6 +44,8 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("stk API")
 	case opt.MpesaAPI == nil && !opt.DisableMpesaService:
 		err = errs.NilObject("mpesa API")
+	case !opt.DisableSTKService && opt.RedisKeyPrefix == "":
+		err = errs.MissingField("redis key prefix")
 	}
 	return err
 }

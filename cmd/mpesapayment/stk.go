@@ -103,8 +103,6 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gw.Logger.Infof("phone: %s", stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber())
-
 	stkPayloadPB := &stk.StkPayload{
 		MerchantRequestId:  stkPayload.Body.STKCallback.MerchantRequestID,
 		CheckoutRequestId:  stkPayload.Body.STKCallback.CheckoutRequestID,
@@ -125,7 +123,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update initiator id
-	stkPayloadPB.InitiatorId, err = gw.RedisDB.Get(r.Context(), stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber)).Result()
+	stkPayloadPB.InitiatorId, err = gw.RedisDB.Get(r.Context(), stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber, gw.RedisKeyPrefix)).Result()
 	if err != nil {
 		gw.Logger.Warningf("failed to get initiator id for stk: %v", err)
 	}
