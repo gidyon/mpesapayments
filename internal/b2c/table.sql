@@ -1,0 +1,23 @@
+CREATE TABLE `b2c_requests` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `businessShortCode` varchar(10) DEFAULT NULL,
+  `msisdn` varchar(12) DEFAULT NULL,
+  `amount` double(8,2) DEFAULT NULL,
+  `paymentType` enum('Withdrawal','LoanDisbursement') DEFAULT NULL,
+  `conversationId` varchar(100) DEFAULT NULL,
+  `originatorConversationID` varchar(100) DEFAULT NULL,
+  `apiResponseCode` int(11) DEFAULT NULL,
+  `apiResponseDescription` varchar(200) DEFAULT NULL,
+  `dateCreated` timestamp NOT NULL DEFAULT current_timestamp(),
+  `status` enum('Submitted','MpesaResponseReceived','PushedToCbs','PushToCbsFail') DEFAULT NULL,
+  `resultResultCode` int(11) DEFAULT NULL,
+  `resultResultDescription` varchar(200) DEFAULT NULL,
+  `mpesaReceiptNumber` varchar(50) DEFAULT NULL,
+  `receiverPartyPublicName` varchar(200) DEFAULT NULL,
+  `transactionTime` timestamp NULL DEFAULT NULL,
+  `dateResponseReceived` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `msisdn` (`msisdn`),
+  KEY `conversationId` (`conversationId`),
+  KEY `transactionId` (`mpesaReceiptNumber`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=latin1
