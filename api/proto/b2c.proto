@@ -1,0 +1,277 @@
+syntax = "proto3";
+
+package gidyon.mpesa;
+
+option go_package="github.com/gidyon/mpesapayments/pkg/api/b2c";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/api/field_behaviour.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+import "mpesa_payment.proto";
+
+message QueryTransactionStatusRequest {
+    enum IdentifierType {
+        QUERY_TRANSACTION_UNSPECIFIED = 0;
+        MSISDN = 1;
+        TILL_NUMBER = 2;
+        ORGANIZATION_SHORT_CODE = 3;
+    }
+
+    IdentifierType identifier_type = 1;
+    int32 party_a = 3;
+    string remarks = 4;
+    string initiator = 5;
+    string security_credential = 6;
+    string queue_timeout_url = 7;
+    string result_url = 8;
+    string transaction_id = 9;
+    string occassion = 10;
+}
+
+message QueryAccountBalanceRequest {
+    enum IdentifierType {
+        QUERY_ACCOUNT_UNSPECIFIED = 0;
+        MSISDN = 1;
+        TILL_NUMBER = 2;
+        ORGANIZATION_SHORT_CODE = 3;
+    }
+
+    IdentifierType identifier_type = 1;
+    int64 party_a = 2;
+	string remarks = 3;
+	string request_id = 4;
+}
+
+message QueryAccountBalanceResponse {
+	int64 party = 1;
+	float working_account_funds = 2;
+	float utility_account_funds = 3;
+	float charges_paid_funds = 4;
+	string request_id = 5;
+}
+
+message TransferFundsRequest {
+	enum CommandId {
+        COMMANDID_UNSPECIFIED = 0;
+        SALARY_PAYMENT = 1;
+        BUSINESS_PAYMENT = 2;
+        PROMOTION_PAYMENT = 3;
+    }	
+
+    float amount = 1;
+    int32 msisdn = 2;
+	int32 short_code = 3;
+    string remarks = 4;
+	string occassion = 5;
+	CommandId Command_id = 6;
+	string request_id = 7;
+}
+
+message ReverseTransactionRequest {
+    int32 receiver_type = 1;
+    int32 short_code = 2;
+    string remarks = 3;
+    string transaction_id = 4;
+	string occassion = 5;
+	string request_id = 6;
+}
+
+message QueryResponse {
+    string originator_conversion_id = 1;
+    string conversion_id = 2;
+    string response_description = 3;
+    bool success = 4;
+}
+
+message B2CPayment {
+	string payment_id = 1;
+	string org_short_code = 2;
+	string msisdn = 3;
+	string receiver_party_public_name = 4;
+	string transaction_type = 5;
+	string transaction_id = 6;
+	string conversation_id = 7;
+	string originator_conversation_id = 8;
+	string result_code = 9;
+	string result_description = 10;
+	int64 transaction_timestamp = 11;
+	int64 create_timestamp = 12;
+	float amount = 13;
+	float working_account_funds = 14;
+	float utility_account_funds = 15;
+	float charges_paid_funds = 16;
+	bool recipient_registered = 17;
+	bool succeeded = 18;
+	bool processed = 19;
+}
+
+message CreateB2CPaymentRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "CreateB2CPaymentRequest"
+			description: "Request to create b2c payment"
+			required: ["payment"]
+		}
+    };
+    
+	B2CPayment payment = 1;
+	bool publish = 2;
+}
+
+message GetB2CPaymentRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetB2CPaymentRequest"
+			description: "Request to retrieve btc payment"
+			required: ["payment_id"]
+		}
+    };
+    
+    string payment_id = 1;
+}
+
+message ListB2CPaymentFilter {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListB2CPaymentFilter"
+			description: "Filter payment for querying stk payments"
+		}
+	};
+	
+	string tx_date = 1;
+	repeated string msisdns = 2;
+	gidyon.mpesa.ProcessedState process_state = 3;
+	int64 start_timestamp = 4;
+	int64 end_timestamp = 5;
+}
+
+message ListB2CPaymentsRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListB2CPaymentsRequest"
+			description: "Request to retrieve a collection of b2c payments"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+	ListB2CPaymentFilter filter = 3;
+}
+
+message ListB2CPaymentsResponse {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListB2CPaymentsResponse"
+			description: "Reponse containing a collection of b2c payments"
+		}
+	};
+
+	string next_page_token = 1;
+	repeated B2CPayment b2c_payments = 2;
+}
+
+message ProcessB2CPaymentRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ProcessB2CPaymentRequest"
+			description: "Request to update b2c payment processed state"
+		}
+	};
+
+	string payment_id = 1;
+	bool processed = 2;
+}
+
+message PublishB2CPaymentRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishB2CPaymentRequest"
+			description: "Request to publish a b2c payment"
+		}
+	};
+
+	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
+	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
+	gidyon.mpesa.ProcessedState processed_state = 3;
+	bool from_cache = 4;
+}
+
+message PublishAllB2CPaymentRequest {
+    option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishAllB2CPaymentRequest"
+			description: "Request to publish all b2c payments"
+		}
+	};
+
+	ProcessedState processed_state = 1;
+	bool from_cache = 2;
+	int64 start_timestamp = 3;
+	int64 end_timestamp = 4;
+}
+
+message PublishMessage {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "PublishMessage"
+			description: "Published stk message to consumers"
+		}
+	};
+
+	string payment_id = 1;
+	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+service B2CAPI {
+    rpc QueryTransactionStatus (QueryTransactionStatusRequest) returns (QueryResponse) {};
+    rpc QueryAccountBalance (QueryAccountBalanceRequest) returns (QueryAccountBalanceResponse) {};
+    rpc TransferFunds (TransferFundsRequest) returns (google.protobuf.Empty) {};
+    rpc ReverseTransaction (ReverseTransactionRequest) returns (google.protobuf.Empty);
+
+    // Creates a record of b2c payment
+    rpc CreateB2CPayment (CreateB2CPaymentRequest) returns (B2CPayment) {
+        option (google.api.http) = {
+			post: "/api/mpestx/b2c"
+			body: "*"
+		};
+    };
+
+    // Retrieves a single btc payment
+    rpc GetB2CPayment (GetB2CPaymentRequest) returns (B2CPayment) {
+        option (google.api.http) = {
+			get: "/api/mpestx/b2c/{payment_id}"
+		};
+    };
+
+    // Retrieves a collection of b2c payments
+    rpc ListB2CPayments (ListB2CPaymentsRequest) returns (ListB2CPaymentsResponse) {
+        option (google.api.http) = {
+			get: "/api/mpestx/b2c"
+		};
+    };
+
+	// Processes b2c payment updating its status
+	rpc ProcessB2CPayment (ProcessB2CPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c/action/process"
+			body: "*"
+		};
+	};
+
+	// // Publishes b2c payment to consumers
+	// rpc PublishB2CPayment (PublishB2CPaymentRequest) returns (google.protobuf.Empty) {
+	// 	option (google.api.http) = {
+	// 		post: "/api/mpestx/b2c/action/publish"
+	// 		body: "*"
+	// 	};
+	// };
+
+	// // Publihses all b2c payments to consumers
+	// rpc PublishAllB2CPayment (PublishAllB2CPaymentRequest) returns (google.protobuf.Empty) {
+	// 	option (google.api.http) = {
+	// 		post: "/api/mpestx/b2c/action/publishall"
+	// 		body: "*"
+	// 	};
+	// };
+}
