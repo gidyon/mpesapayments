@@ -2,8 +2,9 @@ package mpesapayment
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 )
 
@@ -28,6 +29,11 @@ type PaymentMpesa struct {
 
 // TableName returns the name of the table
 func (*PaymentMpesa) TableName() string {
+	// Get table prefix
+	prefix := os.Getenv("TABLE_PREFIX")
+	if prefix != "" {
+		return fmt.Sprintf("%s-%s", prefix, MpesaPayments)
+	}
 	return MpesaPayments
 }
 
