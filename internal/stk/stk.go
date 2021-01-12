@@ -222,7 +222,7 @@ func NewStkAPI(
 	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.addPrefix(stkAPI.PublishChannel))
 
 	// Auto migration
-	if !stkAPI.SQLDB.Migrator().HasTable(StkTable) {
+	if !stkAPI.SQLDB.Migrator().HasTable(&PayloadStk{}) {
 		err = stkAPI.SQLDB.Migrator().AutoMigrate(&PayloadStk{})
 		if err != nil {
 			return nil, err
