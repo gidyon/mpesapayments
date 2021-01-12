@@ -4,8 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/gidyon/micro/pkg/grpc/auth"
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
+	"github.com/gidyon/micro/v2/utils/errs"
+	"github.com/gidyon/mpesapayments/pkg/api/b2c"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
@@ -21,10 +22,12 @@ type Options struct {
 	AuthAPI             auth.API
 	MpesaAPI            mpesapayment.LipaNaMPESAServer
 	StkAPI              stk.StkPushAPIServer
+	B2CAPI              b2c.B2CAPIServer
 	DisableMpesaService bool
 	DisableSTKService   bool
-	DisablePublishing   bool
+	DisableB2CService   bool
 	RedisKeyPrefix      string
+	B2CLocalTopic       string
 }
 
 func validateOptions(opt *Options) error {
@@ -34,7 +37,7 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("options")
 	case opt.SQLDB == nil:
 		err = errs.NilObject("sqlDB")
-	case opt.RedisDB == nil && !opt.DisablePublishing:
+	case opt.RedisDB == nil:
 		err = errs.NilObject("redisDB")
 	case opt.Logger == nil:
 		err = errs.NilObject("logger")
@@ -46,6 +49,8 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("mpesa API")
 	case !opt.DisableSTKService && opt.RedisKeyPrefix == "":
 		err = errs.MissingField("redis key prefix")
+	case !opt.DisableB2CService && opt.B2CLocalTopic == "":
+		err = errs.MissingField("local topic channel for b2c")
 	}
 	return err
 }
