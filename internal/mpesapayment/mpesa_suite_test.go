@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
@@ -57,6 +58,8 @@ func (client) Do(*http.Request) (*http.Response, error) {
 }
 
 var _ = BeforeSuite(func() {
+	os.Setenv("TABLE_PREFIX", "test")
+
 	workerChan = make(chan struct{})
 	ctx = context.Background()
 
