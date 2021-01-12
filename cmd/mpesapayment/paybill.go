@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gidyon/micro/pkg/grpc/auth"
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
+	"github.com/gidyon/micro/v2/utils/errs"
 	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/payload"
@@ -37,7 +37,7 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 
 	// Generate token
 	token, err := gw.AuthAPI.GenToken(
-		ctx, &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(10*365*24*time.Hour))
+		ctx, &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(10*365*24*time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate auth token: %v", err)
 	}
@@ -47,7 +47,7 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 	ctxExt := metadata.NewIncomingContext(ctx, md)
 
 	// Authenticate the token
-	gw.ctxExt, err = gw.AuthAPI.AuthFunc(ctxExt)
+	gw.ctxExt, err = gw.AuthAPI.AuthorizeFunc(ctxExt)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 }
 
 func (gw *gateway) printToken() {
-	token, err := gw.AuthAPI.GenToken(context.Background(), &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(time.Hour*24))
+	token, err := gw.AuthAPI.GenToken(context.Background(), &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(time.Hour*24))
 	if err != nil {
 		gw.Logger.Errorf("failed to generate auth token: %v", err)
 		return
@@ -148,16 +148,16 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mpesaPaymentPB := &mpesapayment.MPESAPayment{
-		TxId:              mpesaPayload.TransID,
-		TxType:            "PAY_BILL",
-		TxTimestamp:       transactionTime.Unix(),
-		Msisdn:            mpesaPayload.MSISDN,
-		Names:             fmt.Sprintf("%s %s", mpesaPayload.FirstName, mpesaPayload.LastName),
-		TxRefNumber:       mpesaPayload.BillRefNumber,
-		TxAmount:          float32(transactionAmount),
-		OrgBalance:        float32(orgBalance),
-		BusinessShortCode: int32(businessShortCode),
-		Processed:         false,
+		TransactionId:        mpesaPayload.TransID,
+		TransactionType:      mpesaPayload.TransactionType,
+		TransactionTimestamp: transactionTime.Unix(),
+		Msisdn:               mpesaPayload.MSISDN,
+		Names:                fmt.Sprintf("%s %s", mpesaPayload.FirstName, mpesaPayload.LastName),
+		RefNumber:            mpesaPayload.BillRefNumber,
+		Amount:               float32(transactionAmount),
+		OrgBalance:           float32(orgBalance),
+		BusinessShortCode:    int32(businessShortCode),
+		Processed:            false,
 	}
 
 	// Save to database
@@ -169,9 +169,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		gw.Logger.Errorf("failed to save mpesa payment: %v", err)
 		bs, err := proto.Marshal(mpesaPaymentPB)
 		if err == nil {
-			if !gw.DisablePublishing {
-				gw.RedisDB.LPush(r.Context(), mpesa.FailedTxList, bs)
-			}
+			gw.RedisDB.LPush(r.Context(), mpesa.FailedTxList, bs)
 		}
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

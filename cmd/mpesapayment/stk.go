@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gidyon/micro/pkg/grpc/auth"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/payload"
@@ -35,7 +35,7 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 
 	// Generate token
 	token, err := gw.AuthAPI.GenToken(
-		ctx, &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(10*365*24*time.Hour))
+		ctx, &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(10*365*24*time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate auth token: %v", err)
 	}
@@ -45,7 +45,7 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 	ctxExt := metadata.NewIncomingContext(ctx, md)
 
 	// Authenticate the token
-	gw.ctxExt, err = gw.AuthAPI.AuthFunc(ctxExt)
+	gw.ctxExt, err = gw.AuthAPI.AuthorizeFunc(ctxExt)
 	if err != nil {
 		return nil, err
 	}
@@ -104,15 +104,15 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stkPayloadPB := &stk.StkPayload{
-		MerchantRequestId:  stkPayload.Body.STKCallback.MerchantRequestID,
-		CheckoutRequestId:  stkPayload.Body.STKCallback.CheckoutRequestID,
-		ResultCode:         fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
-		ResultDesc:         stkPayload.Body.STKCallback.ResultDesc,
-		Amount:             fmt.Sprintf("%.2f", stkPayload.Body.STKCallback.CallbackMetadata.GetAmount()),
-		MpesaReceiptNumber: stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
-		TransactionDate:    stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().UTC().String(),
-		PhoneNumber:        stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
-		Succeeded:          stkPayload.Body.STKCallback.ResultCode == 0,
+		MerchantRequestId:    stkPayload.Body.STKCallback.MerchantRequestID,
+		CheckoutRequestId:    stkPayload.Body.STKCallback.CheckoutRequestID,
+		ResultCode:           fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
+		ResultDesc:           stkPayload.Body.STKCallback.ResultDesc,
+		Amount:               fmt.Sprintf("%.2f", stkPayload.Body.STKCallback.CallbackMetadata.GetAmount()),
+		TransactionId:        stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
+		TransactionTimestamp: stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().Unix(),
+		PhoneNumber:          stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
+		Succeeded:            stkPayload.Body.STKCallback.ResultCode == 0,
 	}
 
 	// Save only if the transaction was successful
@@ -138,9 +138,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		bs, err := proto.Marshal(stkPayloadPB)
 		if err == nil {
-			if !gw.DisablePublishing {
-				gw.RedisDB.LPush(r.Context(), stkapp.FailedTxList, bs)
-			}
+			gw.RedisDB.LPush(r.Context(), stkapp.FailedTxList, bs)
 		}
 
 		return
