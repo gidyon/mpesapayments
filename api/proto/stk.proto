@@ -25,13 +25,13 @@ message StkPayload {
     string result_code = 5;
     string result_desc = 6;
     string amount = 7;
-    string mpesa_receipt_number = 8;
+    string transaction_id = 8;
     string balance = 9;
-    string transaction_date = 10;
     string phone_number = 11;
     bool succeeded = 12;
 	bool processed = 13;
-	int64 create_timestamp = 14;
+	int64 transaction_timestamp = 14;
+	int64 create_timestamp = 15;
 }
 
 message InitiateSTKPushRequest {
@@ -82,7 +82,8 @@ message CreateStkPayloadRequest {
 		}
     };
     
-    StkPayload payload = 1;
+	StkPayload payload = 1;
+	bool publish = 2;
 }
 
 message ListStkPayloadFilter {
@@ -232,3 +233,40 @@ service StkPushAPI {
 		};
 	};
 }
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+	info: {
+		title: "STK Mpesa Service";
+		description: "API for initiating STK push and CRUD API for stks payments"
+		version: "0.1";
+		contact: {
+			name: "Github <Gideon Kamau>";
+			url: "https://github.com/gidyon/mpesapayments/blob/master/api/proto/stk.proto";
+			email: "gideonhacer@gmail.com";
+		};
+		license: {
+			name: "GNU GENERAL PUBLIC LICENSE";
+			url: "https://github.com/gidyon/mpesapayments/src/master/LICENSE";
+		};
+	};
+	schemes: HTTP;
+	schemes: HTTPS;
+	consumes: "application/json";
+	produces: "application/json";
+	security_definitions: {
+		security: {
+		  key: "bearer"
+		  value: {
+			type: TYPE_API_KEY
+			in: IN_HEADER
+			name: "Authorization"
+			description: "Authentication token, prefixed by Bearer: Bearer <token>"
+		  }
+		}
+	  }
+	  security: {
+		security_requirement: {
+		  key: "bearer"
+		}
+	  }
+};
