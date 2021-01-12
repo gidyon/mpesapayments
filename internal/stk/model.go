@@ -24,7 +24,7 @@ type PayloadStk struct {
 	PhoneNumber          string `gorm:"type:varchar(50);not null"`
 	Succeeded            bool   `gorm:"type:tinyint(1)"`
 	Processed            bool   `gorm:"type:tinyint(1)"`
-	TransactionTimestamp int64  `gorm:"type:int(15);not null"`
+	TransactionTimestamp int64  `gorm:"type:int(20);not null"`
 	CreateTimestamp      int64  `gorm:"autoCreateTime"`
 }
 
