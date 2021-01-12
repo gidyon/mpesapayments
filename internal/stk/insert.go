@@ -135,6 +135,7 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 					callback(false)
 				default:
 					stkAPI.Logger.Errorf("failed to save stk paylods (from ticker): %v", err)
+					callback(false)
 				}
 			}
 
@@ -151,6 +152,7 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 					callback(false)
 				default:
 					stkAPI.Logger.Errorf("failed to save stk paylods (from channel): %v", err)
+					callback(false)
 				}
 			}
 		}
