@@ -20,45 +20,44 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 	ticker := time.NewTicker(mpesaAPI.insertTimeOut)
 	defer ticker.Stop()
 
-	paymentsDB := make([]*PaymentMpesa, 0, bulkInsertSize)
+	incomingPayments := make([]*incomingPayment, 0, bulkInsertSize)
+
+	createFn := func() []*PaymentMpesa {
+		txs := make([]*PaymentMpesa, 0, len(incomingPayments))
+		for _, incomingPayment := range incomingPayments {
+			txs = append(txs, incomingPayment.payment)
+		}
+		return txs
+	}
 
 	updateFn := func() {
-
-		if !mpesaAPI.DisablePublishing {
-
-			// Publish to consumers
-			mpesaAPI.Logger.Infof("publishing %d mpesa payments to consumers", len(paymentsDB))
-
-			for _, paymentDB := range paymentsDB {
-
+		for _, incomingPayment := range incomingPayments {
+			if incomingPayment.publish {
 				// By value because the slice will be reset
 				go func(paymentDB PaymentMpesa) {
-					if !mpesaAPI.DisablePublishing {
-						paymentID := valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TxID)
-
-						// Publish the transaction
-						_, err := mpesaAPI.PublishMpesaPayment(
-							mpesaAPI.ctxAdmin, &mpesapayment.PublishMpesaPaymentRequest{
-								PaymentId:   paymentID,
-								InitiatorId: paymentDB.MSISDN,
-							})
-						if err != nil {
-							mpesaAPI.Logger.Errorf("failed to publish lnm payment with id: %%v", err)
-							return
-						}
+					paymentID := valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TransactionID)
+					// Publish the transaction
+					_, err := mpesaAPI.PublishMpesaPayment(
+						mpesaAPI.ctxAdmin, &mpesapayment.PublishMpesaPaymentRequest{
+							PaymentId:   paymentID,
+							InitiatorId: paymentDB.MSISDN,
+						})
+					if err != nil {
+						mpesaAPI.Logger.Errorf("failed to publish lnm payment with id: %%v", err)
+						return
 					}
-				}(*paymentDB)
+				}(*incomingPayment.payment)
 			}
 		}
 
 		ticker.Reset(mpesaAPI.insertTimeOut)
-		paymentsDB = paymentsDB[0:0]
+		incomingPayments = incomingPayments[0:0]
 	}
 
 	chanSize := cap(mpesaAPI.insertChan)
 
 	if chanSize <= 2 {
-		mpesaAPI.insertChan = make(chan *PaymentMpesa, 100)
+		mpesaAPI.insertChan = make(chan *incomingPayment, 100)
 		chanSize = cap(mpesaAPI.insertChan)
 	}
 
@@ -67,11 +66,11 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if len(paymentsDB) > 0 {
-				err := mpesaAPI.SQLDB.CreateInBatches(paymentsDB, bulkInsertSize).Error
+			if len(incomingPayments) > 0 {
+				err := mpesaAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
 				switch {
 				case err == nil:
-					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from ticker)", len(paymentsDB))
+					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from ticker)", len(incomingPayments))
 					updateFn()
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 					mpesaAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from ticker)")
@@ -82,12 +81,12 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 			}
 
 		case paymentDB := <-mpesaAPI.insertChan:
-			paymentsDB = append(paymentsDB, paymentDB)
-			if len(paymentsDB) >= (chanSize - 2) {
-				err := mpesaAPI.SQLDB.CreateInBatches(paymentsDB, bulkInsertSize).Error
+			incomingPayments = append(incomingPayments, paymentDB)
+			if len(incomingPayments) >= (chanSize - 2) {
+				err := mpesaAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
 				switch {
 				case err == nil:
-					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from channel)", len(paymentsDB))
+					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from channel)", len(incomingPayments))
 					updateFn()
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
 					mpesaAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from channel)")
