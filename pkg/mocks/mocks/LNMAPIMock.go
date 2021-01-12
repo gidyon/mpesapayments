@@ -108,6 +108,36 @@ func (_m *LNMAPIMock) GetMPESAPayment(ctx context.Context, in *mpesapayment.GetM
 	return r0, r1
 }
 
+// GetRandomTransaction provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) GetRandomTransaction(ctx context.Context, in *mpesapayment.GetRandomTransactionRequest, opts ...grpc.CallOption) (*mpesapayment.MPESAPayment, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *mpesapayment.MPESAPayment
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetRandomTransactionRequest, ...grpc.CallOption) *mpesapayment.MPESAPayment); ok {
+		r0 = rf(ctx, in, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*mpesapayment.MPESAPayment)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetRandomTransactionRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetScopes provides a mock function with given fields: ctx, in, opts
 func (_m *LNMAPIMock) GetScopes(ctx context.Context, in *mpesapayment.GetScopesRequest, opts ...grpc.CallOption) (*mpesapayment.GetScopesResponse, error) {
 	_va := make([]interface{}, len(opts))
@@ -130,6 +160,36 @@ func (_m *LNMAPIMock) GetScopes(ctx context.Context, in *mpesapayment.GetScopesR
 
 	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetScopesRequest, ...grpc.CallOption) error); ok {
+		r1 = rf(ctx, in, opts...)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetTransactionsCount provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) GetTransactionsCount(ctx context.Context, in *mpesapayment.GetTransactionsCountRequest, opts ...grpc.CallOption) (*mpesapayment.TransactionsSummary, error) {
+	_va := make([]interface{}, len(opts))
+	for _i := range opts {
+		_va[_i] = opts[_i]
+	}
+	var _ca []interface{}
+	_ca = append(_ca, ctx, in)
+	_ca = append(_ca, _va...)
+	ret := _m.Called(_ca...)
+
+	var r0 *mpesapayment.TransactionsSummary
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.GetTransactionsCountRequest, ...grpc.CallOption) *mpesapayment.TransactionsSummary); ok {
+		r0 = rf(ctx, in, opts...)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*mpesapayment.TransactionsSummary)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.GetTransactionsCountRequest, ...grpc.CallOption) error); ok {
 		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
