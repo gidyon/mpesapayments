@@ -32,7 +32,7 @@ func (*PaymentMpesa) TableName() string {
 	// Get table prefix
 	prefix := os.Getenv("TABLE_PREFIX")
 	if prefix != "" {
-		return fmt.Sprintf("%s-%s", prefix, MpesaPayments)
+		return fmt.Sprintf("%s_%s", prefix, MpesaPayments)
 	}
 	return MpesaPayments
 }
