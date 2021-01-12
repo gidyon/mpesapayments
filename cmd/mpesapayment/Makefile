@@ -33,8 +33,19 @@ run:
 	MPESA_POST_URL=https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest \
 	MPESA_QUERY_URL=https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query \
 	PUBLISH_CHANNEL_STK=mpesa:stk:pub \
-	PUBLISH_CHANNEL_PAYBILL=mpesa:pyabill:pubsub \
+	PUBLISH_CHANNEL_PAYBILL=mpesa:paybill:pubsub \
+	PUBLISH_CHANNEL_B2C=mpesa:btc:pubsub \
+	PUBLISH_CHANNEL_LOCAL=local \
+	QUERY_BALANCE_URL=https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query \
+	B2C_URL=https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest \
+	REVERSAL_URL=https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request \
+	QUEUE_TIMEOUT_URL=http:localhost:9090/timeout \
+	RESULT_URL=http:localhost:9090/result \
+	INITIATOR_USERNAME=gideon \
+	INITIATOR_PASSWORD=hakty1111 \
+	INITIATOR_ENCRYPTED_PASSWORD=eghfevfuebefewbf2893fb47bv7v4bv4874v8f9 \
 	REDIS_KEY_PREFIX="test" \
+	TABLE_PREFIX="test" \
 	./service -config-file=./config.yaml
 
 gotest:
