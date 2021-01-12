@@ -18,12 +18,13 @@ var _ = Describe("Adding scopes @addscopes", func() {
 
 	BeforeEach(func() {
 		addReq = &mpesapayment.AddScopesRequest{
-			UserId: fmt.Sprint(randomdata.Decimal(99, 999)),
+			UserId: fmt.Sprint(randomdata.Number(99, 999)),
 			Scopes: &mpesapayment.Scopes{
 				AllowedAccNumber: []string{randomdata.Adjective(), randomdata.Adjective()},
 				AllowedPhones:    []string{randomdata.PhoneNumber(), randomdata.PhoneNumber()},
 			},
 		}
+		ctx = context.Background()
 	})
 
 	Describe("Adding scopes with malformed request", func() {

@@ -9,13 +9,14 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/micro"
-	"github.com/gidyon/micro/pkg/conn"
-	"github.com/gidyon/micro/pkg/mocks"
-	"github.com/gidyon/micro/utils/encryption"
+	"github.com/gidyon/micro/v2"
+	"github.com/gidyon/micro/v2/pkg/conn"
+	"github.com/gidyon/micro/v2/pkg/mocks"
+	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/onsi/ginkgo"
@@ -69,22 +70,24 @@ var _ = BeforeSuite(func() {
 
 	Expect(db.AutoMigrate(&PaymentMpesa{})).ShouldNot(HaveOccurred())
 
-	redisDB := conn.NewRedisClient(&redis.Options{
+	redisDB := conn.OpenRedisConn(&redis.Options{
 		Addr: "localhost:6379",
 	})
 
-	logger := micro.NewLogger("MPESAPayment_app")
+	logger := micro.NewLogger("MPESAPayment_app", zerolog.TraceLevel)
 
 	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
 	Expect(err).ShouldNot(HaveOccurred())
 
-	authAPI := mocks.AuthAPI
+	// authAPI := mocks.AuthAPI
 
 	opt := &Options{
+		PublishChannel:   "test",
+		RedisKeyPrefix:   "test",
 		SQLDB:            db,
 		RedisDB:          redisDB,
 		Logger:           logger,
-		AuthAPI:          authAPI,
+		AuthAPI:          mocks.AuthAPI,
 		PaginationHasher: paginationHasher,
 	}
 
@@ -121,10 +124,19 @@ var _ = BeforeSuite(func() {
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.AuthAPI = authAPI
+	opt.AuthAPI = mocks.AuthAPI
 	opt.PaginationHasher = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
+
+	opt.PaginationHasher = paginationHasher
+	opt.RedisKeyPrefix = ""
+	_, err = NewAPIServerMPESA(ctx, opt)
+	Expect(err).Should(HaveOccurred())
+
+	opt.RedisKeyPrefix = "test"
+	_, err = NewAPIServerMPESA(ctx, opt)
+	Expect(err).ShouldNot(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {

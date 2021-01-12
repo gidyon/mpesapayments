@@ -45,13 +45,13 @@ var _ = Describe("Processing MPESA payment @process", func() {
 		var paymentID string
 		Context("Lets create mpesa payment first", func() {
 			It("should succeed", func() {
-				createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, &mpesapayment.CreateMPESAPaymentRequest{
-					MpesaPayment: fakeMpesaPayment(),
-				})
+				paymentDB, err := GetMpesaDB(fakeMpesaPayment())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(createRes).ShouldNot(BeNil())
-				paymentID = createRes.PaymentId
+
+				err = MpesaPaymentAPIServer.SQLDB.Create(paymentDB).Error
+				Expect(err).ShouldNot(HaveOccurred())
+
+				paymentID = paymentDB.TransactionID
 			})
 		})
 
@@ -74,6 +74,9 @@ var _ = Describe("Processing MPESA payment @process", func() {
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
 				Expect(getRes).ShouldNot(BeNil())
+				MpesaPaymentAPIServer.Logger.Infoln("name: ", getRes.Names)
+				MpesaPaymentAPIServer.Logger.Infoln("state: ", getRes.Processed)
+				MpesaPaymentAPIServer.Logger.Infoln("id: ", paymentID)
 				Expect(getRes.Processed).Should(BeTrue())
 			})
 		})

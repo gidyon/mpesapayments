@@ -42,15 +42,16 @@ var _ = Describe("Listing payments @list", func() {
 
 	Describe("Listing payments with well formed request", func() {
 		Context("Lets create random payments", func() {
-			It("should succeed", func() {
-				for i := 0; i < 100; i++ {
-					createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, &mpesapayment.CreateMPESAPaymentRequest{
-						MpesaPayment: fakeMpesaPayment(),
-					})
+			It("should always succeed", func() {
+				var err error
+				payments := make([]*PaymentMpesa, 0, 50)
+				for i := 0; i < 50; i++ {
+					paymentDB, err := GetMpesaDB(fakeMpesaPayment())
 					Expect(err).ShouldNot(HaveOccurred())
-					Expect(status.Code(err)).Should(Equal(codes.OK))
-					Expect(createRes).ShouldNot(BeNil())
+					payments = append(payments, paymentDB)
 				}
+				err = MpesaPaymentAPIServer.SQLDB.CreateInBatches(payments, 50).Error
+				Expect(err).ShouldNot(HaveOccurred())
 			})
 
 			Describe("Listing payments now", func() {

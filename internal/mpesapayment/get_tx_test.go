@@ -23,7 +23,7 @@ var _ = Describe("Getting summary of mpesa transactions @gettx", func() {
 		ctx = context.Background()
 	})
 
-	Describe("Getting transactions summary with malformed request", func() {
+	When("Getting transactions summary with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			getReq = nil
 			getRes, err := MpesaPaymentAPI.GetTransactionsCount(ctx, getReq)
@@ -48,27 +48,26 @@ var _ = Describe("Getting summary of mpesa transactions @gettx", func() {
 		})
 	})
 
-	Describe("Getting transactions summary with well formed request", func() {
+	When("Getting transactions summary with well formed request", func() {
 		Context("Lets create some transactions", func() {
-			for i := 0; i < 10; i++ {
-				It("should create transaction", func() {
-					paymentPB := fakeMpesaPayment()
-					paymentDB, err := GetMpesaDB(paymentPB)
+			It("should always succeed", func() {
+				var err error
+				payments := make([]*PaymentMpesa, 0, 50)
+				for i := 0; i < 50; i++ {
+					paymentDB, err := GetMpesaDB(fakeMpesaPayment())
 					Expect(err).ShouldNot(HaveOccurred())
-					paymentDB.TxAmount = 100
-					paymentDB.TxRefNumber = "a"
-					err = MpesaPaymentAPIServer.SQLDB.Create(paymentDB).Error
+					payments = append(payments, paymentDB)
+				}
+				for i := 0; i < 50; i++ {
+					paymentDB, err := GetMpesaDB(fakeMpesaPayment())
 					Expect(err).ShouldNot(HaveOccurred())
-				})
-
-				It("should create transaction", func() {
-					paymentPB := fakeMpesaPayment()
-					paymentDB, err := GetMpesaDB(paymentPB)
-					Expect(err).ShouldNot(HaveOccurred())
-					err = MpesaPaymentAPIServer.SQLDB.Create(paymentDB).Error
-					Expect(err).ShouldNot(HaveOccurred())
-				})
-			}
+					paymentDB.Amount = 100
+					paymentDB.ReferenceNumber = "a"
+					payments = append(payments, paymentDB)
+				}
+				err = MpesaPaymentAPIServer.SQLDB.CreateInBatches(payments, 50).Error
+				Expect(err).ShouldNot(HaveOccurred())
+			})
 		})
 
 		Context("Getting the summary", func() {

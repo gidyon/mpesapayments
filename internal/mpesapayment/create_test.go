@@ -2,6 +2,7 @@ package mpesapayment
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
@@ -17,14 +18,14 @@ var (
 
 func fakeMpesaPayment() *mpesapayment.MPESAPayment {
 	return &mpesapayment.MPESAPayment{
-		TxId:              randomdata.RandStringRunes(32),
-		TxType:            txTypes[randomdata.Number(0, len(txTypes))],
-		TxTimestamp:       time.Now().Unix(),
-		Msisdn:            randomdata.PhoneNumber()[:10],
-		Names:             randomdata.SillyName(),
-		TxRefNumber:       txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
-		TxAmount:          float32(randomdata.Decimal(1000, 100000)),
-		BusinessShortCode: int32(randomdata.Number(1000, 20000)),
+		TransactionId:        strings.ToUpper(randomdata.RandStringRunes(32)),
+		TransactionType:      txTypes[randomdata.Number(0, len(txTypes))],
+		TransactionTimestamp: time.Now().Unix(),
+		Msisdn:               randomdata.PhoneNumber()[:10],
+		Names:                randomdata.SillyName(),
+		RefNumber:            txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
+		Amount:               float32(randomdata.Decimal(1000, 100000)),
+		BusinessShortCode:    int32(randomdata.Number(1000, 20000)),
 	}
 }
 
@@ -57,7 +58,7 @@ var _ = Describe("Creating MPESA payment @create", func() {
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when short code is missing and tx type is PAY_BILL", func() {
-			createReq.MpesaPayment.TxType = "PAY_BILL"
+			createReq.MpesaPayment.TransactionType = "PAY_BILL"
 			createReq.MpesaPayment.BusinessShortCode = 0
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
@@ -72,21 +73,35 @@ var _ = Describe("Creating MPESA payment @create", func() {
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when tx time is missing", func() {
-			createReq.MpesaPayment.TxTimestamp = 0
+			createReq.MpesaPayment.TransactionTimestamp = 0
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when tx type is missing", func() {
-			createReq.MpesaPayment.TxType = ""
+			createReq.MpesaPayment.TransactionType = ""
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when tx amount is missing", func() {
-			createReq.MpesaPayment.TxAmount = 0
+			createReq.MpesaPayment.Amount = 0
+			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
+			Expect(err).Should(HaveOccurred())
+			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
+			Expect(createRes).Should(BeNil())
+		})
+		It("should fail when tx reference number is missing", func() {
+			createReq.MpesaPayment.RefNumber = ""
+			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
+			Expect(err).Should(HaveOccurred())
+			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
+			Expect(createRes).Should(BeNil())
+		})
+		It("should fail when tx id is missing", func() {
+			createReq.MpesaPayment.TransactionId = ""
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
@@ -95,18 +110,18 @@ var _ = Describe("Creating MPESA payment @create", func() {
 	})
 
 	Describe("Creating mpesa payment with well formed request", func() {
-		var TxID string
+		var TransactionID string
 		It("should succeed", func() {
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.OK))
 			Expect(createRes).ShouldNot(BeNil())
-			TxID = createReq.MpesaPayment.TxId
+			TransactionID = createReq.MpesaPayment.TransactionId
 		})
 
 		Describe("Creating duplicate transaction", func() {
 			It("should succeed since create is indepotent", func() {
-				createReq.MpesaPayment.TxId = TxID
+				createReq.MpesaPayment.TransactionId = TransactionID
 				createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

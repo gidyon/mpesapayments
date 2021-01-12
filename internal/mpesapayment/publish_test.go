@@ -48,7 +48,7 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 		)
 
 		listenFn := func() {
-			msgChan := MpesaPaymentAPIServer.RedisDB.Subscribe(ctx, publishChannel).Channel()
+			msgChan := MpesaPaymentAPIServer.RedisDB.Subscribe(ctx, MpesaPaymentAPIServer.AddPrefix(MpesaPaymentAPIServer.PublishChannel)).Channel()
 
 			for msg := range msgChan {
 				strs := strings.Split(msg.Payload, ":")
@@ -62,13 +62,13 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 			It("should succeed", func() {
 				go listenFn()
 
-				createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, &mpesapayment.CreateMPESAPaymentRequest{
-					MpesaPayment: fakeMpesaPayment(),
-				})
+				paymentDB, err := GetMpesaDB(fakeMpesaPayment())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(createRes).ShouldNot(BeNil())
-				paymentID = createRes.PaymentId
+
+				err = MpesaPaymentAPIServer.SQLDB.Create(paymentDB).Error
+				Expect(err).ShouldNot(HaveOccurred())
+
+				paymentID = paymentDB.TransactionID
 			})
 		})
 
