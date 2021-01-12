@@ -38,7 +38,7 @@ func (*Payment) TableName() string {
 	// Get table prefix
 	prefix := os.Getenv("TABLE_PREFIX")
 	if prefix != "" {
-		return fmt.Sprintf("%s-%s", prefix, B2CTable)
+		return fmt.Sprintf("%s_%s", prefix, B2CTable)
 	}
 	return B2CTable
 }
