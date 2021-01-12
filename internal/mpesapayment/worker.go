@@ -51,8 +51,8 @@ loop:
 		default:
 			res, err := mpesaAPI.RedisDB.BRPopLPush(
 				ctx,
-				mpesaAPI.addPrefix(FailedTxList),
-				mpesaAPI.addPrefix(failedTxListv2),
+				mpesaAPI.AddPrefix(FailedTxList),
+				mpesaAPI.AddPrefix(failedTxListv2),
 				5*time.Minute,
 			).Result()
 			switch {
