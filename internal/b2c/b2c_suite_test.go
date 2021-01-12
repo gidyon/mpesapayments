@@ -91,7 +91,6 @@ var _ = BeforeSuite(func() {
 		InitiatorPassword:          randomdata.Alphanumeric(32),
 		InitiatorEncryptedPassword: randomdata.RandStringRunes(96),
 		PublicKeyCertificateFile:   "",
-		BusinessShortCode:          "174379",
 	}
 
 	opt := &Options{
@@ -135,11 +134,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.OptionsB2C.AccessTokenURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
-	opt.OptionsB2C.BusinessShortCode = ""
-	_, err = NewB2CAPI(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.OptionsB2C.BusinessShortCode = "174379"
 	opt.OptionsB2C.ConsumerKey = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())

@@ -176,7 +176,6 @@ type OptionsB2C struct {
 	InitiatorPassword          string
 	InitiatorEncryptedPassword string
 	PublicKeyCertificateFile   string
-	BusinessShortCode          string
 	accessToken                string
 	basicToken                 string
 }
@@ -197,8 +196,6 @@ func ValidateOptionsB2C(opt *OptionsB2C) error {
 		err = errs.MissingField("initiator username")
 	case opt.InitiatorPassword == "" && opt.InitiatorEncryptedPassword == "":
 		err = errs.MissingField("initiator password")
-	case opt.BusinessShortCode == "":
-		err = errs.MissingField("business short code")
 	case opt.QueueTimeOutURL == "":
 		err = errs.MissingField("queue timeuout url")
 	case opt.ResultURL == "":
@@ -253,6 +250,16 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 		Options:       opt,
 		pubsub:        &pubsub{mu: &sync.RWMutex{}, subs: map[string]chan struct{}{}},
 		ctxAdmin:      ctxAdmin,
+	}
+
+	b2cAPI.Logger.Infof("Publishing to b2c consumers on channel: %v", AddPrefix(b2cAPI.PublishChannel, b2cAPI.RedisKeyPrefix))
+
+	// Auto migration
+	if !b2cAPI.SQLDB.Migrator().HasTable(&Payment{}) {
+		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&Payment{})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// Worker for updating access token
