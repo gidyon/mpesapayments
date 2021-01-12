@@ -13,18 +13,18 @@ const MpesaPayments = "payments_mpesa"
 
 // PaymentMpesa contains mpesa transaction details
 type PaymentMpesa struct {
-	PaymentID         uint    `gorm:"primaryKey;autoIncrement"`
-	TxType            string  `gorm:"type:varchar(50);not null"`
-	TxID              string  `gorm:"type:varchar(50);not null;unique"`
-	MSISDN            string  `gorm:"index;type:varchar(15);not null"`
-	Names             string  `gorm:"type:varchar(50)"`
-	TxRefNumber       string  `gorm:"index;type:varchar(20)"`
-	TxTimestamp       int64   `gorm:"type:int(15);not null"`
-	TxAmount          float32 `gorm:"type:float(10);not null"`
-	OrgAccountBalance float32 `gorm:"type:float(10)"`
-	BusinessShortCode int32   `gorm:"index;type:varchar(10);not null"`
-	Processed         bool    `gorm:"type:tinyint(1);not null;default:0"`
-	CreatedAt         int64   `gorm:"autoCreateTime"`
+	PaymentID            uint    `gorm:"primaryKey;autoIncrement"`
+	TransactionType      string  `gorm:"type:varchar(50);not null"`
+	TransactionID        string  `gorm:"type:varchar(50);not null;unique"`
+	MSISDN               string  `gorm:"index;type:varchar(15);not null"`
+	Names                string  `gorm:"type:varchar(50)"`
+	ReferenceNumber      string  `gorm:"index;type:varchar(20)"`
+	Amount               float32 `gorm:"type:float(10);not null"`
+	OrgAccountBalance    float32 `gorm:"type:float(10)"`
+	BusinessShortCode    int32   `gorm:"index;type:varchar(10);not null"`
+	TransactionTimestamp int64   `gorm:"type:int(15);not null"`
+	CreateTimesatamp     int64   `gorm:"autoCreateTime"`
+	Processed            bool    `gorm:"type:tinyint(1);not null"`
 }
 
 // TableName returns the name of the table
@@ -44,16 +44,16 @@ func GetMpesaDB(MpesaPB *mpesapayment.MPESAPayment) (*PaymentMpesa, error) {
 	}
 
 	mpesaDB := &PaymentMpesa{
-		TxID:              MpesaPB.TxId,
-		TxType:            MpesaPB.TxType,
-		TxTimestamp:       MpesaPB.TxTimestamp,
-		MSISDN:            MpesaPB.Msisdn,
-		Names:             MpesaPB.Names,
-		TxRefNumber:       MpesaPB.TxRefNumber,
-		TxAmount:          MpesaPB.TxAmount,
-		OrgAccountBalance: MpesaPB.OrgBalance,
-		BusinessShortCode: MpesaPB.BusinessShortCode,
-		Processed:         MpesaPB.Processed,
+		TransactionID:        MpesaPB.TransactionId,
+		TransactionType:      MpesaPB.TransactionType,
+		TransactionTimestamp: MpesaPB.TransactionTimestamp,
+		MSISDN:               MpesaPB.Msisdn,
+		Names:                MpesaPB.Names,
+		ReferenceNumber:      MpesaPB.RefNumber,
+		Amount:               MpesaPB.Amount,
+		OrgAccountBalance:    MpesaPB.OrgBalance,
+		BusinessShortCode:    MpesaPB.BusinessShortCode,
+		Processed:            MpesaPB.Processed,
 	}
 
 	return mpesaDB, nil
@@ -66,18 +66,18 @@ func GetMpesaPB(MpesaDB *PaymentMpesa) (*mpesapayment.MPESAPayment, error) {
 	}
 
 	mpesaPB := &mpesapayment.MPESAPayment{
-		PaymentId:         fmt.Sprint(MpesaDB.PaymentID),
-		TxType:            MpesaDB.TxType,
-		TxId:              MpesaDB.TxID,
-		TxTimestamp:       MpesaDB.TxTimestamp,
-		Msisdn:            MpesaDB.MSISDN,
-		Names:             MpesaDB.Names,
-		TxRefNumber:       MpesaDB.TxRefNumber,
-		TxAmount:          MpesaDB.TxAmount,
-		OrgBalance:        MpesaDB.OrgAccountBalance,
-		BusinessShortCode: MpesaDB.BusinessShortCode,
-		Processed:         MpesaDB.Processed,
-		CreateTimestamp:   MpesaDB.CreatedAt,
+		PaymentId:            fmt.Sprint(MpesaDB.PaymentID),
+		TransactionType:      MpesaDB.TransactionType,
+		TransactionId:        MpesaDB.TransactionID,
+		TransactionTimestamp: MpesaDB.TransactionTimestamp,
+		Msisdn:               MpesaDB.MSISDN,
+		Names:                MpesaDB.Names,
+		RefNumber:            MpesaDB.ReferenceNumber,
+		Amount:               MpesaDB.Amount,
+		OrgBalance:           MpesaDB.OrgAccountBalance,
+		BusinessShortCode:    MpesaDB.BusinessShortCode,
+		Processed:            MpesaDB.Processed,
+		CreateTimestamp:      MpesaDB.CreateTimesatamp,
 	}
 
 	return mpesaPB, nil
