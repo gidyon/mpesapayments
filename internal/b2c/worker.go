@@ -52,7 +52,7 @@ func (b2cAPI *b2cAPIServer) updateAccessToken() error {
 }
 
 func (b2cAPI *b2cAPIServer) subscriptionsWorker(ctx context.Context) {
-	ch := b2cAPI.RedisDB.Subscribe(ctx, b2cAPI.B2CLocalTopic).Channel()
+	ch := b2cAPI.RedisDB.Subscribe(ctx, AddPrefix(b2cAPI.Options.B2CLocalTopic, b2cAPI.RedisKeyPrefix)).Channel()
 
 	for {
 		select {
