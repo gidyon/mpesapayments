@@ -42,22 +42,20 @@ var _ = Describe("Processing stk payload @process", func() {
 	})
 
 	Describe("Processing request with malformed request", func() {
-		var paymentID string
+		var payloadID string
 		Context("Lets create stk payload first", func() {
 			It("should succeed", func() {
-				createRes, err := StkAPI.CreateStkPayload(ctx, &stk.CreateStkPayloadRequest{
-					Payload: mockStkPayload(),
-				})
+				payloadDB, err := GetStkPayloadDB(mockStkPayload())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(createRes).ShouldNot(BeNil())
-				paymentID = createRes.PayloadId
+				err = StkAPIServer.SQLDB.Create(payloadDB).Error
+				Expect(err).ShouldNot(HaveOccurred())
+				payloadID = payloadDB.TransactionID
 			})
 		})
 
 		Describe("Processing the request", func() {
 			It("should succeed", func() {
-				processReq.PayloadId = paymentID
+				processReq.PayloadId = payloadID
 				processReq.Processed = true
 				processRes, err := StkAPI.ProcessStkPayload(ctx, processReq)
 				Expect(err).ShouldNot(HaveOccurred())
@@ -69,7 +67,7 @@ var _ = Describe("Processing stk payload @process", func() {
 		Context("Getting the stk payload", func() {
 			Specify("processed to be true", func() {
 				getRes, err := StkAPI.GetStkPayload(ctx, &stk.GetStkPayloadRequest{
-					PayloadId: paymentID,
+					PayloadId: payloadID,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

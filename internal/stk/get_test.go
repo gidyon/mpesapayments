@@ -39,13 +39,6 @@ var _ = Describe("Getting stk payload @get", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(getRes).Should(BeNil())
 		})
-		It("should fail when the payload id is incorrect integer", func() {
-			getReq.PayloadId = "dedbibd3d"
-			getRes, err := StkAPI.GetStkPayload(ctx, getReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(getRes).Should(BeNil())
-		})
 		It("should fail when payment id is missing", func() {
 			getReq.PayloadId = fmt.Sprint(randomdata.Number(99999, 999999))
 			getRes, err := StkAPI.GetStkPayload(ctx, getReq)
@@ -59,13 +52,11 @@ var _ = Describe("Getting stk payload @get", func() {
 		var payloadID string
 		Context("Lets create stk payload first", func() {
 			It("should succeed", func() {
-				createRes, err := StkAPI.CreateStkPayload(ctx, &stk.CreateStkPayloadRequest{
-					Payload: mockStkPayload(),
-				})
+				payloadDB, err := GetStkPayloadDB(mockStkPayload())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(createRes).ShouldNot(BeNil())
-				payloadID = createRes.PayloadId
+				err = StkAPIServer.SQLDB.Create(payloadDB).Error
+				Expect(err).ShouldNot(HaveOccurred())
+				payloadID = payloadDB.TransactionID
 			})
 		})
 

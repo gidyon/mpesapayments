@@ -50,6 +50,12 @@ var _ = Describe("Listing stk payloads @list", func() {
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(status.Code(err)).Should(Equal(codes.OK))
 					Expect(createRes).ShouldNot(BeNil())
+
+					// DB Direct
+					payloadDB, err := GetStkPayloadDB(mockStkPayload())
+					Expect(err).ShouldNot(HaveOccurred())
+					err = StkAPIServer.SQLDB.Create(payloadDB).Error
+					Expect(err).ShouldNot(HaveOccurred())
 				}
 			})
 

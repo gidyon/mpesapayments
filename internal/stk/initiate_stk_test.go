@@ -22,6 +22,7 @@ var _ = Describe("Initiating stk request @initiate", func() {
 			Payload: map[string]string{
 				"client_id": randomdata.RandStringRunes(32),
 			},
+			InitiatorId: randomdata.RandStringRunes(32),
 		}
 		ctx = context.Background()
 	})

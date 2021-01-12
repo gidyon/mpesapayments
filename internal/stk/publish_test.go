@@ -3,7 +3,6 @@ package stk
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
@@ -49,11 +48,10 @@ var _ = Describe("Publishing stk payload @publish", func() {
 		)
 
 		listenFn := func() {
-			msgChan := StkAPIServer.RedisDB.Subscribe(context.Background(), publishChannel).Channel()
+			msgChan := StkAPIServer.RedisDB.Subscribe(context.Background(), AddPrefix(StkAPIServer.PublishChannel, StkAPIServer.RedisKeyPrefix)).Channel()
 
 			for msg := range msgChan {
-				strs := strings.Split(msg.Payload, ":")
-				payloadReceive = strs[1]
+				payloadReceive = msg.Payload
 				break
 			}
 			close(ch)
@@ -63,13 +61,11 @@ var _ = Describe("Publishing stk payload @publish", func() {
 			It("should succeed", func() {
 				go listenFn()
 
-				createRes, err := StkAPI.CreateStkPayload(ctx, &stk.CreateStkPayloadRequest{
-					Payload: mockStkPayload(),
-				})
+				payloadDB, err := GetStkPayloadDB(mockStkPayload())
 				Expect(err).ShouldNot(HaveOccurred())
-				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(createRes).ShouldNot(BeNil())
-				payloadID = createRes.PayloadId
+				err = StkAPIServer.SQLDB.Create(payloadDB).Error
+				Expect(err).ShouldNot(HaveOccurred())
+				payloadID = payloadDB.TransactionID
 			})
 		})
 
@@ -90,7 +86,7 @@ var _ = Describe("Publishing stk payload @publish", func() {
 
 		Specify("Payload gotten is what was published", func() {
 			<-ch
-			Expect(payloadReceive).To(Equal(payloadID))
+			Expect(payloadReceive).To(ContainSubstring(payloadID))
 		})
 	})
 

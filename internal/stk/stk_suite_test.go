@@ -5,18 +5,20 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/micro"
-	"github.com/gidyon/micro/pkg/conn"
-	"github.com/gidyon/micro/pkg/mocks"
-	"github.com/gidyon/micro/utils/encryption"
+	"github.com/gidyon/micro/v2"
+	"github.com/gidyon/micro/v2/pkg/conn"
+	"github.com/gidyon/micro/v2/pkg/mocks"
+	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
 	"github.com/onsi/ginkgo"
@@ -57,6 +59,8 @@ func (client) Do(*http.Request) (*http.Response, error) {
 }
 
 var _ = BeforeSuite(func() {
+	os.Setenv("TABLE_PREFIX", "test")
+
 	workerChan = make(chan struct{})
 	ctx = context.Background()
 
@@ -70,16 +74,14 @@ var _ = BeforeSuite(func() {
 
 	Expect(db.AutoMigrate(&PayloadStk{})).ShouldNot(HaveOccurred())
 
-	redisDB := conn.NewRedisClient(&redis.Options{
+	redisDB := conn.OpenRedisConn(&redis.Options{
 		Addr: "localhost:6379",
 	})
 
-	logger := micro.NewLogger("MPESAPayment_app")
+	logger := micro.NewLogger("MPESAPayment_app", zerolog.TraceLevel)
 
 	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
 	Expect(err).ShouldNot(HaveOccurred())
-
-	authAPI := mocks.AuthAPI
 
 	stkOptions := &OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
@@ -102,7 +104,7 @@ var _ = BeforeSuite(func() {
 		SQLDB:                     db,
 		RedisDB:                   redisDB,
 		Logger:                    logger,
-		AuthAPI:                   authAPI,
+		AuthAPI:                   mocks.AuthAPI,
 		PaginationHasher:          paginationHasher,
 		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
@@ -151,7 +153,7 @@ var _ = BeforeSuite(func() {
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
-	opt.AuthAPI = authAPI
+	opt.AuthAPI = mocks.AuthAPI
 	opt.PaginationHasher = nil
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
@@ -162,6 +164,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.HTTPClient = httpClient
+	opt.RedisKeyPrefix = ""
+	_, err = NewStkAPI(ctx, opt, mpesaAPI)
+	Expect(err).Should(HaveOccurred())
+
+	opt.RedisKeyPrefix = "test"
 	opt.OptionsSTK = nil
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
