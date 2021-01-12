@@ -316,7 +316,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		paymentID = uint(ids[0])
 	}
 
-	mpesapayments := make([]*PaymentMpesa, 0, pageSize)
+	mpesapayments := make([]*PaymentMpesa, 0, pageSize+1)
 
 	// Add filter from request filters
 	allowedAccNo = append(allowedAccNo, listReq.GetFilter().GetAccountsNumber()...)
