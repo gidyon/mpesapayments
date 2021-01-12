@@ -174,9 +174,7 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Save in cache for later processing
 		bs, err := proto.Marshal(transactionPB)
 		if err == nil {
-			if !gw.DisablePublishing {
-				gw.RedisDB.LPush(r.Context(), b2capp.FailedTxList, bs)
-			}
+			gw.RedisDB.LPush(r.Context(), b2capp.FailedTxList, bs)
 		}
 
 		return
