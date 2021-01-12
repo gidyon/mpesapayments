@@ -124,7 +124,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", mpesaAPI.AddPrefix(opt.PublishChannel))
 
 	// Auto migration
-	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaPayments) {
+	if !mpesaAPI.SQLDB.Migrator().HasTable(&PaymentMpesa{}) {
 		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&PaymentMpesa{})
 		if err != nil {
 			return nil, err
