@@ -762,7 +762,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		}
 	}
 
-	db := mpesaAPI.SQLDB.Table(MpesaPayments)
+	db := mpesaAPI.SQLDB.Model(&PaymentMpesa{})
 
 	// Apply filters
 	if getReq.Amount > 0 {
@@ -791,7 +791,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	var totalAmount float32
 
 	// Get total amount
-	err = db.Table(MpesaPayments).Select("sum(amount) as total").Row().Scan(&totalAmount)
+	err = db.Model(&PaymentMpesa{}).Select("sum(amount) as total").Row().Scan(&totalAmount)
 	if err != nil {
 		return nil, errs.FailedToFind("total", err)
 	}
