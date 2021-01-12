@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gidyon/micro/pkg/grpc/auth"
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
+	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/speps/go-hashids"
@@ -31,25 +31,29 @@ const (
 	bulkInsertSize          = 1000
 )
 
+type incomingPayment struct {
+	payment *PaymentMpesa
+	publish bool
+}
+
 type mpesaAPIServer struct {
 	mpesapayment.UnimplementedLipaNaMPESAServer
 	lastProcessedTxTime time.Time
 	*Options
-	insertChan    chan *PaymentMpesa
+	insertChan    chan *incomingPayment
 	insertTimeOut time.Duration
 	ctxAdmin      context.Context
 }
 
 // Options contains options for starting mpesa service
 type Options struct {
-	PublishChannel    string
-	RedisKeyPrefix    string
-	SQLDB             *gorm.DB
-	RedisDB           *redis.Client
-	Logger            grpclog.LoggerV2
-	AuthAPI           auth.API
-	PaginationHasher  *hashids.HashID
-	DisablePublishing bool
+	PublishChannel   string
+	RedisKeyPrefix   string
+	SQLDB            *gorm.DB
+	RedisDB          *redis.Client
+	Logger           grpclog.LoggerV2
+	AuthAPI          auth.API
+	PaginationHasher *hashids.HashID
 }
 
 // ValidateOptions validates options required by stk service
@@ -60,7 +64,7 @@ func ValidateOptions(opt *Options) error {
 		err = errs.NilObject("options")
 	case opt.SQLDB == nil:
 		err = errs.NilObject("sql db")
-	case opt.RedisDB == nil && !opt.DisablePublishing:
+	case opt.RedisDB == nil:
 		err = errs.NilObject("redis db")
 	case opt.Logger == nil:
 		err = errs.NilObject("logger")
@@ -95,7 +99,7 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 
 	// Generate jwt for API
 	token, err := opt.AuthAPI.GenToken(
-		ctx, &auth.Payload{Group: auth.AdminGroup()}, time.Now().Add(10*365*24*time.Hour))
+		ctx, &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(10*365*24*time.Hour))
 	if err != nil {
 		return nil, fmt.Errorf("failed to generate auth token: %v", err)
 	}
@@ -105,19 +109,19 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 	ctxAdmin := metadata.NewIncomingContext(ctx, md)
 
 	// Authenticate the jwt context
-	ctxAdmin, err = opt.AuthAPI.AuthFunc(ctxAdmin)
+	ctxAdmin, err = opt.AuthAPI.AuthorizeFunc(ctxAdmin)
 	if err != nil {
 		return nil, err
 	}
 
 	mpesaAPI := &mpesaAPIServer{
 		Options:       opt,
-		insertChan:    make(chan *PaymentMpesa, bulkInsertSize),
+		insertChan:    make(chan *incomingPayment, bulkInsertSize),
 		insertTimeOut: 5 * time.Second,
 		ctxAdmin:      ctxAdmin,
 	}
 
-	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", mpesaAPI.addPrefix(opt.PublishChannel))
+	mpesaAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", mpesaAPI.AddPrefix(opt.PublishChannel))
 
 	// Auto migration
 	if !mpesaAPI.SQLDB.Migrator().HasTable(MpesaPayments) {
@@ -147,33 +151,39 @@ func ValidateMPESAPayment(payment *mpesapayment.MPESAPayment) error {
 	switch {
 	case payment == nil:
 		err = errs.NilObject("mpesa payment")
-	case payment.BusinessShortCode == 0 && payment.TxType == "PAY_BILL":
+	case payment.BusinessShortCode == 0 && payment.TransactionType == "PAY_BILL":
 		err = errs.MissingField("business short code")
-	case payment.TxRefNumber == "" && payment.TxType == "PAY_BILL":
+	case payment.RefNumber == "" && payment.TransactionType == "PAY_BILL":
 		err = errs.MissingField("account number")
 	case payment.Msisdn == "" || payment.Msisdn == "0":
 		err = errs.MissingField("msisdn")
-	case payment.TxType == "":
+	case payment.TransactionType == "":
 		err = errs.MissingField("transaction type")
-	case payment.TxAmount == 0:
+	case int(payment.Amount) == 0:
 		err = errs.MissingField("transaction amount")
-	case payment.TxId == "":
+	case payment.TransactionId == "":
 		err = errs.MissingField("transaction id")
-	case payment.TxTimestamp == 0:
+	case payment.TransactionTimestamp == 0:
 		err = errs.MissingField("transaction time")
 	}
 	return err
 }
 
-func (mpesaAPI *mpesaAPIServer) addPrefix(key string) string {
-	return fmt.Sprintf("%s:%s", mpesaAPI.RedisKeyPrefix, key)
+// AddPrefix adds a prefix to redis key
+func AddPrefix(key, prefix string) string {
+	return fmt.Sprintf("%s:%s", prefix, key)
+}
+
+// AddPrefix adds a prefix to redis key
+func (mpesaAPI *mpesaAPIServer) AddPrefix(key string) string {
+	return AddPrefix(key, mpesaAPI.RedisKeyPrefix)
 }
 
 func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
 	ctx context.Context, createReq *mpesapayment.CreateMPESAPaymentRequest,
 ) (*mpesapayment.CreateMPESAPaymentResponse, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -196,11 +206,14 @@ func (mpesaAPI *mpesaAPIServer) CreateMPESAPayment(
 
 	// Save payload via channel
 	go func() {
-		mpesaAPI.insertChan <- mpesaDB
+		mpesaAPI.insertChan <- &incomingPayment{
+			payment: mpesaDB,
+			publish: createReq.Publish,
+		}
 	}()
 
 	return &mpesapayment.CreateMPESAPaymentResponse{
-		PaymentId: fmt.Sprint(createReq.MpesaPayment.TxId),
+		PaymentId: fmt.Sprint(createReq.MpesaPayment.TransactionId),
 	}, nil
 }
 
@@ -224,15 +237,18 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 
 	mpesaDB := &PaymentMpesa{}
 
-	if paymentID, err := strconv.Atoi(getReq.PaymentId); err == nil && paymentID != 0 {
-		err = mpesaAPI.SQLDB.First(mpesaDB, "payment_id=?", paymentID).Error
+	if paymentID, err1 := strconv.Atoi(getReq.PaymentId); err1 == nil && paymentID != 0 {
+		err = mpesaAPI.SQLDB.First(mpesaDB, paymentID).Error
 	} else {
-		err = mpesaAPI.SQLDB.First(mpesaDB, "tx_id=?", getReq.PaymentId).Error
+		err = mpesaAPI.SQLDB.First(mpesaDB, "transaction_id=?", getReq.PaymentId).Error
 	}
+
 	switch {
 	case err == nil:
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return nil, errs.DoesNotExist("mpesa payment", getReq.PaymentId)
+	default:
+		return nil, errs.FailedToFind("mpesa payment", err)
 	}
 
 	return GetMpesaPB(mpesaDB)
@@ -267,26 +283,24 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	var allowedAccNo, allowedPhones []string
 
-	if !mpesaAPI.DisablePublishing {
-		// Read from redis list of acc numbers
-		allowedAccNo, err = mpesaAPI.RedisDB.SMembers(
-			ctx, mpesaAPI.addPrefix(userAllowedAccSet(payload.ID)),
-		).Result()
-		if err != nil && !errors.Is(err, redis.Nil) {
-			return nil, errs.RedisCmdFailed(err, "smembers")
-		}
-		// Read from redis list of phone numbers
-		allowedPhones, err = mpesaAPI.RedisDB.SMembers(
-			ctx, mpesaAPI.addPrefix(userAllowedPhonesSet(payload.ID)),
-		).Result()
-		if err != nil && !errors.Is(err, redis.Nil) {
-			return nil, errs.RedisCmdFailed(err, "smembers")
-		}
+	// Read from redis list of acc numbers
+	allowedAccNo, err = mpesaAPI.RedisDB.SMembers(
+		ctx, mpesaAPI.AddPrefix(userAllowedAccSet(payload.ID)),
+	).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return nil, errs.RedisCmdFailed(err, "smembers")
+	}
+	// Read from redis list of phone numbers
+	allowedPhones, err = mpesaAPI.RedisDB.SMembers(
+		ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(payload.ID)),
+	).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return nil, errs.RedisCmdFailed(err, "smembers")
 	}
 
 	pageSize := listReq.GetPageSize()
 	if pageSize <= 0 || pageSize > defaultPageSize {
-		if !inGroup(payload.Group, auth.Admins()) {
+		if mpesaAPI.AuthAPI.IsAdmin(payload.Group) {
 			pageSize = defaultPageSize
 		}
 	}
@@ -312,7 +326,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	// Apply filters
 	if len(allowedAccNo) > 0 {
-		db = db.Where("tx_ref_number IN(?)", allowedAccNo)
+		db = db.Where("reference_number IN(?)", allowedAccNo)
 	}
 
 	if len(allowedPhones) > 0 {
@@ -320,7 +334,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	}
 
 	if int(listReq.GetFilter().GetAmount()) > 0 {
-		db = db.Where("tx_amount BETWEEN ? AND ?", listReq.Filter.Amount-0.5, listReq.Filter.Amount)
+		db = db.Where("amount BETWEEN ? AND ?", listReq.Filter.Amount-0.5, listReq.Filter.Amount)
 	}
 
 	// Apply payment id filter
@@ -335,7 +349,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 		// Timestamp filter
 		if endTimestamp > startTimestamp {
-			db = db.Where("tx_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
+			db = db.Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
 		} else {
 			// Date filter
 			if listReq.Filter.TxDate != "" {
@@ -343,7 +357,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 				if err != nil {
 					return nil, err
 				}
-				db = db.Where("tx_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+				db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 			}
 		}
 
@@ -414,12 +428,8 @@ func getTime(dateStr string) (*time.Time, error) {
 func (mpesaAPI *mpesaAPIServer) AddScopes(
 	ctx context.Context, addReq *mpesapayment.AddScopesRequest,
 ) (*emptypb.Empty, error) {
-	if mpesaAPI.DisablePublishing {
-		return nil, errs.WrapMessage(codes.PermissionDenied, "not allowed to add scopes")
-	}
-
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -435,12 +445,12 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 	}
 
 	// Delete the scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.addPrefix(userAllowedAccSet(addReq.UserId)))
+	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)))
 
 	if len(addReq.Scopes.AllowedAccNumber) > 0 {
 		// Add the scopes
 		err = mpesaAPI.RedisDB.SAdd(
-			ctx, mpesaAPI.addPrefix(userAllowedAccSet(addReq.UserId)), addReq.Scopes.AllowedAccNumber,
+			ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)), addReq.Scopes.AllowedAccNumber,
 		).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "sadd")
@@ -448,12 +458,12 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 	}
 
 	// Delete the scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.addPrefix(userAllowedPhonesSet(addReq.UserId)))
+	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)))
 
 	if len(addReq.Scopes.AllowedPhones) > 0 {
 		// Add the scopes
 		err = mpesaAPI.RedisDB.SAdd(
-			ctx, mpesaAPI.addPrefix(userAllowedPhonesSet(addReq.UserId)), addReq.Scopes.AllowedPhones,
+			ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)), addReq.Scopes.AllowedPhones,
 		).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "sadd")
@@ -466,10 +476,6 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 func (mpesaAPI *mpesaAPIServer) GetScopes(
 	ctx context.Context, getReq *mpesapayment.GetScopesRequest,
 ) (*mpesapayment.GetScopesResponse, error) {
-	if mpesaAPI.DisablePublishing {
-		return nil, errs.WrapMessage(codes.PermissionDenied, "not allowed to get scopes")
-	}
-
 	// Authentication
 	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
@@ -486,7 +492,7 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 
 	// Read from redis set of acc numbers
 	allowedAccNo, err := mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.addPrefix(userAllowedAccSet(getReq.UserId)),
+		ctx, mpesaAPI.AddPrefix(userAllowedAccSet(getReq.UserId)),
 	).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return nil, errs.RedisCmdFailed(err, "smembers")
@@ -494,7 +500,7 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 
 	// Read from redis set of phone numbers
 	allowedPhones, err := mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.addPrefix(userAllowedPhonesSet(getReq.UserId)),
+		ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(getReq.UserId)),
 	).Result()
 	if err != nil && !errors.Is(err, redis.Nil) {
 		return nil, errs.RedisCmdFailed(err, "smembers")
@@ -512,7 +518,7 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 	ctx context.Context, processReq *mpesapayment.ProcessMpesaPaymentRequest,
 ) (*emptypb.Empty, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -533,7 +539,7 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 		err = db.Error
 		count = db.RowsAffected
 	} else {
-		db := mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Unscoped().Where("tx_id=?", processReq.PaymentId).Update("processed", processReq.State)
+		db := mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Unscoped().Where("transaction_id=?", processReq.PaymentId).Update("processed", processReq.State)
 		err = db.Error
 		count = db.RowsAffected
 	}
@@ -549,7 +555,7 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 				mpesaAPI.Logger.Infoln("started goroutine to update mpesa payment once its received")
 
 				updateFn := func() int64 {
-					return mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("tx_id=?", paymentID).Update("processed", true).RowsAffected
+					return mpesaAPI.SQLDB.Model(&PaymentMpesa{}).Where("transaction_id=?", paymentID).Update("processed", processReq.State).RowsAffected
 				}
 
 				timer := time.NewTimer(5 * time.Second)
@@ -578,12 +584,8 @@ func (mpesaAPI *mpesaAPIServer) ProcessMpesaPayment(
 func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 	ctx context.Context, pubReq *mpesapayment.PublishMpesaPaymentRequest,
 ) (*emptypb.Empty, error) {
-	if mpesaAPI.DisablePublishing {
-		return nil, errs.WrapMessage(codes.PermissionDenied, "not allowed to publish payment")
-	}
-
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -612,7 +614,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 	switch pubReq.ProcessedState {
 	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 		err = mpesaAPI.RedisDB.Publish(
-			ctx, mpesaAPI.addPrefix(mpesaAPI.PublishChannel), publishPayload,
+			ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), publishPayload,
 		).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -621,7 +623,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 		// Publish only if the processed state is false
 		if !mpesaPayment.Processed {
 			err = mpesaAPI.RedisDB.Publish(
-				ctx, mpesaAPI.addPrefix(mpesaAPI.PublishChannel), publishPayload,
+				ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), publishPayload,
 			).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -631,7 +633,7 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 		// Publish only if the processed state is true
 		if mpesaPayment.Processed {
 			err = mpesaAPI.RedisDB.Publish(
-				ctx, mpesaAPI.addPrefix(mpesaAPI.PublishChannel), publishPayload,
+				ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), publishPayload,
 			).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -645,12 +647,8 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 	ctx context.Context, pubReq *mpesapayment.PublishAllMpesaPaymentRequest,
 ) (*emptypb.Empty, error) {
-	if mpesaAPI.DisablePublishing {
-		return nil, errs.WrapMessage(codes.PermissionDenied, "not allowed to publish payment")
-	}
-
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, auth.Admins()...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -712,7 +710,7 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 		// Publish the mpesa transactions to listeners
 		for _, mpesaPB := range listRes.MpesaPayments {
 			err := pipeliner.Publish(
-				ctx, mpesaAPI.addPrefix(mpesaAPI.PublishChannel), mpesaPB.PaymentId,
+				ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), mpesaPB.PaymentId,
 			).Err()
 			if err != nil {
 				return nil, err
@@ -754,7 +752,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	switch {
 	case getReq == nil:
 		return nil, errs.NilObject("get transactions count")
-	case getReq.Amount == 0 && !inGroup(payload.Group, auth.Admins()):
+	case getReq.Amount == 0 && mpesaAPI.AuthAPI.IsAdmin(payload.Group):
 		return nil, errs.NilObject("amount")
 	default:
 		if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
@@ -768,10 +766,10 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 
 	// Apply filters
 	if getReq.Amount > 0 {
-		db = db.Where("tx_amount BETWEEN ? AND ?", getReq.Amount-0.5, getReq.Amount)
+		db = db.Where("amount BETWEEN ? AND ?", getReq.Amount-0.5, getReq.Amount)
 	}
 	if len(getReq.AccountsNumber) > 0 {
-		db = db.Where("tx_ref_number IN (?)", getReq.AccountsNumber)
+		db = db.Where("reference_number IN (?)", getReq.AccountsNumber)
 	}
 	if len(getReq.Msisdns) > 0 {
 		db = db.Where("msisdn IN (?)", getReq.Msisdns)
@@ -779,7 +777,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 
 	// Apply date filters
 	if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
-		db = db.Where("tx_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
+		db = db.Where("transaction_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
 	}
 
 	var transactions int64
@@ -793,7 +791,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	var totalAmount float32
 
 	// Get total amount
-	err = db.Table(MpesaPayments).Select("sum(tx_amount) as total").Row().Scan(&totalAmount)
+	err = db.Table(MpesaPayments).Select("sum(amount) as total").Row().Scan(&totalAmount)
 	if err != nil {
 		return nil, errs.FailedToFind("total", err)
 	}
@@ -812,7 +810,7 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 	ctx context.Context, getReq *mpesapayment.GetRandomTransactionRequest,
 ) (*mpesapayment.MPESAPayment, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeGroups(ctx, append(auth.Admins(), "PRESENTER")...)
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
 		return nil, err
 	}
