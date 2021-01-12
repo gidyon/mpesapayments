@@ -211,18 +211,6 @@ message PublishAllB2CPaymentRequest {
 	int64 end_timestamp = 4;
 }
 
-message PublishMessage {
-	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-		json_schema: {
-			title: "PublishMessage"
-			description: "Published stk message to consumers"
-		}
-	};
-
-	string payment_id = 1;
-	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
-}
-
 service B2CAPI {
     rpc QueryTransactionStatus (QueryTransactionStatusRequest) returns (QueryResponse) {};
     rpc QueryAccountBalance (QueryAccountBalanceRequest) returns (QueryAccountBalanceResponse) {};
