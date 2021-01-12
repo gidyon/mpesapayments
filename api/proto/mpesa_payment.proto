@@ -18,14 +18,14 @@ message MPESAPayment {
 	};
 
 	string payment_id = 1;
-	string tx_type = 2;
-	string tx_id = 3;
+	string transaction_type = 2;
+	string transaction_id = 3;
 	string msisdn = 4;
 	string names = 5;
-	string tx_ref_number = 6;
-	int64 tx_timestamp = 7;
+	string ref_number = 6;
+	int64 transaction_timestamp = 7;
 	int64 create_timestamp = 8;
-	float tx_amount = 9;
+	float amount = 9;
 	float org_balance = 10;
 	int32 business_short_code = 11;
 	bool processed = 12;
@@ -41,6 +41,7 @@ message CreateMPESAPaymentRequest {
 	};
 
 	MPESAPayment mpesa_payment = 1 [(google.api.field_behavior) = REQUIRED];
+	bool publish = 2;
 }
 
 message CreateMPESAPaymentResponse {

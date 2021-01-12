@@ -512,6 +512,9 @@
       "properties": {
         "mpesaPayment": {
           "$ref": "#/definitions/mpesaMPESAPayment"
+        },
+        "publish": {
+          "type": "boolean"
         }
       },
       "description": "Request to create record of mpesa payment",
@@ -599,10 +602,10 @@
         "paymentId": {
           "type": "string"
         },
-        "txType": {
+        "transactionType": {
           "type": "string"
         },
-        "txId": {
+        "transactionId": {
           "type": "string"
         },
         "msisdn": {
@@ -611,10 +614,10 @@
         "names": {
           "type": "string"
         },
-        "txRefNumber": {
+        "refNumber": {
           "type": "string"
         },
-        "txTimestamp": {
+        "transactionTimestamp": {
           "type": "string",
           "format": "int64"
         },
@@ -622,7 +625,7 @@
           "type": "string",
           "format": "int64"
         },
-        "txAmount": {
+        "amount": {
           "type": "number",
           "format": "float"
         },
