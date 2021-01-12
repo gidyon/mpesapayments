@@ -33,7 +33,7 @@ func (*PayloadStk) TableName() string {
 	// Get table prefix
 	prefix := os.Getenv("TABLE_PREFIX")
 	if prefix != "" {
-		return fmt.Sprintf("%s-%s", prefix, StkTable)
+		return fmt.Sprintf("%s_%s", prefix, StkTable)
 	}
 	return StkTable
 }
