@@ -3,9 +3,11 @@ package mocks
 import (
 	"context"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
 	"github.com/stretchr/testify/mock"
@@ -140,14 +142,13 @@ func randomParagraph(l int) string {
 
 func mockStkPayload() *stk.StkPayload {
 	return &stk.StkPayload{
-		PayloadId:          fmt.Sprint(randomdata.Number(1, 10)),
-		MerchantRequestId:  randomdata.RandStringRunes(48),
-		CheckoutRequestId:  randomdata.RandStringRunes(44),
-		ResultCode:         fmt.Sprint(randomdata.Number(0, 9999)),
-		ResultDesc:         randomParagraph(100),
-		Amount:             fmt.Sprint(randomdata.Decimal(5, 10)),
-		MpesaReceiptNumber: randomdata.RandStringRunes(32),
-		TransactionDate:    randomdata.FullDate(),
-		PhoneNumber:        randomdata.PhoneNumber()[:10],
+		MerchantRequestId:    randomdata.RandStringRunes(48),
+		CheckoutRequestId:    randomdata.RandStringRunes(44),
+		ResultCode:           fmt.Sprint(randomdata.Number(0, 9999)),
+		ResultDesc:           randomParagraph(100),
+		Amount:               fmt.Sprint(randomdata.Decimal(5, 10)),
+		TransactionId:        strings.ToUpper(randomdata.RandStringRunes(32)),
+		TransactionTimestamp: time.Now().Unix(),
+		PhoneNumber:          randomdata.PhoneNumber()[:10],
 	}
 }

@@ -2,10 +2,11 @@ package mocks
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/micro/utils/errs"
+	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
 	"github.com/stretchr/testify/mock"
@@ -122,14 +123,13 @@ var (
 
 func mockMpesaPayment() *mpesapayment.MPESAPayment {
 	return &mpesapayment.MPESAPayment{
-		PaymentId:         fmt.Sprint(randomdata.Number(1, 10)),
-		TxId:              randomdata.RandStringRunes(32),
-		TxType:            txTypes[randomdata.Number(0, len(txTypes))],
-		TxTimestamp:       time.Now().Unix(),
-		Msisdn:            randomdata.PhoneNumber()[:10],
-		Names:             randomdata.SillyName(),
-		TxRefNumber:       txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
-		TxAmount:          float32(randomdata.Decimal(1000, 100000)),
-		BusinessShortCode: int32(randomdata.Number(1000, 20000)),
+		TransactionId:        strings.ToUpper(randomdata.RandStringRunes(32)),
+		TransactionType:      txTypes[randomdata.Number(0, len(txTypes))],
+		TransactionTimestamp: time.Now().Unix(),
+		Msisdn:               randomdata.PhoneNumber()[:10],
+		Names:                randomdata.SillyName(),
+		RefNumber:            txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
+		Amount:               float32(randomdata.Decimal(1000, 100000)),
+		BusinessShortCode:    int32(randomdata.Number(1000, 20000)),
 	}
 }
