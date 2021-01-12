@@ -1,9 +1,23 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "stk.proto",
-    "version": "version not set"
+    "title": "STK Mpesa Service",
+    "description": "API for initiating STK push and CRUD API for stks payments",
+    "version": "0.1",
+    "contact": {
+      "name": "Github \u003cGideon Kamau\u003e",
+      "url": "https://github.com/gidyon/mpesapayments/blob/master/api/proto/stk.proto",
+      "email": "gideonhacer@gmail.com"
+    },
+    "license": {
+      "name": "GNU GENERAL PUBLIC LICENSE",
+      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE"
+    }
   },
+  "schemes": [
+    "http",
+    "https"
+  ],
   "consumes": [
     "application/json"
   ],
@@ -292,6 +306,9 @@
       "properties": {
         "payload": {
           "$ref": "#/definitions/mpesaStkPayload"
+        },
+        "publish": {
+          "type": "boolean"
         }
       },
       "description": "Request to create stk push payload",
@@ -473,13 +490,10 @@
         "amount": {
           "type": "string"
         },
-        "mpesaReceiptNumber": {
+        "transactionId": {
           "type": "string"
         },
         "balance": {
-          "type": "string"
-        },
-        "transactionDate": {
           "type": "string"
         },
         "phoneNumber": {
@@ -490,6 +504,10 @@
         },
         "processed": {
           "type": "boolean"
+        },
+        "transactionTimestamp": {
+          "type": "string",
+          "format": "int64"
         },
         "createTimestamp": {
           "type": "string",
@@ -532,5 +550,18 @@
         }
       }
     }
-  }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Authentication token, prefixed by Bearer: Bearer \u003ctoken\u003e",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
 }

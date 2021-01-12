@@ -1,9 +1,23 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "b2c.proto",
-    "version": "version not set"
+    "title": "B2C Mpesa Service",
+    "description": "API for interacting with B2C Mpesa API",
+    "version": "0.1",
+    "contact": {
+      "name": "Github \u003cGideon Kamau\u003e",
+      "url": "https://github.com/gidyon/mpesapayments/blob/master/api/proto/b2c.proto",
+      "email": "gideonhacer@gmail.com"
+    },
+    "license": {
+      "name": "GNU GENERAL PUBLIC LICENSE",
+      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE"
+    }
   },
+  "schemes": [
+    "http",
+    "https"
+  ],
   "consumes": [
     "application/json"
   ],
@@ -441,5 +455,18 @@
         }
       }
     }
-  }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Authentication token, prefixed by Bearer: Bearer \u003ctoken\u003e",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
 }

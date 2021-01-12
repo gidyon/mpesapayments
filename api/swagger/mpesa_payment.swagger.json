@@ -6,12 +6,12 @@
     "version": "0.1",
     "contact": {
       "name": "Github \u003cGideon Kamau\u003e",
-      "url": "https://github.com/gidyon/mpesapayments/src/master/",
+      "url": "https://github.com/gidyon/mpesapayments/blob/master/api/proto/mpesa_payment.proto",
       "email": "gkamau@onfonmedia.com"
     },
     "license": {
-      "name": "BSD 3-Clause License",
-      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE.txt"
+      "name": "GNU GENERAL PUBLIC LICENSE",
+      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE"
     }
   },
   "schemes": [
