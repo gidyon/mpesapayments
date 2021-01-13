@@ -80,6 +80,9 @@ func main() {
 				} else if !*disableStk {
 					r = stkPayloadBuffer()
 					address = fmt.Sprintf("%s%s", *serverAddress, *stkPath)
+				} else {
+					r = mpesaPayloadBuffer()
+					address = fmt.Sprintf("%s%s", *serverAddress, *mpesaPath)
 				}
 
 				err := sendRequest(ctx, address, r)
