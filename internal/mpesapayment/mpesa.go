@@ -2,6 +2,7 @@ package mpesapayment
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -73,7 +74,7 @@ func ValidateOptions(opt *Options) error {
 	case opt.PaginationHasher == nil:
 		err = errs.NilObject("pagination PaginationHasher")
 	case opt.RedisKeyPrefix == "":
-		err = errs.MissingField("keys prefix")
+		err = errs.MissingField("redis keys prefix")
 	}
 	return err
 }
@@ -788,7 +789,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		return nil, errs.FailedToFind("transactions", err)
 	}
 
-	var totalAmount float32
+	var totalAmount sql.NullFloat64
 
 	// Get total amount
 	err = db.Model(&PaymentMpesa{}).Select("sum(amount) as total").Row().Scan(&totalAmount)
@@ -796,8 +797,14 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		return nil, errs.FailedToFind("total", err)
 	}
 
+	var totalAmountF float32
+
+	if totalAmount.Valid {
+		totalAmountF = float32(totalAmount.Float64)
+	}
+
 	return &mpesapayment.TransactionsSummary{
-		TotalAmount:       totalAmount,
+		TotalAmount:       totalAmountF,
 		TransactionsCount: int32(transactions),
 	}, nil
 }
