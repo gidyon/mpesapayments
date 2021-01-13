@@ -744,7 +744,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	ctx context.Context, getReq *mpesapayment.GetTransactionsCountRequest,
 ) (*mpesapayment.TransactionsSummary, error) {
 	// Authentication
-	payload, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -753,8 +753,6 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	switch {
 	case getReq == nil:
 		return nil, errs.NilObject("get transactions count")
-	case getReq.Amount == 0 && mpesaAPI.AuthAPI.IsAdmin(payload.Group):
-		return nil, errs.NilObject("amount")
 	default:
 		if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
 			if getReq.StartTimeSeconds > getReq.EndTimeSeconds {

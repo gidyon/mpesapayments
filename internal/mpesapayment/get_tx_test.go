@@ -31,13 +31,6 @@ var _ = Describe("Getting summary of mpesa transactions @gettx", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(getRes).Should(BeNil())
 		})
-		It("should fail when amount is missing", func() {
-			getReq.Amount = 0
-			getRes, err := MpesaPaymentAPI.GetTransactionsCount(ctx, getReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(getRes).Should(BeNil())
-		})
 		It("should fail when the start time is greater the end time", func() {
 			getReq.StartTimeSeconds = time.Now().Unix() + 10000
 			getReq.EndTimeSeconds = time.Now().Unix()
