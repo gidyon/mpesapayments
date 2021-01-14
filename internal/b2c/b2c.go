@@ -39,6 +39,8 @@ const (
 	publishChannel          = "mpesa:b2c:pubsub"
 	bulkInsertSize          = 1000
 
+	// InitiatorID ...
+	InitiatorID = "initiator_id"
 	// RequestIDQuery ...
 	RequestIDQuery = "request_id"
 	// ShortCodeQuery ...
@@ -275,6 +277,7 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 }
 
 type queryOptions struct {
+	initiatorID          string
 	requestID            string
 	msisdn               string
 	shortCode            string
@@ -291,6 +294,9 @@ func (b2cAPI *b2cAPIServer) QueryTransactionStatus(
 
 func addQueryParams(opt *queryOptions, url string) string {
 	url = url + "?oops=oops"
+	if opt.initiatorID != "" {
+		url += fmt.Sprintf("&%s=%s", InitiatorID, opt.initiatorID)
+	}
 	if opt.requestID != "" {
 		url += fmt.Sprintf("&%s=%s", RequestIDQuery, opt.requestID)
 	}
@@ -352,6 +358,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 	defer b2cAPI.release(requestID)
 
 	queryOptions := &queryOptions{
+		initiatorID:          queryReq.InitiatorId,
 		requestID:            requestID,
 		msisdn:               fmt.Sprint(queryReq.PartyA),
 		shortCode:            fmt.Sprint(queryReq.PartyA),
@@ -469,6 +476,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 	defer b2cAPI.release(requestID)
 
 	queryOptions := &queryOptions{
+		initiatorID:          transferReq.InitiatorId,
 		requestID:            requestID,
 		msisdn:               fmt.Sprint(transferReq.Msisdn),
 		shortCode:            fmt.Sprint(transferReq.ShortCode),
@@ -575,6 +583,7 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 	defer b2cAPI.release(requestID)
 
 	queryOptions := &queryOptions{
+		initiatorID:          reverseReq.InitiatorId,
 		requestID:            requestID,
 		shortCode:            fmt.Sprint(reverseReq.ShortCode),
 		publishGlobalChannel: b2cAPI.PublishChannel,
@@ -805,6 +814,10 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 				return nil, err
 			}
 			db = db.Where("create_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+		}
+
+		if listReq.Filter.InitiatorId != "" {
+			db = db.Where("initiator_id = ?", listReq.Filter.InitiatorId)
 		}
 
 		if len(listReq.Filter.Msisdns) > 0 {

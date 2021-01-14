@@ -13,11 +13,12 @@ const B2CTable = "b2c_transactions"
 // Payment is B2C payment model
 type Payment struct {
 	PaymentID                uint    `gorm:"primaryKey;autoIncrement"`
+	InitiatorID              string  `gorm:"index;type:varchar(50)"`
 	Msisdn                   string  `gorm:"index;type:varchar(15)"`
 	OrgShortCode             string  `gorm:"index;type:varchar(15)"`
 	ReceiverPublicName       string  `gorm:"type:varchar(50)"`
 	TransactionType          string  `gorm:"type:varchar(50)"`
-	TransactionID            string  `gorm:"type:varchar(50)"`
+	TransactionID            string  `gorm:"index;type:varchar(50)"`
 	ConversationID           string  `gorm:"type:varchar(50)"`
 	OriginatorConversationID string  `gorm:"type:varchar(50)"`
 	ResultCode               string  `gorm:"type:varchar(2)"`
@@ -46,6 +47,7 @@ func (*Payment) TableName() string {
 // GetB2CPaymentDB is wrapper to converts database model to protobuf b2c payment
 func GetB2CPaymentDB(paymentPB *b2c.B2CPayment) (*Payment, error) {
 	paymentDB := &Payment{
+		InitiatorID:              paymentPB.InitiatorId,
 		Msisdn:                   paymentPB.Msisdn,
 		OrgShortCode:             paymentPB.OrgShortCode,
 		ReceiverPublicName:       paymentPB.ReceiverPartyPublicName,
@@ -71,6 +73,7 @@ func GetB2CPaymentDB(paymentPB *b2c.B2CPayment) (*Payment, error) {
 func GetB2CPaymentPB(paymentDB *Payment) (*b2c.B2CPayment, error) {
 	paymentPB := &b2c.B2CPayment{
 		PaymentId:                fmt.Sprint(paymentDB.PaymentID),
+		InitiatorId:              paymentDB.InitiatorID,
 		Msisdn:                   paymentDB.Msisdn,
 		OrgShortCode:             paymentDB.OrgShortCode,
 		ReceiverPartyPublicName:  paymentDB.ReceiverPublicName,

@@ -58,6 +58,12 @@
             "format": "int32"
           },
           {
+            "name": "filter.initiatorId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
             "name": "filter.txDate",
             "in": "query",
             "required": false,
@@ -218,6 +224,9 @@
         "paymentId": {
           "type": "string"
         },
+        "initiatorId": {
+          "type": "string"
+        },
         "orgShortCode": {
           "type": "string"
         },
@@ -299,6 +308,9 @@
     "mpesaListB2CPaymentFilter": {
       "type": "object",
       "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
         "txDate": {
           "type": "string"
         },
@@ -391,6 +403,9 @@
           "format": "float"
         },
         "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
           "type": "string"
         }
       }

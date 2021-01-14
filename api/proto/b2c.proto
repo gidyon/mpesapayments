@@ -26,7 +26,7 @@ message QueryTransactionStatusRequest {
     string queue_timeout_url = 7;
     string result_url = 8;
     string transaction_id = 9;
-    string occassion = 10;
+	string occassion = 10;
 }
 
 message QueryAccountBalanceRequest {
@@ -41,6 +41,7 @@ message QueryAccountBalanceRequest {
     int64 party_a = 2;
 	string remarks = 3;
 	string request_id = 4;
+	string initiator_id = 5;
 }
 
 message QueryAccountBalanceResponse {
@@ -49,6 +50,7 @@ message QueryAccountBalanceResponse {
 	float utility_account_funds = 3;
 	float charges_paid_funds = 4;
 	string request_id = 5;
+	string initiator_id = 6;
 }
 
 message TransferFundsRequest {
@@ -66,6 +68,7 @@ message TransferFundsRequest {
 	string occassion = 5;
 	CommandId Command_id = 6;
 	string request_id = 7;
+	string initiator_id = 8;
 }
 
 message ReverseTransactionRequest {
@@ -75,6 +78,7 @@ message ReverseTransactionRequest {
     string transaction_id = 4;
 	string occassion = 5;
 	string request_id = 6;
+	string initiator_id = 7;
 }
 
 message QueryResponse {
@@ -86,24 +90,25 @@ message QueryResponse {
 
 message B2CPayment {
 	string payment_id = 1;
-	string org_short_code = 2;
-	string msisdn = 3;
-	string receiver_party_public_name = 4;
-	string transaction_type = 5;
-	string transaction_id = 6;
-	string conversation_id = 7;
-	string originator_conversation_id = 8;
-	string result_code = 9;
-	string result_description = 10;
-	int64 transaction_timestamp = 11;
-	int64 create_timestamp = 12;
-	float amount = 13;
-	float working_account_funds = 14;
-	float utility_account_funds = 15;
-	float charges_paid_funds = 16;
-	bool recipient_registered = 17;
-	bool succeeded = 18;
-	bool processed = 19;
+	string initiator_id = 2;
+	string org_short_code = 3;
+	string msisdn = 4;
+	string receiver_party_public_name = 5;
+	string transaction_type = 6;
+	string transaction_id = 7;
+	string conversation_id = 8;
+	string originator_conversation_id = 9;
+	string result_code = 10;
+	string result_description = 11;
+	int64 transaction_timestamp = 12;
+	int64 create_timestamp = 13;
+	float amount = 14;
+	float working_account_funds = 15;
+	float utility_account_funds = 16;
+	float charges_paid_funds = 17;
+	bool recipient_registered = 18;
+	bool succeeded = 19;
+	bool processed = 20;
 }
 
 message CreateB2CPaymentRequest {
@@ -139,11 +144,12 @@ message ListB2CPaymentFilter {
 		}
 	};
 	
-	string tx_date = 1;
-	repeated string msisdns = 2;
-	gidyon.mpesa.ProcessedState process_state = 3;
-	int64 start_timestamp = 4;
-	int64 end_timestamp = 5;
+	string initiator_id = 1;
+	string tx_date = 2;
+	repeated string msisdns = 3;
+	gidyon.mpesa.ProcessedState process_state = 4;
+	int64 start_timestamp = 5;
+	int64 end_timestamp = 6;
 }
 
 message ListB2CPaymentsRequest {
