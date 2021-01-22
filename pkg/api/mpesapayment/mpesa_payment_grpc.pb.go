@@ -38,6 +38,8 @@ type LipaNaMPESAClient interface {
 	GetTransactionsCount(ctx context.Context, in *GetTransactionsCountRequest, opts ...grpc.CallOption) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
 	GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
+	// Archives transactions in a separate table`
+	ArchiveTransactions(ctx context.Context, in *ArchiveTransactionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type lipaNaMPESAClient struct {
@@ -138,6 +140,15 @@ func (c *lipaNaMPESAClient) GetRandomTransaction(ctx context.Context, in *GetRan
 	return out, nil
 }
 
+func (c *lipaNaMPESAClient) ArchiveTransactions(ctx context.Context, in *ArchiveTransactionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ArchiveTransactions", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LipaNaMPESAServer is the server API for LipaNaMPESA service.
 // All implementations must embed UnimplementedLipaNaMPESAServer
 // for forward compatibility
@@ -162,6 +173,8 @@ type LipaNaMPESAServer interface {
 	GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
 	GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error)
+	// Archives transactions in a separate table`
+	ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLipaNaMPESAServer()
 }
 
@@ -198,6 +211,9 @@ func (UnimplementedLipaNaMPESAServer) GetTransactionsCount(context.Context, *Get
 }
 func (UnimplementedLipaNaMPESAServer) GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRandomTransaction not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ArchiveTransactions not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) mustEmbedUnimplementedLipaNaMPESAServer() {}
 
@@ -392,6 +408,24 @@ func _LipaNaMPESA_GetRandomTransaction_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LipaNaMPESA_ArchiveTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ArchiveTransactionsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ArchiveTransactions(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ArchiveTransactions",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ArchiveTransactions(ctx, req.(*ArchiveTransactionsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.LipaNaMPESA",
 	HandlerType: (*LipaNaMPESAServer)(nil),
@@ -435,6 +469,10 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetRandomTransaction",
 			Handler:    _LipaNaMPESA_GetRandomTransaction_Handler,
+		},
+		{
+			MethodName: "ArchiveTransactions",
+			Handler:    _LipaNaMPESA_ArchiveTransactions_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

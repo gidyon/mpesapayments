@@ -891,3 +891,44 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 		PaymentId: fmt.Sprint(winnerID),
 	})
 }
+
+func (mpesaAPI *mpesaAPIServer) ArchiveTransactions(
+	ctx context.Context, archiveReq *mpesapayment.ArchiveTransactionsRequest,
+) (*emptypb.Empty, error) {
+	// Authentication
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case archiveReq == nil:
+		return nil, errs.NilObject("get request")
+	case archiveReq.ArchiveName == "":
+		return nil, errs.MissingField("archive name")
+	}
+
+	liveTable := (&PaymentMpesa{}).TableName()
+
+	archiveTable := fmt.Sprintf("%s_%s", liveTable, archiveReq.ArchiveName)
+
+	// Check table does not exist
+	if mpesaAPI.SQLDB.Migrator().HasTable(archiveTable) {
+		return nil, errs.WrapMessage(codes.AlreadyExists, "archive name exists, use a different one")
+	}
+
+	// Create table and copy data
+	err = mpesaAPI.SQLDB.Exec(fmt.Sprintf("CREATE TABLE %s AS SELECT * FROM %s", archiveTable, liveTable)).Error
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to archive table")
+	}
+
+	// Truncate the old table
+	err = mpesaAPI.SQLDB.Exec(fmt.Sprintf("TRUNCATE TABLE %s", liveTable)).Error
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to truncate table")
+	}
+
+	return &emptypb.Empty{}, nil
+}

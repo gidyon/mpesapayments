@@ -153,6 +153,61 @@
         ]
       }
     },
+    "/api/mpestx/payments/actions/archive-transactions": {
+      "get": {
+        "summary": "Archives transactions in a separate table`",
+        "operationId": "LipaNaMPESA_ArchiveTransactions",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "fromTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "toTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "refNumbers",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "archiveName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/payments/actions/get-random-transaction": {
       "get": {
         "summary": "Retrives a random transaction using RM=NG algorithm",

@@ -240,6 +240,20 @@ message TransactionsSummary {
 	int32 transactions_count = 2;
 }
 
+message ArchiveTransactionsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ArchiveTransactionsRequest"
+			description: "Request to archive all transactions in active table to a separate table"
+		}
+	};
+
+	int64 from_time_seconds = 1;
+	int64 to_time_seconds = 2;
+	repeated string ref_numbers = 3;
+	string archive_name = 4;
+}
+
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
 	// Creates a record of mpesa payment.
@@ -314,6 +328,13 @@ service LipaNaMPESA {
 	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (MPESAPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/payments/actions/get-random-transaction"
+		};
+	};
+
+	// Archives transactions in a separate table`
+	rpc ArchiveTransactions (ArchiveTransactionsRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/payments/actions/archive-transactions"
 		};
 	};
 }
