@@ -84,8 +84,8 @@ message ListMPESAPaymentsFilter {
 	string tx_date = 1;
 	repeated string msisdns = 2;
 	repeated string accounts_number = 3;
-	ProcessedState process_state = 4;
-	float amount = 5;
+	repeated float amounts = 4;
+	ProcessedState process_state = 5;
 	int64 start_timestamp = 6;
 	int64 end_timestamp = 7;
 }
@@ -125,12 +125,14 @@ message Scopes {
 
 	repeated string allowed_phones = 1;
 	repeated string allowed_acc_number = 2;
+	repeated float allowed_amounts = 3;
+	float percentage = 4;
 }
 
-message AddScopesRequest {
+message SaveScopesRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "AddScopesRequest"
+			title: "SaveScopesRequest"
 			description: "Request to add scopes"
 			required: ["user_id", "scopes"]
 		}
@@ -140,10 +142,10 @@ message AddScopesRequest {
 	Scopes scopes = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
-message AddScopesResponse {
+message SaveScopesResponse {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "AddScopesResponse"
+			title: "SaveScopesResponse"
 			description: "Response containing scopes"
 		}
 	};
@@ -223,9 +225,9 @@ message GetTransactionsCountRequest {
 
 	repeated string accounts_number = 1;
 	repeated string msisdns = 2;
-	int64 start_time_seconds = 3;
-	int64 end_time_seconds = 4;
-	float amount = 5 [(google.api.field_behavior) = REQUIRED];
+	repeated float amounts = 3 [(google.api.field_behavior) = REQUIRED];
+	int64 start_time_seconds = 4;
+	int64 end_time_seconds = 5;
 }
 
 message TransactionsSummary {
@@ -278,8 +280,8 @@ service LipaNaMPESA {
 		};
 	};
 
-	// Adds scopes to a user.
-	rpc AddScopes (AddScopesRequest) returns (google.protobuf.Empty) {
+	// Saves scopes for a user.
+	rpc SaveScopes (SaveScopesRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx/scopes:add"
 			body: "*"
