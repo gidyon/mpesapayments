@@ -103,7 +103,8 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case mpesaPayload.BusinessShortCode == "":
 		err = fmt.Errorf("missing business short code")
 	case mpesaPayload.BillRefNumber == "":
-		err = fmt.Errorf("missing account number")
+		gw.Logger.Warningln("missing account number")
+		mpesaPayload.BillRefNumber = "TILL_PAYMENT"
 	case mpesaPayload.MSISDN == "":
 		err = fmt.Errorf("missing transaction msisdn")
 	case mpesaPayload.TransactionType == "":
