@@ -24,8 +24,8 @@ type LipaNaMPESAClient interface {
 	GetMPESAPayment(ctx context.Context, in *GetMPESAPaymentRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
 	// Retrieves a collection of MPESA payments.
 	ListMPESAPayments(ctx context.Context, in *ListMPESAPaymentsRequest, opts ...grpc.CallOption) (*ListMPESAPaymentsResponse, error)
-	// Adds scopes to a user.
-	AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Saves scopes for a user.
+	SaveScopes(ctx context.Context, in *SaveScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(ctx context.Context, in *GetScopesRequest, opts ...grpc.CallOption) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
@@ -77,9 +77,9 @@ func (c *lipaNaMPESAClient) ListMPESAPayments(ctx context.Context, in *ListMPESA
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) AddScopes(ctx context.Context, in *AddScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) SaveScopes(ctx context.Context, in *SaveScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/AddScopes", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/SaveScopes", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -159,8 +159,8 @@ type LipaNaMPESAServer interface {
 	GetMPESAPayment(context.Context, *GetMPESAPaymentRequest) (*MPESAPayment, error)
 	// Retrieves a collection of MPESA payments.
 	ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error)
-	// Adds scopes to a user.
-	AddScopes(context.Context, *AddScopesRequest) (*emptypb.Empty, error)
+	// Saves scopes for a user.
+	SaveScopes(context.Context, *SaveScopesRequest) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
@@ -191,8 +191,8 @@ func (UnimplementedLipaNaMPESAServer) GetMPESAPayment(context.Context, *GetMPESA
 func (UnimplementedLipaNaMPESAServer) ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListMPESAPayments not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) AddScopes(context.Context, *AddScopesRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddScopes not implemented")
+func (UnimplementedLipaNaMPESAServer) SaveScopes(context.Context, *SaveScopesRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SaveScopes not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetScopes not implemented")
@@ -282,20 +282,20 @@ func _LipaNaMPESA_ListMPESAPayments_Handler(srv interface{}, ctx context.Context
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_AddScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddScopesRequest)
+func _LipaNaMPESA_SaveScopes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SaveScopesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).AddScopes(ctx, in)
+		return srv.(LipaNaMPESAServer).SaveScopes(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/AddScopes",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/SaveScopes",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).AddScopes(ctx, req.(*AddScopesRequest))
+		return srv.(LipaNaMPESAServer).SaveScopes(ctx, req.(*SaveScopesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -443,8 +443,8 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 			Handler:    _LipaNaMPESA_ListMPESAPayments_Handler,
 		},
 		{
-			MethodName: "AddScopes",
-			Handler:    _LipaNaMPESA_AddScopes_Handler,
+			MethodName: "SaveScopes",
+			Handler:    _LipaNaMPESA_SaveScopes_Handler,
 		},
 		{
 			MethodName: "GetScopes",
