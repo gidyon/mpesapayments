@@ -84,6 +84,17 @@
             "collectionFormat": "multi"
           },
           {
+            "name": "filter.amounts",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            },
+            "collectionFormat": "multi"
+          },
+          {
             "name": "filter.processState",
             "in": "query",
             "required": false,
@@ -94,13 +105,6 @@
               "NOT_PROCESSED"
             ],
             "default": "PROCESS_STATE_UNSPECIFIED"
-          },
-          {
-            "name": "filter.amount",
-            "in": "query",
-            "required": false,
-            "type": "number",
-            "format": "float"
           },
           {
             "name": "filter.startTimestamp",
@@ -403,6 +407,17 @@
             "collectionFormat": "multi"
           },
           {
+            "name": "amounts",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            },
+            "collectionFormat": "multi"
+          },
+          {
             "name": "startTimeSeconds",
             "in": "query",
             "required": false,
@@ -415,13 +430,6 @@
             "required": false,
             "type": "string",
             "format": "int64"
-          },
-          {
-            "name": "amount",
-            "in": "query",
-            "required": false,
-            "type": "number",
-            "format": "float"
           }
         ],
         "tags": [
@@ -493,8 +501,8 @@
     },
     "/api/mpestx/scopes:add": {
       "post": {
-        "summary": "Adds scopes to a user.",
-        "operationId": "LipaNaMPESA_AddScopes",
+        "summary": "Saves scopes for a user.",
+        "operationId": "LipaNaMPESA_SaveScopes",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -515,7 +523,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaAddScopesRequest"
+              "$ref": "#/definitions/mpesaSaveScopesRequest"
             }
           }
         ],
@@ -540,27 +548,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "allowedAmounts": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "percentage": {
+          "type": "number",
+          "format": "float"
         }
       },
       "description": "Identities that is allowed access",
       "title": "Scopes"
-    },
-    "mpesaAddScopesRequest": {
-      "type": "object",
-      "properties": {
-        "userId": {
-          "type": "string"
-        },
-        "scopes": {
-          "$ref": "#/definitions/gidyonmpesaScopes"
-        }
-      },
-      "description": "Request to add scopes",
-      "title": "AddScopesRequest",
-      "required": [
-        "user_id",
-        "scopes"
-      ]
     },
     "mpesaCreateMPESAPaymentRequest": {
       "type": "object",
@@ -616,12 +618,15 @@
             "type": "string"
           }
         },
+        "amounts": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "float"
+          }
+        },
         "processState": {
           "$ref": "#/definitions/mpesaProcessedState"
-        },
-        "amount": {
-          "type": "number",
-          "format": "float"
         },
         "startTimestamp": {
           "type": "string",
@@ -757,6 +762,23 @@
       },
       "description": "Request to publish an mpesa transaction for listerners to process",
       "title": "PublishMpesaPaymentRequest"
+    },
+    "mpesaSaveScopesRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "scopes": {
+          "$ref": "#/definitions/gidyonmpesaScopes"
+        }
+      },
+      "description": "Request to add scopes",
+      "title": "SaveScopesRequest",
+      "required": [
+        "user_id",
+        "scopes"
+      ]
     },
     "mpesaTransactionsSummary": {
       "type": "object",
