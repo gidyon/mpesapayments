@@ -12,16 +12,18 @@ import (
 
 var _ = Describe("Adding scopes @addscopes", func() {
 	var (
-		addReq *mpesapayment.AddScopesRequest
+		addReq *mpesapayment.SaveScopesRequest
 		ctx    context.Context
 	)
 
 	BeforeEach(func() {
-		addReq = &mpesapayment.AddScopesRequest{
+		addReq = &mpesapayment.SaveScopesRequest{
 			UserId: fmt.Sprint(randomdata.Number(99, 999)),
 			Scopes: &mpesapayment.Scopes{
 				AllowedAccNumber: []string{randomdata.Adjective(), randomdata.Adjective()},
 				AllowedPhones:    []string{randomdata.PhoneNumber(), randomdata.PhoneNumber()},
+				AllowedAmounts:   []float32{float32(randomdata.Decimal(10, 1000)), float32(randomdata.Decimal(10, 1000))},
+				Percentage:       10,
 			},
 		}
 		ctx = context.Background()
@@ -30,21 +32,21 @@ var _ = Describe("Adding scopes @addscopes", func() {
 	Describe("Adding scopes with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			addReq = nil
-			addRes, err := MpesaPaymentAPI.AddScopes(ctx, addReq)
+			addRes, err := MpesaPaymentAPI.SaveScopes(ctx, addReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(addRes).Should(BeNil())
 		})
 		It("should fail when user is is missing", func() {
 			addReq.UserId = ""
-			addRes, err := MpesaPaymentAPI.AddScopes(ctx, addReq)
+			addRes, err := MpesaPaymentAPI.SaveScopes(ctx, addReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(addRes).Should(BeNil())
 		})
 		It("should fail when scopes is nil", func() {
 			addReq.Scopes = nil
-			addRes, err := MpesaPaymentAPI.AddScopes(ctx, addReq)
+			addRes, err := MpesaPaymentAPI.SaveScopes(ctx, addReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(addRes).Should(BeNil())
@@ -57,7 +59,7 @@ var _ = Describe("Adding scopes @addscopes", func() {
 			scopes *mpesapayment.Scopes
 		)
 		It("should succeed", func() {
-			addRes, err := MpesaPaymentAPI.AddScopes(ctx, addReq)
+			addRes, err := MpesaPaymentAPI.SaveScopes(ctx, addReq)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.OK))
 			Expect(addRes).ShouldNot(BeNil())
@@ -67,20 +69,24 @@ var _ = Describe("Adding scopes @addscopes", func() {
 
 		Describe("Getting the scopes", func() {
 			It("should succeed", func() {
-				listRes, err := MpesaPaymentAPI.GetScopes(ctx, &mpesapayment.GetScopesRequest{
+				getRes, err := MpesaPaymentAPI.GetScopes(ctx, &mpesapayment.GetScopesRequest{
 					UserId: userID,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
-				Expect(listRes).ShouldNot(BeNil())
-				Expect(listRes.Scopes.GetAllowedAccNumber()).ShouldNot(BeNil())
-				Expect(listRes.Scopes.GetAllowedPhones()).ShouldNot(BeNil())
+				Expect(getRes).ShouldNot(BeNil())
+				Expect(getRes.Scopes.GetAllowedAccNumber()).ShouldNot(BeNil())
+				Expect(getRes.Scopes.GetAllowedPhones()).ShouldNot(BeNil())
 				// Scopes must be equivalent
-				for _, scope := range listRes.Scopes.GetAllowedAccNumber() {
+				Expect(scopes.Percentage).Should(Equal(getRes.Scopes.Percentage))
+				for _, scope := range getRes.Scopes.GetAllowedAccNumber() {
 					Expect(scope).Should(BeElementOf(scopes.AllowedAccNumber))
 				}
-				for _, scope := range listRes.Scopes.GetAllowedPhones() {
+				for _, scope := range getRes.Scopes.GetAllowedPhones() {
 					Expect(scope).Should(BeElementOf(scopes.AllowedPhones))
+				}
+				for _, scope := range getRes.Scopes.GetAllowedAmounts() {
+					Expect(scope).Should(BeElementOf(scopes.AllowedAmounts))
 				}
 			})
 		})

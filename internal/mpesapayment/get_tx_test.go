@@ -17,7 +17,7 @@ var _ = Describe("Getting summary of mpesa transactions @gettx", func() {
 
 	BeforeEach(func() {
 		getReq = &mpesapayment.GetTransactionsCountRequest{
-			Amount:         100,
+			Amounts:        []float32{100},
 			AccountsNumber: []string{"a"},
 		}
 		ctx = context.Background()

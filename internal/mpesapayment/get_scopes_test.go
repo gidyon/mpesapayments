@@ -23,7 +23,7 @@ var _ = Describe("Listing payments @getscopes", func() {
 		ctx = context.Background()
 	})
 
-	Describe("Listing scopes with mal formed request", func() {
+	Describe("Getting scopes with mal formed request", func() {
 		It("should fail when the request is nil", func() {
 			listReq = nil
 			listRes, err := MpesaPaymentAPI.GetScopes(ctx, listReq)
@@ -31,9 +31,16 @@ var _ = Describe("Listing payments @getscopes", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(listRes).Should(BeNil())
 		})
+		It("should fail when user id is missing", func() {
+			listReq.UserId = ""
+			listRes, err := MpesaPaymentAPI.GetScopes(ctx, listReq)
+			Expect(err).Should(HaveOccurred())
+			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
+			Expect(listRes).Should(BeNil())
+		})
 	})
 
-	Describe("Listing scopes with well formed request", func() {
+	Describe("Getting scopes with well formed request", func() {
 		It("should succeed", func() {
 			listRes, err := MpesaPaymentAPI.GetScopes(ctx, listReq)
 			Expect(err).ShouldNot(HaveOccurred())
