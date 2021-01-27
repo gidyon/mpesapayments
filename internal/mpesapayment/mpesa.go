@@ -389,7 +389,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	// Update percentage
 	if percent != 0 {
-		paymentsPB = paymentsPB[:int(math.Round(float64(percent)))]
+		paymentsPB = paymentsPB[:int(math.Round(float64(percent/100)))]
 	}
 
 	return &mpesapayment.ListMPESAPaymentsResponse{
