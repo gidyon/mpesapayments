@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math"
 	"math/rand"
 	"strconv"
 	"time"
@@ -388,9 +387,15 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	}
 
 	// Update percentage
-	if percent != 0 {
-		paymentsPB = paymentsPB[:int(math.Round(float64(percent/100)))]
+	switch {
+	case percent > 100:
+		percent = 1
+	case percent < 0:
+		percent = 1
 	}
+
+	// Jan 27 2021 and wasted 30 minutes
+	paymentsPB = paymentsPB[:int((float32(len(paymentsPB))*percent)/100)]
 
 	return &mpesapayment.ListMPESAPaymentsResponse{
 		NextPageToken: token,
@@ -915,9 +920,17 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		totalAmountF = float32(totalAmount.Float64)
 	}
 
+	percent := scopesPB.GetScopes().GetPercentage()
+	switch {
+	case percent > 100:
+		percent = 1
+	case percent < 0:
+		percent = 1
+	}
+
 	return &mpesapayment.TransactionsSummary{
-		TotalAmount:       totalAmountF,
-		TransactionsCount: int32(transactions),
+		TotalAmount:       (totalAmountF * percent) / 100,
+		TransactionsCount: int32((float32(transactions) * percent) / 100),
 	}, nil
 }
 
