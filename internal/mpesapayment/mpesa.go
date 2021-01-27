@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"math/rand"
 	"strconv"
 	"time"
@@ -132,14 +133,6 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 		}
 	}
 
-	// workerDur := time.Minute * 30
-	// if opt.WorkerDuration > 0 {
-	// 	workerDur = opt.WorkerDuration
-	// }
-
-	// // Start worker for failed transactions
-	// go mpesaAPI.worker(ctx, workerDur)
-
 	// Insert worker
 	go mpesaAPI.insertWorker(ctx)
 
@@ -258,18 +251,26 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 const defaultPageSize = 20
 
 func userAllowedAccSet(userID string) string {
-	return fmt.Sprintf("user:%s:allowedaccount", userID)
+	return fmt.Sprintf("user:%s:allowedaccounts", userID)
 }
 
 func userAllowedPhonesSet(userID string) string {
 	return fmt.Sprintf("user:%s:allowedphones", userID)
 }
 
+func userAllowedAmounts(userID string) string {
+	return fmt.Sprintf("user:%s:allowedamounts", userID)
+}
+
+func userAllowedPercent(userID string) string {
+	return fmt.Sprintf("user:%s:percent", userID)
+}
+
 func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	ctx context.Context, listReq *mpesapayment.ListMPESAPaymentsRequest,
 ) (*mpesapayment.ListMPESAPaymentsResponse, error) {
 	// Authentication
-	payload, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	actor, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -282,33 +283,31 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		return nil, errs.IncorrectVal("page size")
 	}
 
-	var allowedAccNo, allowedPhones []string
-
-	// Read from redis list of acc numbers
-	allowedAccNo, err = mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.AddPrefix(userAllowedAccSet(payload.ID)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return nil, errs.RedisCmdFailed(err, "smembers")
-	}
-	// Read from redis list of phone numbers
-	allowedPhones, err = mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(payload.ID)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return nil, errs.RedisCmdFailed(err, "smembers")
+	// Get scopes
+	scopesPB, err := mpesaAPI.GetScopes(ctx, &mpesapayment.GetScopesRequest{
+		UserId: actor.ID,
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	pageSize := listReq.GetPageSize()
+	// Union request filter with scopes ACL
+	var (
+		msisdns        = getStringUnion(scopesPB.GetScopes().GetAllowedPhones(), listReq.GetFilter().GetMsisdns())
+		accountNumbers = getStringUnion(scopesPB.GetScopes().GetAllowedAccNumber(), listReq.GetFilter().GetAccountsNumber())
+		amounts        = getFloat32Union(scopesPB.GetScopes().GetAllowedAmounts(), listReq.GetFilter().GetAmounts())
+		pageSize       = listReq.GetPageSize()
+		pageToken      = listReq.GetPageToken()
+		percent        = scopesPB.GetScopes().GetPercentage()
+		paymentID      uint
+	)
+
 	if pageSize <= 0 || pageSize > defaultPageSize {
-		if mpesaAPI.AuthAPI.IsAdmin(payload.Group) {
+		if mpesaAPI.AuthAPI.IsAdmin(actor.Group) {
 			pageSize = defaultPageSize
 		}
 	}
 
-	var paymentID uint
-
-	pageToken := listReq.GetPageToken()
 	if pageToken != "" {
 		ids, err := mpesaAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
 		if err != nil {
@@ -319,24 +318,7 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 
 	mpesapayments := make([]*PaymentMpesa, 0, pageSize+1)
 
-	// Add filter from request filters
-	allowedAccNo = append(allowedAccNo, listReq.GetFilter().GetAccountsNumber()...)
-	allowedPhones = append(allowedPhones, listReq.GetFilter().GetMsisdns()...)
-
 	db := mpesaAPI.SQLDB.Limit(int(pageSize + 1)).Order("payment_id DESC")
-
-	// Apply filters
-	if len(allowedAccNo) > 0 {
-		db = db.Where("reference_number IN(?)", allowedAccNo)
-	}
-
-	if len(allowedPhones) > 0 {
-		db = db.Where("msisdn IN(?)", allowedPhones)
-	}
-
-	if int(listReq.GetFilter().GetAmount()) > 0 {
-		db = db.Where("amount BETWEEN ? AND ?", listReq.Filter.Amount-0.5, listReq.Filter.Amount)
-	}
 
 	// Apply payment id filter
 	if paymentID != 0 {
@@ -344,32 +326,31 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	}
 
 	// Apply filters
-	if listReq.Filter != nil {
-		startTimestamp := listReq.Filter.GetStartTimestamp()
-		endTimestamp := listReq.Filter.GetEndTimestamp()
-
-		// Timestamp filter
-		if endTimestamp > startTimestamp {
-			db = db.Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
-		} else {
-			// Date filter
-			if listReq.Filter.TxDate != "" {
-				t, err := getTime(listReq.Filter.TxDate)
-				if err != nil {
-					return nil, err
-				}
-				db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
-			}
+	if len(accountNumbers) > 0 {
+		db = db.Where("reference_number IN(?)", accountNumbers)
+	}
+	if len(msisdns) > 0 {
+		db = db.Where("msisdn IN(?)", msisdns)
+	}
+	if len(amounts) > 0 {
+		db = db.Where("amount IN(?)", amounts)
+	}
+	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
+		db = db.Where("transaction_timestamp BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
+	} else if listReq.GetFilter().GetTxDate() != "" {
+		t, err := getTime(listReq.Filter.TxDate)
+		if err != nil {
+			return nil, err
 		}
-
-		if listReq.Filter.ProcessState != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
-			switch listReq.Filter.ProcessState {
-			case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-			case mpesapayment.ProcessedState_NOT_PROCESSED:
-				db = db.Where("processed=false")
-			case mpesapayment.ProcessedState_PROCESSED:
-				db = db.Where("processed=true")
-			}
+		db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+	}
+	if listReq.GetFilter().GetProcessState() != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
+		switch listReq.Filter.ProcessState {
+		case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+		case mpesapayment.ProcessedState_NOT_PROCESSED:
+			db = db.Where("processed=false")
+		case mpesapayment.ProcessedState_PROCESSED:
+			db = db.Where("processed=true")
 		}
 	}
 
@@ -406,6 +387,11 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 		}
 	}
 
+	// Update percentage
+	if percent != 0 {
+		paymentsPB = paymentsPB[:int(math.Round(float64(percent)))]
+	}
+
 	return &mpesapayment.ListMPESAPaymentsResponse{
 		NextPageToken: token,
 		MpesaPayments: paymentsPB,
@@ -426,8 +412,35 @@ func getTime(dateStr string) (*time.Time, error) {
 	return &t, nil
 }
 
-func (mpesaAPI *mpesaAPIServer) AddScopes(
-	ctx context.Context, addReq *mpesapayment.AddScopesRequest,
+func stringArrayToFloat(arr []float32) []string {
+	arr1 := make([]string, 0, len(arr))
+	for _, v := range arr {
+		arr1 = append(arr1, fmt.Sprint(v))
+	}
+	return arr1
+}
+
+func float32ArrToString(arr []float32) []string {
+	arr1 := make([]string, 0, len(arr))
+	for _, v := range arr {
+		arr1 = append(arr1, fmt.Sprint(v))
+	}
+	return arr1
+}
+
+func stringArrToFloat32(arr []string) []float32 {
+	arr1 := make([]float32, 0, len(arr))
+	for _, v := range arr {
+		v2, err := strconv.ParseFloat(v, 32)
+		if err == nil {
+			arr1 = append(arr1, float32(v2))
+		}
+	}
+	return arr1
+}
+
+func (mpesaAPI *mpesaAPIServer) SaveScopes(
+	ctx context.Context, addReq *mpesapayment.SaveScopesRequest,
 ) (*emptypb.Empty, error) {
 	// Authentication
 	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
@@ -438,18 +451,16 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 	// Validation
 	switch {
 	case addReq == nil:
-		return nil, errs.NilObject("AddScopesRequest")
+		return nil, errs.NilObject("SaveScopesRequest")
 	case addReq.UserId == "":
 		return nil, errs.MissingField("user id")
 	case addReq.Scopes == nil:
 		return nil, errs.NilObject("scopes")
 	}
 
-	// Delete the scopes
+	// Add allowed account numbers scopes
 	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)))
-
 	if len(addReq.Scopes.AllowedAccNumber) > 0 {
-		// Add the scopes
 		err = mpesaAPI.RedisDB.SAdd(
 			ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)), addReq.Scopes.AllowedAccNumber,
 		).Err()
@@ -458,16 +469,35 @@ func (mpesaAPI *mpesaAPIServer) AddScopes(
 		}
 	}
 
-	// Delete the scopes
+	// Add allowed phone numbers scopes
 	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)))
-
 	if len(addReq.Scopes.AllowedPhones) > 0 {
-		// Add the scopes
 		err = mpesaAPI.RedisDB.SAdd(
 			ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)), addReq.Scopes.AllowedPhones,
 		).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "sadd")
+		}
+	}
+
+	// Add allowed amount scopes
+	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedAmounts(addReq.UserId)))
+	if len(addReq.Scopes.AllowedAmounts) > 0 {
+		allowedAmount := float32ArrToString(addReq.Scopes.AllowedAmounts)
+		err = mpesaAPI.RedisDB.SAdd(
+			ctx, mpesaAPI.AddPrefix(userAllowedAmounts(addReq.UserId)), allowedAmount,
+		).Err()
+		if err != nil {
+			return nil, errs.RedisCmdFailed(err, "sadd")
+		}
+	}
+
+	// Add percent scopes
+	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedPercent(addReq.UserId)))
+	if addReq.Scopes.Percentage != 0 {
+		err = mpesaAPI.RedisDB.Set(ctx, mpesaAPI.AddPrefix(userAllowedPercent(addReq.UserId)), addReq.Scopes.Percentage, 0).Err()
+		if err != nil {
+			return nil, errs.RedisCmdFailed(err, "set")
 		}
 	}
 
@@ -507,10 +537,34 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 		return nil, errs.RedisCmdFailed(err, "smembers")
 	}
 
+	// Read from redis set of amounts
+	allowedAmounts, err := mpesaAPI.RedisDB.SMembers(
+		ctx, mpesaAPI.AddPrefix(userAllowedAmounts(getReq.UserId)),
+	).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return nil, errs.RedisCmdFailed(err, "smembers")
+	}
+	allowedAmountsFloat32 := stringArrToFloat32(allowedAmounts)
+
+	// Get allowed percentage
+	percent, err := mpesaAPI.RedisDB.Get(
+		ctx, mpesaAPI.AddPrefix(userAllowedPercent(getReq.UserId)),
+	).Result()
+	if err != nil && !errors.Is(err, redis.Nil) {
+		return nil, errs.RedisCmdFailed(err, "get")
+	}
+	var percentFloat32 float32
+	v2, err := strconv.ParseFloat(percent, 32)
+	if err == nil {
+		percentFloat32 = float32(v2)
+	}
+
 	return &mpesapayment.GetScopesResponse{
 		Scopes: &mpesapayment.Scopes{
 			AllowedAccNumber: allowedAccNo,
 			AllowedPhones:    allowedPhones,
+			AllowedAmounts:   allowedAmountsFloat32,
+			Percentage:       percentFloat32,
 		},
 	}, nil
 }
@@ -731,20 +785,67 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 type transactionsSummary struct {
 }
 
-func inGroup(group string, groups []string) bool {
-	for _, grp := range groups {
-		if grp == group {
+func inStringArray(element string, array []string) bool {
+	for _, v := range array {
+		if v == element {
 			return true
 		}
 	}
 	return false
 }
 
+func inFloat32Array(element float32, array []float32) bool {
+	for _, v := range array {
+		if v == element {
+			return true
+		}
+	}
+	return false
+}
+
+func getStringUnion(arr1, arr2 []string) []string {
+	if len(arr1) == 0 {
+		return arr2
+	}
+	if len(arr2) == 0 {
+		return arr1
+	}
+	arr3 := make([]string, 0, len(arr1))
+	for _, v := range arr2 {
+		if inStringArray(v, arr1) {
+			arr3 = append(arr3, v)
+		}
+	}
+	if len(arr3) == 0 {
+		return arr1
+	}
+	return arr3
+}
+
+func getFloat32Union(arr1, arr2 []float32) []float32 {
+	if len(arr1) == 0 {
+		return arr2
+	}
+	if len(arr2) == 0 {
+		return arr1
+	}
+	arr3 := make([]float32, 0, len(arr1))
+	for _, v := range arr2 {
+		if inFloat32Array(v, arr1) {
+			arr3 = append(arr3, v)
+		}
+	}
+	if len(arr3) == 0 {
+		return arr1
+	}
+	return arr3
+}
+
 func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	ctx context.Context, getReq *mpesapayment.GetTransactionsCountRequest,
 ) (*mpesapayment.TransactionsSummary, error) {
 	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	actor, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -761,20 +862,33 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		}
 	}
 
+	// Get scopes
+	scopesPB, err := mpesaAPI.GetScopes(ctx, &mpesapayment.GetScopesRequest{
+		UserId: actor.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Union request filter with scopes ACL
+	var (
+		msisdns        = getStringUnion(scopesPB.GetScopes().GetAllowedPhones(), getReq.GetMsisdns())
+		accountNumbers = getStringUnion(scopesPB.GetScopes().GetAllowedAccNumber(), getReq.GetAccountsNumber())
+		amounts        = getFloat32Union(scopesPB.GetScopes().GetAllowedAmounts(), getReq.GetAmounts())
+	)
+
 	db := mpesaAPI.SQLDB.Model(&PaymentMpesa{})
 
 	// Apply filters
-	if getReq.Amount > 0 {
-		db = db.Where("amount BETWEEN ? AND ?", getReq.Amount-0.5, getReq.Amount)
+	if len(amounts) > 0 {
+		db = db.Where("amount IN (?)", amounts)
 	}
-	if len(getReq.AccountsNumber) > 0 {
-		db = db.Where("reference_number IN (?)", getReq.AccountsNumber)
+	if len(accountNumbers) > 0 {
+		db = db.Where("reference_number IN (?)", accountNumbers)
 	}
-	if len(getReq.Msisdns) > 0 {
-		db = db.Where("msisdn IN (?)", getReq.Msisdns)
+	if len(msisdns) > 0 {
+		db = db.Where("msisdn IN (?)", msisdns)
 	}
-
-	// Apply date filters
 	if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
 		db = db.Where("transaction_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
 	}
@@ -840,7 +954,7 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 			PageSize:  defaultPageSize,
 			Filter: &mpesapayment.ListMPESAPaymentsFilter{
 				AccountsNumber: getReq.GetAccountsNumber(),
-				Amount:         getReq.GetAmount(),
+				Amounts:        []float32{getReq.GetAmount()},
 				StartTimestamp: getReq.GetStartTimeSeconds(),
 				EndTimestamp:   getReq.GetEndTimeSeconds(),
 			},
