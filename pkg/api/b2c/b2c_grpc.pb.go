@@ -18,18 +18,26 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type B2CAPIClient interface {
+	// Queries for query transaction
 	QueryTransactionStatus(ctx context.Context, in *QueryTransactionStatusRequest, opts ...grpc.CallOption) (*QueryResponse, error)
+	// Queries for account balance
 	QueryAccountBalance(ctx context.Context, in *QueryAccountBalanceRequest, opts ...grpc.CallOption) (*QueryAccountBalanceResponse, error)
+	// Transfer funds from business to customer or another business
 	TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Reverses an mpesa transaction
 	ReverseTransaction(ctx context.Context, in *ReverseTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creates a record of b2c payment
 	CreateB2CPayment(ctx context.Context, in *CreateB2CPaymentRequest, opts ...grpc.CallOption) (*B2CPayment, error)
-	// Retrieves a single btc payment
+	// Retrieves a single b2c payment
 	GetB2CPayment(ctx context.Context, in *GetB2CPaymentRequest, opts ...grpc.CallOption) (*B2CPayment, error)
 	// Retrieves a collection of b2c payments
 	ListB2CPayments(ctx context.Context, in *ListB2CPaymentsRequest, opts ...grpc.CallOption) (*ListB2CPaymentsResponse, error)
 	// Processes b2c payment updating its status
 	ProcessB2CPayment(ctx context.Context, in *ProcessB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Publishes b2c payment to consumers
+	PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Publihses all b2c payments to consumers
+	PublishAllB2CPayment(ctx context.Context, in *PublishAllB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type b2CAPIClient struct {
@@ -112,22 +120,48 @@ func (c *b2CAPIClient) ProcessB2CPayment(ctx context.Context, in *ProcessB2CPaym
 	return out, nil
 }
 
+func (c *b2CAPIClient) PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishB2CPayment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *b2CAPIClient) PublishAllB2CPayment(ctx context.Context, in *PublishAllB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // B2CAPIServer is the server API for B2CAPI service.
 // All implementations must embed UnimplementedB2CAPIServer
 // for forward compatibility
 type B2CAPIServer interface {
+	// Queries for query transaction
 	QueryTransactionStatus(context.Context, *QueryTransactionStatusRequest) (*QueryResponse, error)
+	// Queries for account balance
 	QueryAccountBalance(context.Context, *QueryAccountBalanceRequest) (*QueryAccountBalanceResponse, error)
+	// Transfer funds from business to customer or another business
 	TransferFunds(context.Context, *TransferFundsRequest) (*emptypb.Empty, error)
+	// Reverses an mpesa transaction
 	ReverseTransaction(context.Context, *ReverseTransactionRequest) (*emptypb.Empty, error)
 	// Creates a record of b2c payment
 	CreateB2CPayment(context.Context, *CreateB2CPaymentRequest) (*B2CPayment, error)
-	// Retrieves a single btc payment
+	// Retrieves a single b2c payment
 	GetB2CPayment(context.Context, *GetB2CPaymentRequest) (*B2CPayment, error)
 	// Retrieves a collection of b2c payments
 	ListB2CPayments(context.Context, *ListB2CPaymentsRequest) (*ListB2CPaymentsResponse, error)
 	// Processes b2c payment updating its status
 	ProcessB2CPayment(context.Context, *ProcessB2CPaymentRequest) (*emptypb.Empty, error)
+	// Publishes b2c payment to consumers
+	PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error)
+	// Publihses all b2c payments to consumers
+	PublishAllB2CPayment(context.Context, *PublishAllB2CPaymentRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedB2CAPIServer()
 }
 
@@ -158,6 +192,12 @@ func (UnimplementedB2CAPIServer) ListB2CPayments(context.Context, *ListB2CPaymen
 }
 func (UnimplementedB2CAPIServer) ProcessB2CPayment(context.Context, *ProcessB2CPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessB2CPayment not implemented")
+}
+func (UnimplementedB2CAPIServer) PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishB2CPayment not implemented")
+}
+func (UnimplementedB2CAPIServer) PublishAllB2CPayment(context.Context, *PublishAllB2CPaymentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishAllB2CPayment not implemented")
 }
 func (UnimplementedB2CAPIServer) mustEmbedUnimplementedB2CAPIServer() {}
 
@@ -316,6 +356,42 @@ func _B2CAPI_ProcessB2CPayment_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _B2CAPI_PublishB2CPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishB2CPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(B2CAPIServer).PublishB2CPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.B2CAPI/PublishB2CPayment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(B2CAPIServer).PublishB2CPayment(ctx, req.(*PublishB2CPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _B2CAPI_PublishAllB2CPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishAllB2CPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(B2CAPIServer).PublishAllB2CPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.B2CAPI/PublishAllB2CPayment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(B2CAPIServer).PublishAllB2CPayment(ctx, req.(*PublishAllB2CPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.B2CAPI",
 	HandlerType: (*B2CAPIServer)(nil),
@@ -351,6 +427,14 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ProcessB2CPayment",
 			Handler:    _B2CAPI_ProcessB2CPayment_Handler,
+		},
+		{
+			MethodName: "PublishB2CPayment",
+			Handler:    _B2CAPI_PublishB2CPayment_Handler,
+		},
+		{
+			MethodName: "PublishAllB2CPayment",
+			Handler:    _B2CAPI_PublishAllB2CPayment_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
