@@ -353,9 +353,11 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 
 	requestID := firstVal(queryReq.RequestId, uuid.New().String())
 
-	// Subscribe
-	b2cAPI.subcribe(requestID)
-	defer b2cAPI.release(requestID)
+	if queryReq.Synchronous {
+		// Subscribe if synchronous
+		b2cAPI.subcribe(requestID)
+		defer b2cAPI.release(requestID)
+	}
 
 	queryOptions := &queryOptions{
 		initiatorID:          queryReq.InitiatorId,
@@ -413,27 +415,29 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
-	// Wait for response from mpesa server for not more than a minute
-	ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-
-	select {
-	case <-ctxWait.Done():
-		return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-	case <-b2cAPI.wait(requestID):
-	}
-
-	// Get from cache
-	str, err := b2cAPI.RedisDB.Get(ctx, AddPrefix(requestID, b2cAPI.RedisKeyPrefix)).Result()
-	if err != nil {
-		return nil, errs.RedisCmdFailed(err, "get")
-	}
-
 	transaction := &b2c.B2CPayment{}
 
-	err = proto.Unmarshal([]byte(str), transaction)
-	if err != nil {
-		return nil, errs.FromProtoUnMarshal(err, "b2cpayment")
+	if queryReq.Synchronous {
+		// Wait for response from mpesa server for not more than a minute
+		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
+
+		select {
+		case <-ctxWait.Done():
+			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
+		case <-b2cAPI.wait(requestID):
+		}
+
+		// Get from cache
+		str, err := b2cAPI.RedisDB.Get(ctx, AddPrefix(requestID, b2cAPI.RedisKeyPrefix)).Result()
+		if err != nil {
+			return nil, errs.RedisCmdFailed(err, "get")
+		}
+
+		err = proto.Unmarshal([]byte(str), transaction)
+		if err != nil {
+			return nil, errs.FromProtoUnMarshal(err, "b2cpayment")
+		}
 	}
 
 	return &b2c.QueryAccountBalanceResponse{
@@ -441,6 +445,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		WorkingAccountFunds: transaction.WorkingAccountFunds,
 		UtilityAccountFunds: transaction.UtilityAccountFunds,
 		ChargesPaidFunds:    transaction.ChargesPaidFunds,
+		Completed:           queryReq.Synchronous,
 	}, nil
 }
 
@@ -471,9 +476,11 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 
 	requestID := firstVal(transferReq.RequestId, uuid.New().String())
 
-	// Subscribe
-	b2cAPI.subcribe(requestID)
-	defer b2cAPI.release(requestID)
+	if transferReq.Synchronous {
+		// Subscribe if synchronous mode
+		b2cAPI.subcribe(requestID)
+		defer b2cAPI.release(requestID)
+	}
 
 	queryOptions := &queryOptions{
 		initiatorID:          transferReq.InitiatorId,
@@ -542,14 +549,16 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
-	// Wait for response from mpesa server for not more than a minute
-	ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
+	if transferReq.Synchronous {
+		// Wait for response from mpesa server for not more than a minute
+		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
 
-	select {
-	case <-ctxWait.Done():
-		return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-	case <-b2cAPI.wait(requestID):
+		select {
+		case <-ctxWait.Done():
+			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
+		case <-b2cAPI.wait(requestID):
+		}
 	}
 
 	return &emptypb.Empty{}, nil
@@ -578,9 +587,11 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 
 	requestID := firstVal(reverseReq.RequestId, uuid.New().String())
 
-	// Subscribe
-	b2cAPI.subcribe(requestID)
-	defer b2cAPI.release(requestID)
+	if reverseReq.Synchronous {
+		// Subscribe
+		b2cAPI.subcribe(requestID)
+		defer b2cAPI.release(requestID)
+	}
 
 	queryOptions := &queryOptions{
 		initiatorID:          reverseReq.InitiatorId,
@@ -638,14 +649,16 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
-	// Wait for response from mpesa server for not more than a minute
-	ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
+	if reverseReq.Synchronous {
+		// Wait for response from mpesa server for not more than a minute
+		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
+		defer cancel()
 
-	select {
-	case <-ctxWait.Done():
-		return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-	case <-b2cAPI.wait(requestID):
+		select {
+		case <-ctxWait.Done():
+			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
+		case <-b2cAPI.wait(requestID):
+		}
 	}
 
 	return &emptypb.Empty{}, nil
