@@ -11,6 +11,13 @@ import "protoc-gen-swagger/options/annotations.proto";
 import "mpesa_payment.proto";
 
 message QueryTransactionStatusRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "QueryTransactionStatusRequest"
+			description: "Request to query transaction status"
+		}
+	};
+
     enum IdentifierType {
         QUERY_TRANSACTION_UNSPECIFIED = 0;
         MSISDN = 1;
@@ -27,9 +34,17 @@ message QueryTransactionStatusRequest {
     string result_url = 8;
     string transaction_id = 9;
 	string occassion = 10;
+	bool synchronous = 11;
 }
 
 message QueryAccountBalanceRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "QueryAccountBalanceRequest"
+			description: "Request to query for account balance"
+		}
+	};
+
     enum IdentifierType {
         QUERY_ACCOUNT_UNSPECIFIED = 0;
         MSISDN = 1;
@@ -42,18 +57,34 @@ message QueryAccountBalanceRequest {
 	string remarks = 3;
 	string request_id = 4;
 	string initiator_id = 5;
+	bool synchronous = 6;
 }
 
 message QueryAccountBalanceResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "QueryAccountBalanceResponse"
+			description: "Response containing account balance data"
+		}
+	};
+
 	int64 party = 1;
 	float working_account_funds = 2;
 	float utility_account_funds = 3;
 	float charges_paid_funds = 4;
 	string request_id = 5;
 	string initiator_id = 6;
+	bool completed = 7;
 }
 
 message TransferFundsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "TransferFundsRequest"
+			description: "Request to transfer funds b2cs"
+		}
+	};
+
 	enum CommandId {
         COMMANDID_UNSPECIFIED = 0;
         SALARY_PAYMENT = 1;
@@ -69,9 +100,17 @@ message TransferFundsRequest {
 	CommandId Command_id = 6;
 	string request_id = 7;
 	string initiator_id = 8;
+	bool synchronous = 9;
 }
 
 message ReverseTransactionRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ReverseTransactionRequest"
+			description: "Request to reverse an mpesa transaction"
+		}
+	};
+
     int32 receiver_type = 1;
     int32 short_code = 2;
     string remarks = 3;
@@ -79,9 +118,17 @@ message ReverseTransactionRequest {
 	string occassion = 5;
 	string request_id = 6;
 	string initiator_id = 7;
+	bool synchronous = 8;
 }
 
 message QueryResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "QueryResponse"
+			description: "Mpesa Query response"
+		}
+	};
+	
     string originator_conversion_id = 1;
     string conversion_id = 2;
     string response_description = 3;
@@ -89,6 +136,13 @@ message QueryResponse {
 }
 
 message B2CPayment {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "B2CPayment"
+			description: "Mpesa B2C payment"
+		}
+	};
+
 	string payment_id = 1;
 	string initiator_id = 2;
 	string org_short_code = 3;
@@ -128,7 +182,7 @@ message GetB2CPaymentRequest {
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
 			title: "GetB2CPaymentRequest"
-			description: "Request to retrieve btc payment"
+			description: "Request to retrieve a b2c payment"
 			required: ["payment_id"]
 		}
     };
@@ -218,10 +272,37 @@ message PublishAllB2CPaymentRequest {
 }
 
 service B2CAPI {
-    rpc QueryTransactionStatus (QueryTransactionStatusRequest) returns (QueryResponse) {};
-    rpc QueryAccountBalance (QueryAccountBalanceRequest) returns (QueryAccountBalanceResponse) {};
-    rpc TransferFunds (TransferFundsRequest) returns (google.protobuf.Empty) {};
-    rpc ReverseTransaction (ReverseTransactionRequest) returns (google.protobuf.Empty);
+	// Queries for query transaction
+    rpc QueryTransactionStatus (QueryTransactionStatusRequest) returns (QueryResponse) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:queryTransactionStatus"
+			body: "*"
+		};
+	};
+
+	// Queries for account balance
+    rpc QueryAccountBalance (QueryAccountBalanceRequest) returns (QueryAccountBalanceResponse) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:queryAccountBalance"
+			body: "*"
+		};
+	};
+
+	// Transfer funds from business to customer or another business
+    rpc TransferFunds (TransferFundsRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:transferFunds"
+			body: "*"
+		};
+	};
+
+	// Reverses an mpesa transaction
+    rpc ReverseTransaction (ReverseTransactionRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:reverseTransaction"
+			body: "*"
+		};
+	};
 
     // Creates a record of b2c payment
     rpc CreateB2CPayment (CreateB2CPaymentRequest) returns (B2CPayment) {
@@ -231,7 +312,7 @@ service B2CAPI {
 		};
     };
 
-    // Retrieves a single btc payment
+    // Retrieves a single b2c payment
     rpc GetB2CPayment (GetB2CPaymentRequest) returns (B2CPayment) {
         option (google.api.http) = {
 			get: "/api/mpestx/b2c/{payment_id}"
@@ -242,32 +323,36 @@ service B2CAPI {
     rpc ListB2CPayments (ListB2CPaymentsRequest) returns (ListB2CPaymentsResponse) {
         option (google.api.http) = {
 			get: "/api/mpestx/b2c"
+			additional_bindings {
+				post: "/api/mpestx/b2c:listB2CPayments"
+				body: "*"
+			}
 		};
     };
 
 	// Processes b2c payment updating its status
 	rpc ProcessB2CPayment (ProcessB2CPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/b2c/action/process"
+			post: "/api/mpestx/b2c:processB2CPayment"
 			body: "*"
 		};
 	};
 
-	// // Publishes b2c payment to consumers
-	// rpc PublishB2CPayment (PublishB2CPaymentRequest) returns (google.protobuf.Empty) {
-	// 	option (google.api.http) = {
-	// 		post: "/api/mpestx/b2c/action/publish"
-	// 		body: "*"
-	// 	};
-	// };
+	// Publishes b2c payment to consumers
+	rpc PublishB2CPayment (PublishB2CPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:publishB2CPayment"
+			body: "*"
+		};
+	};
 
-	// // Publihses all b2c payments to consumers
-	// rpc PublishAllB2CPayment (PublishAllB2CPaymentRequest) returns (google.protobuf.Empty) {
-	// 	option (google.api.http) = {
-	// 		post: "/api/mpestx/b2c/action/publishall"
-	// 		body: "*"
-	// 	};
-	// };
+	// Publihses all b2c payments to consumers
+	rpc PublishAllB2CPayment (PublishAllB2CPaymentRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			post: "/api/mpestx/b2c:publishAllB2CPayment"
+			body: "*"
+		};
+	};
 }
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {

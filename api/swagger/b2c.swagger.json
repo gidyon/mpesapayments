@@ -142,7 +142,71 @@
         ]
       }
     },
-    "/api/mpestx/b2c/action/process": {
+    "/api/mpestx/b2c/{paymentId}": {
+      "get": {
+        "summary": "Retrieves a single b2c payment",
+        "operationId": "B2CAPI_GetB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaB2CPayment"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:listB2CPayments": {
+      "post": {
+        "summary": "Retrieves a collection of b2c payments",
+        "operationId": "B2CAPI_ListB2CPayments2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListB2CPaymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaListB2CPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:processB2CPayment": {
       "post": {
         "summary": "Processes b2c payment updating its status",
         "operationId": "B2CAPI_ProcessB2CPayment",
@@ -175,15 +239,15 @@
         ]
       }
     },
-    "/api/mpestx/b2c/{paymentId}": {
-      "get": {
-        "summary": "Retrieves a single btc payment",
-        "operationId": "B2CAPI_GetB2CPayment",
+    "/api/mpestx/b2c:publishAllB2CPayment": {
+      "post": {
+        "summary": "Publihses all b2c payments to consumers",
+        "operationId": "B2CAPI_PublishAllB2CPayment",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaB2CPayment"
+              "properties": {}
             }
           },
           "default": {
@@ -195,10 +259,177 @@
         },
         "parameters": [
           {
-            "name": "paymentId",
-            "in": "path",
+            "name": "body",
+            "in": "body",
             "required": true,
-            "type": "string"
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishAllB2CPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:publishB2CPayment": {
+      "post": {
+        "summary": "Publishes b2c payment to consumers",
+        "operationId": "B2CAPI_PublishB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishB2CPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:queryAccountBalance": {
+      "post": {
+        "summary": "Queries for account balance",
+        "operationId": "B2CAPI_QueryAccountBalance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaQueryAccountBalanceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaQueryAccountBalanceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:queryTransactionStatus": {
+      "post": {
+        "summary": "Queries for query transaction",
+        "operationId": "B2CAPI_QueryTransactionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaQueryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaQueryTransactionStatusRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:reverseTransaction": {
+      "post": {
+        "summary": "Reverses an mpesa transaction",
+        "operationId": "B2CAPI_ReverseTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaReverseTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:transferFunds": {
+      "post": {
+        "summary": "Transfer funds from business to customer or another business",
+        "operationId": "B2CAPI_TransferFunds",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaTransferFundsRequest"
+            }
           }
         ],
         "tags": [
@@ -287,7 +518,9 @@
         "processed": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "Mpesa B2C payment",
+      "title": "B2CPayment"
     },
     "mpesaCreateB2CPaymentRequest": {
       "type": "object",
@@ -335,6 +568,23 @@
       "description": "Filter payment for querying stk payments",
       "title": "ListB2CPaymentFilter"
     },
+    "mpesaListB2CPaymentsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/mpesaListB2CPaymentFilter"
+        }
+      },
+      "description": "Request to retrieve a collection of b2c payments",
+      "title": "ListB2CPaymentsRequest"
+    },
     "mpesaListB2CPaymentsResponse": {
       "type": "object",
       "properties": {
@@ -373,6 +623,75 @@
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
+    "mpesaPublishAllB2CPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "fromCache": {
+          "type": "boolean"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Request to publish all b2c payments",
+      "title": "PublishAllB2CPaymentRequest"
+    },
+    "mpesaPublishB2CPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "fromCache": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to publish a b2c payment",
+      "title": "PublishB2CPaymentRequest"
+    },
+    "mpesaQueryAccountBalanceRequest": {
+      "type": "object",
+      "properties": {
+        "identifierType": {
+          "$ref": "#/definitions/mpesaQueryAccountBalanceRequestIdentifierType"
+        },
+        "partyA": {
+          "type": "string",
+          "format": "int64"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to query for account balance",
+      "title": "QueryAccountBalanceRequest"
+    },
     "mpesaQueryAccountBalanceRequestIdentifierType": {
       "type": "string",
       "enum": [
@@ -407,8 +726,13 @@
         },
         "initiatorId": {
           "type": "string"
+        },
+        "completed": {
+          "type": "boolean"
         }
-      }
+      },
+      "description": "Response containing account balance data",
+      "title": "QueryAccountBalanceResponse"
     },
     "mpesaQueryResponse": {
       "type": "object",
@@ -425,7 +749,47 @@
         "success": {
           "type": "boolean"
         }
-      }
+      },
+      "description": "Mpesa Query response",
+      "title": "QueryResponse"
+    },
+    "mpesaQueryTransactionStatusRequest": {
+      "type": "object",
+      "properties": {
+        "identifierType": {
+          "$ref": "#/definitions/mpesaQueryTransactionStatusRequestIdentifierType"
+        },
+        "partyA": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "initiator": {
+          "type": "string"
+        },
+        "securityCredential": {
+          "type": "string"
+        },
+        "queueTimeoutUrl": {
+          "type": "string"
+        },
+        "resultUrl": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to query transaction status",
+      "title": "QueryTransactionStatusRequest"
     },
     "mpesaQueryTransactionStatusRequestIdentifierType": {
       "type": "string",
@@ -436,6 +800,76 @@
         "ORGANIZATION_SHORT_CODE"
       ],
       "default": "QUERY_TRANSACTION_UNSPECIFIED"
+    },
+    "mpesaReverseTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "receiverType": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "shortCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to reverse an mpesa transaction",
+      "title": "ReverseTransactionRequest"
+    },
+    "mpesaTransferFundsRequest": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "format": "float"
+        },
+        "msisdn": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "shortCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "CommandId": {
+          "$ref": "#/definitions/TransferFundsRequestCommandId"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to transfer funds b2cs",
+      "title": "TransferFundsRequest"
     },
     "protobufAny": {
       "type": "object",
