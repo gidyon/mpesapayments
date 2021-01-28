@@ -58,8 +58,8 @@ func addPrefix(key, prefix string) string {
 }
 
 func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if gw.DisableSTKService {
-		http.Error(w, "receiving stk transactions disabled", http.StatusServiceUnavailable)
+	if gw.DisableB2CService {
+		http.Error(w, "receiving b2c transactions disabled", http.StatusServiceUnavailable)
 		return
 	}
 
