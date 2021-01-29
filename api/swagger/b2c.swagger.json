@@ -760,8 +760,8 @@
           "$ref": "#/definitions/mpesaQueryTransactionStatusRequestIdentifierType"
         },
         "partyA": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "remarks": {
           "type": "string"
@@ -805,8 +805,8 @@
       "type": "object",
       "properties": {
         "receiverType": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "shortCode": {
           "type": "integer",
@@ -842,8 +842,8 @@
           "format": "float"
         },
         "msisdn": {
-          "type": "integer",
-          "format": "int32"
+          "type": "string",
+          "format": "int64"
         },
         "shortCode": {
           "type": "integer",
@@ -855,7 +855,7 @@
         "occassion": {
           "type": "string"
         },
-        "CommandId": {
+        "commandId": {
           "$ref": "#/definitions/TransferFundsRequestCommandId"
         },
         "requestId": {

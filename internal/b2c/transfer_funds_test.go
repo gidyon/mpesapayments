@@ -20,7 +20,7 @@ var _ = Describe("Transfering funds @transferfunds", func() {
 	BeforeEach(func() {
 		transferReq = &b2c.TransferFundsRequest{
 			Amount:    float32(randomdata.Decimal(9, 99999)),
-			Msisdn:    int32(fakePhoneNumber()),
+			Msisdn:    fakePhoneNumber(),
 			ShortCode: 174379,
 			Remarks:   randParagraph(),
 			Occassion: randParagraph(),

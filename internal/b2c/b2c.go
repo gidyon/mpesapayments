@@ -411,7 +411,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		return nil, errs.WrapError(err)
 	}
 
-	if apiRes.Succeeded() {
+	if apiRes.Succeeded() == false {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
@@ -545,7 +545,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		return nil, errs.WrapError(err)
 	}
 
-	if apiRes.Succeeded() {
+	if apiRes.Succeeded() == false {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
@@ -645,7 +645,7 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.WrapError(err)
 	}
 
-	if !apiRes.Succeeded() {
+	if apiRes.Succeeded() == false {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
