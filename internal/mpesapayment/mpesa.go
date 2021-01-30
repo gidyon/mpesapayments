@@ -704,8 +704,8 @@ func (mpesaAPI *mpesaAPIServer) PublishMpesaPayment(
 	return &emptypb.Empty{}, nil
 }
 
-func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
-	ctx context.Context, pubReq *mpesapayment.PublishAllMpesaPaymentRequest,
+func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayments(
+	ctx context.Context, pubReq *mpesapayment.PublishAllMpesaPaymentsRequest,
 ) (*emptypb.Empty, error) {
 	// Authentication
 	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
@@ -769,8 +769,9 @@ func (mpesaAPI *mpesaAPIServer) PublishAllMpesaPayment(
 
 		// Publish the mpesa transactions to listeners
 		for _, mpesaPB := range listRes.MpesaPayments {
+			publishPayload := fmt.Sprintf("PAYMENT:%s:%s", mpesaPB.PaymentId, "")
 			err := pipeliner.Publish(
-				ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), mpesaPB.PaymentId,
+				ctx, mpesaAPI.AddPrefix(mpesaAPI.PublishChannel), publishPayload,
 			).Err()
 			if err != nil {
 				return nil, err
