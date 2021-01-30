@@ -468,6 +468,270 @@
         ]
       }
     },
+    "/api/mpestx/payments:archiveTransactions": {
+      "post": {
+        "summary": "Archives transactions in a separate table`",
+        "operationId": "LipaNaMPESA_ArchiveTransactions2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaArchiveTransactionsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:getRandomTransaction": {
+      "post": {
+        "summary": "Retrives a random transaction using RM=NG algorithm",
+        "operationId": "LipaNaMPESA_GetRandomTransaction2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaMPESAPayment"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaGetRandomTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:getScopes": {
+      "post": {
+        "summary": "Retrieves scopes for a user.",
+        "operationId": "LipaNaMPESA_GetScopes2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaGetScopesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaGetScopesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:getTransactionsCount": {
+      "post": {
+        "summary": "Get transactions count summary",
+        "operationId": "LipaNaMPESA_GetTransactionsCount2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaTransactionsSummary"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaGetTransactionsCountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:processMpesaPayment": {
+      "post": {
+        "summary": "Updates Mpesa transaction processed state to either true or false.",
+        "operationId": "LipaNaMPESA_ProcessMpesaPayment2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaProcessMpesaPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:publishAllMpesaPayments": {
+      "post": {
+        "summary": "Publish all failed Mpesa transaction for listeners to process.",
+        "operationId": "LipaNaMPESA_PublishAllMpesaPayments2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishAllMpesaPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:publishMpesaPayment": {
+      "post": {
+        "summary": "Publishes Mpesa statement for listeners to process. Safe to be called many times.",
+        "operationId": "LipaNaMPESA_PublishMpesaPayment2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishMpesaPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:saveScopes": {
+      "post": {
+        "summary": "Saves scopes for a user.",
+        "operationId": "LipaNaMPESA_SaveScopes2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaSaveScopesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/scopes/{userId}": {
       "get": {
         "summary": "Retrieves scopes for a user.",
@@ -564,6 +828,30 @@
       "description": "Identities that is allowed access",
       "title": "Scopes"
     },
+    "mpesaArchiveTransactionsRequest": {
+      "type": "object",
+      "properties": {
+        "fromTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "toTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "refNumbers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "archiveName": {
+          "type": "string"
+        }
+      },
+      "description": "Request to archive all transactions in active table to a separate table",
+      "title": "ArchiveTransactionsRequest"
+    },
     "mpesaCreateMPESAPaymentRequest": {
       "type": "object",
       "properties": {
@@ -590,6 +878,44 @@
       "description": "Response after creating payment containing payment id",
       "title": "CreateMPESAPaymentResponse"
     },
+    "mpesaGetRandomTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "accountsNumber": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "amount": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "description": "Request to a random transaction information",
+      "title": "RandomTransactionRequest"
+    },
+    "mpesaGetScopesRequest": {
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        }
+      },
+      "description": "Request to scopes for an identity",
+      "title": "GetScopesRequest",
+      "required": [
+        "user_id"
+      ]
+    },
     "mpesaGetScopesResponse": {
       "type": "object",
       "properties": {
@@ -599,6 +925,40 @@
       },
       "description": "Reponse containing scopes",
       "title": "GetScopesResponse"
+    },
+    "mpesaGetTransactionsCountRequest": {
+      "type": "object",
+      "properties": {
+        "accountsNumber": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "msisdns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "amounts": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "format": "float"
+          }
+        },
+        "startTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Request to retrieve transactions information",
+      "title": "GetTransactionsCountRequest"
     },
     "mpesaListMPESAPaymentsFilter": {
       "type": "object",

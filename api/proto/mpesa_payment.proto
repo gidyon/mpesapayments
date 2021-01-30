@@ -285,6 +285,10 @@ service LipaNaMPESA {
 		option (google.api.http) = {
 			post: "/api/mpestx/scopes:add"
 			body: "*"
+			additional_bindings {
+				post: "/api/mpestx/payments:saveScopes"
+				body: "*"
+			}
 		};
 	};
 
@@ -292,6 +296,10 @@ service LipaNaMPESA {
 	rpc GetScopes (GetScopesRequest) returns (GetScopesResponse) {
 		option (google.api.http) = {
 			get: "/api/mpestx/scopes/{user_id}"
+			additional_bindings {
+				post: "/api/mpestx/payments:getScopes"
+				body: "*"
+			}
 		};
 	};
 
@@ -300,6 +308,10 @@ service LipaNaMPESA {
 		option (google.api.http) = {
 			post: "/api/mpestx/payments/actions/process"
 			body: "*"
+			additional_bindings {
+				post: "/api/mpestx/payments:processMpesaPayment"
+				body: "*"
+			}
 		};
 	};
 
@@ -308,6 +320,10 @@ service LipaNaMPESA {
 		option (google.api.http) = {
 			post: "/api/mpestx/payments/actions/publish"
 			body: "*"
+			additional_bindings {
+				post: "/api/mpestx/payments:publishMpesaPayment"
+				body: "*"
+			}
 		};
 	};
 
@@ -316,6 +332,10 @@ service LipaNaMPESA {
 		option (google.api.http) = {
 			post: "/api/mpestx/payments/actions/publishall"
 			body: "*"
+			additional_bindings {
+				post: "/api/mpestx/payments:publishAllMpesaPayments"
+				body: "*"
+			}
 		};
 	};
 
@@ -323,6 +343,10 @@ service LipaNaMPESA {
 	rpc GetTransactionsCount (GetTransactionsCountRequest) returns (TransactionsSummary) {
 		option (google.api.http) = {
 			get: "/api/mpestx/payments/actions/transactions"
+			additional_bindings {
+				post: "/api/mpestx/payments:getTransactionsCount"
+				body: "*"
+			}
 		};
 	};
 
@@ -330,6 +354,10 @@ service LipaNaMPESA {
 	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (MPESAPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/payments/actions/get-random-transaction"
+			additional_bindings {
+				post: "/api/mpestx/payments:getRandomTransaction"
+				body: "*"
+			}
 		};
 	};
 
@@ -337,6 +365,10 @@ service LipaNaMPESA {
 	rpc ArchiveTransactions (ArchiveTransactionsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			get: "/api/mpestx/payments/actions/archive-transactions"
+			additional_bindings {
+				post: "/api/mpestx/payments:archiveTransactions"
+				body: "*"
+			}
 		};
 	};
 }
