@@ -33,7 +33,7 @@ type LipaNaMPESAClient interface {
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
 	PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PublishAllMpesaPayments(ctx context.Context, in *PublishAllMpesaPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(ctx context.Context, in *GetTransactionsCountRequest, opts ...grpc.CallOption) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
@@ -113,9 +113,9 @@ func (c *lipaNaMPESAClient) PublishMpesaPayment(ctx context.Context, in *Publish
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) PublishAllMpesaPayment(ctx context.Context, in *PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) PublishAllMpesaPayments(ctx context.Context, in *PublishAllMpesaPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -168,7 +168,7 @@ type LipaNaMPESAServer interface {
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
 	PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*emptypb.Empty, error)
+	PublishAllMpesaPayments(context.Context, *PublishAllMpesaPaymentsRequest) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
@@ -203,8 +203,8 @@ func (UnimplementedLipaNaMPESAServer) ProcessMpesaPayment(context.Context, *Proc
 func (UnimplementedLipaNaMPESAServer) PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishMpesaPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayment(context.Context, *PublishAllMpesaPaymentRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishAllMpesaPayment not implemented")
+func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayments(context.Context, *PublishAllMpesaPaymentsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishAllMpesaPayments not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionsCount not implemented")
@@ -354,20 +354,20 @@ func _LipaNaMPESA_PublishMpesaPayment_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_PublishAllMpesaPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishAllMpesaPaymentRequest)
+func _LipaNaMPESA_PublishAllMpesaPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishAllMpesaPaymentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).PublishAllMpesaPayment(ctx, in)
+		return srv.(LipaNaMPESAServer).PublishAllMpesaPayments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayment",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).PublishAllMpesaPayment(ctx, req.(*PublishAllMpesaPaymentRequest))
+		return srv.(LipaNaMPESAServer).PublishAllMpesaPayments(ctx, req.(*PublishAllMpesaPaymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -459,8 +459,8 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 			Handler:    _LipaNaMPESA_PublishMpesaPayment_Handler,
 		},
 		{
-			MethodName: "PublishAllMpesaPayment",
-			Handler:    _LipaNaMPESA_PublishAllMpesaPayment_Handler,
+			MethodName: "PublishAllMpesaPayments",
+			Handler:    _LipaNaMPESA_PublishAllMpesaPayments_Handler,
 		},
 		{
 			MethodName: "GetTransactionsCount",

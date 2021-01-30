@@ -202,10 +202,10 @@ message PublishMpesaPaymentRequest {
 	ProcessedState processed_state = 3;
 }
 
-message PublishAllMpesaPaymentRequest {
+message PublishAllMpesaPaymentsRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "PublishAllMpesaPaymentRequest"
+			title: "PublishAllMpesaPaymentsRequest"
 			description: "Update Mpesa tx processed state to either true or false"
 		}
 	};
@@ -312,7 +312,7 @@ service LipaNaMPESA {
 	};
 
 	// Publish all failed Mpesa transaction for listeners to process.
-	rpc PublishAllMpesaPayment (PublishAllMpesaPaymentRequest) returns (google.protobuf.Empty) {
+	rpc PublishAllMpesaPayments (PublishAllMpesaPaymentsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx/payments/actions/publishall"
 			body: "*"

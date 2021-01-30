@@ -337,7 +337,7 @@
     "/api/mpestx/payments/actions/publishall": {
       "post": {
         "summary": "Publish all failed Mpesa transaction for listeners to process.",
-        "operationId": "LipaNaMPESA_PublishAllMpesaPayment",
+        "operationId": "LipaNaMPESA_PublishAllMpesaPayments",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -358,7 +358,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaPublishAllMpesaPaymentRequest"
+              "$ref": "#/definitions/mpesaPublishAllMpesaPaymentsRequest"
             }
           }
         ],
@@ -729,7 +729,7 @@
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
-    "mpesaPublishAllMpesaPaymentRequest": {
+    "mpesaPublishAllMpesaPaymentsRequest": {
       "type": "object",
       "properties": {
         "processedState": {
@@ -745,7 +745,7 @@
         }
       },
       "description": "Update Mpesa tx processed state to either true or false",
-      "title": "PublishAllMpesaPaymentRequest"
+      "title": "PublishAllMpesaPaymentsRequest"
     },
     "mpesaPublishMpesaPaymentRequest": {
       "type": "object",
