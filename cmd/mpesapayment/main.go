@@ -222,6 +222,7 @@ func main() {
 			AuthAPI:             authAPI,
 			MpesaAPI:            mpesaAPI,
 			StkAPI:              stkAPI,
+			B2CAPI:              b2cAPI,
 			DisableMpesaService: disableMpesaAPI,
 			DisableSTKService:   disableSTKAPI,
 			DisableB2CService:   disableB2CAPI,
