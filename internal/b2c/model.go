@@ -84,6 +84,7 @@ func GetB2CPaymentPB(paymentDB *Payment) (*b2c.B2CPayment, error) {
 		ResultCode:               paymentDB.ResultCode,
 		ResultDescription:        paymentDB.ResultDescription,
 		TransactionTimestamp:     paymentDB.TransactionTimestamp,
+		CreateTimestamp:          paymentDB.CreateTimestamp,
 		Amount:                   paymentDB.Amount,
 		WorkingAccountFunds:      paymentDB.WorkingAccountFunds,
 		UtilityAccountFunds:      paymentDB.UtilityAccountFunds,
