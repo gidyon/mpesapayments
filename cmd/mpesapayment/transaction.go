@@ -75,6 +75,11 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err             error
 	)
 
+	// Tell local consumers that they can unsubscribe
+	defer func() {
+		gw.RedisDB.Publish(context.Background(), b2capp.AddPrefix(gw.Options.B2CLocalTopic, gw.Options.RedisKeyPrefix), requestID)
+	}()
+
 	gw.Logger.Infoln("received b2c transaction from mpesa")
 
 	// Must be POST request
@@ -91,12 +96,21 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		// Marshaling
 		err = json.NewDecoder(r.Body).Decode(transaction)
 		if err != nil {
-			gw.Logger.Errorf("error is %v", err)
+			gw.Logger.Errorf("error decoding json in response: %v", err)
 			http.Error(w, "decoding json failed: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 	default:
-		gw.Logger.Warningln("incorrect  content type: %v", r.Header.Get("content-type"))
+		ctype := r.Header.Get("content-type")
+		http.Error(w, fmt.Sprintf("incorrect content-type: %s", ctype), http.StatusBadRequest)
+		gw.Logger.Warningln("incorrect content type: %s", ctype)
+		return
+	}
+
+	// Stop if the transaction failed
+	if transaction.Result.ResultCode != 0 {
+		w.Write([]byte("mpesa b2c transaction not processed because it was not successful"))
+		gw.Logger.Warningf("%+v", transaction.Result)
 		return
 	}
 
