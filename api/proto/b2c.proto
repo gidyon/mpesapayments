@@ -49,7 +49,7 @@ message QueryAccountBalanceRequest {
         QUERY_ACCOUNT_UNSPECIFIED = 0;
         MSISDN = 1;
         TILL_NUMBER = 2;
-        ORGANIZATION_SHORT_CODE = 3;
+        ORGANIZATION_SHORT_CODE = 4;
     }
 
     IdentifierType identifier_type = 1;
@@ -174,7 +174,7 @@ message CreateB2CPaymentRequest {
 		}
     };
     
-	B2CPayment payment = 1;
+	B2CPayment payment = 1 [(google.api.field_behavior) = REQUIRED];
 	bool publish = 2;
 }
 
@@ -251,24 +251,22 @@ message PublishB2CPaymentRequest {
 		}
 	};
 
-	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
-	map<string, string> payload = 2 [(google.api.field_behavior) = REQUIRED];
-	gidyon.mpesa.ProcessedState processed_state = 3;
-	bool from_cache = 4;
+	string payment_id = 1;
+	string initiator_id = 2;
+	ProcessedState processed_state = 3;
 }
 
-message PublishAllB2CPaymentRequest {
+message PublishAllB2CPaymentsRequest {
     option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "PublishAllB2CPaymentRequest"
+			title: "PublishAllB2CPaymentsRequest"
 			description: "Request to publish all b2c payments"
 		}
 	};
 
 	ProcessedState processed_state = 1;
-	bool from_cache = 2;
-	int64 start_timestamp = 3;
-	int64 end_timestamp = 4;
+	int64 start_timestamp = 2;
+	int64 end_timestamp = 3;
 }
 
 service B2CAPI {
@@ -347,9 +345,9 @@ service B2CAPI {
 	};
 
 	// Publihses all b2c payments to consumers
-	rpc PublishAllB2CPayment (PublishAllB2CPaymentRequest) returns (google.protobuf.Empty) {
+	rpc PublishAllB2CPayments (PublishAllB2CPaymentsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/b2c:publishAllB2CPayment"
+			post: "/api/mpestx/b2c:publishAllB2CPayments"
 			body: "*"
 		};
 	};

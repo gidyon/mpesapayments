@@ -37,7 +37,7 @@ type B2CAPIClient interface {
 	// Publishes b2c payment to consumers
 	PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publihses all b2c payments to consumers
-	PublishAllB2CPayment(ctx context.Context, in *PublishAllB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type b2CAPIClient struct {
@@ -129,9 +129,9 @@ func (c *b2CAPIClient) PublishB2CPayment(ctx context.Context, in *PublishB2CPaym
 	return out, nil
 }
 
-func (c *b2CAPIClient) PublishAllB2CPayment(ctx context.Context, in *PublishAllB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *b2CAPIClient) PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ type B2CAPIServer interface {
 	// Publishes b2c payment to consumers
 	PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error)
 	// Publihses all b2c payments to consumers
-	PublishAllB2CPayment(context.Context, *PublishAllB2CPaymentRequest) (*emptypb.Empty, error)
+	PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedB2CAPIServer()
 }
 
@@ -196,8 +196,8 @@ func (UnimplementedB2CAPIServer) ProcessB2CPayment(context.Context, *ProcessB2CP
 func (UnimplementedB2CAPIServer) PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishB2CPayment not implemented")
 }
-func (UnimplementedB2CAPIServer) PublishAllB2CPayment(context.Context, *PublishAllB2CPaymentRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishAllB2CPayment not implemented")
+func (UnimplementedB2CAPIServer) PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishAllB2CPayments not implemented")
 }
 func (UnimplementedB2CAPIServer) mustEmbedUnimplementedB2CAPIServer() {}
 
@@ -374,20 +374,20 @@ func _B2CAPI_PublishB2CPayment_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _B2CAPI_PublishAllB2CPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishAllB2CPaymentRequest)
+func _B2CAPI_PublishAllB2CPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishAllB2CPaymentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(B2CAPIServer).PublishAllB2CPayment(ctx, in)
+		return srv.(B2CAPIServer).PublishAllB2CPayments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/PublishAllB2CPayment",
+		FullMethod: "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(B2CAPIServer).PublishAllB2CPayment(ctx, req.(*PublishAllB2CPaymentRequest))
+		return srv.(B2CAPIServer).PublishAllB2CPayments(ctx, req.(*PublishAllB2CPaymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -433,8 +433,8 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 			Handler:    _B2CAPI_PublishB2CPayment_Handler,
 		},
 		{
-			MethodName: "PublishAllB2CPayment",
-			Handler:    _B2CAPI_PublishAllB2CPayment_Handler,
+			MethodName: "PublishAllB2CPayments",
+			Handler:    _B2CAPI_PublishAllB2CPayments_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -239,10 +239,10 @@
         ]
       }
     },
-    "/api/mpestx/b2c:publishAllB2CPayment": {
+    "/api/mpestx/b2c:publishAllB2CPayments": {
       "post": {
         "summary": "Publihses all b2c payments to consumers",
-        "operationId": "B2CAPI_PublishAllB2CPayment",
+        "operationId": "B2CAPI_PublishAllB2CPayments",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -263,7 +263,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaPublishAllB2CPaymentRequest"
+              "$ref": "#/definitions/mpesaPublishAllB2CPaymentsRequest"
             }
           }
         ],
@@ -623,14 +623,11 @@
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
-    "mpesaPublishAllB2CPaymentRequest": {
+    "mpesaPublishAllB2CPaymentsRequest": {
       "type": "object",
       "properties": {
         "processedState": {
           "$ref": "#/definitions/mpesaProcessedState"
-        },
-        "fromCache": {
-          "type": "boolean"
         },
         "startTimestamp": {
           "type": "string",
@@ -642,7 +639,7 @@
         }
       },
       "description": "Request to publish all b2c payments",
-      "title": "PublishAllB2CPaymentRequest"
+      "title": "PublishAllB2CPaymentsRequest"
     },
     "mpesaPublishB2CPaymentRequest": {
       "type": "object",
@@ -650,17 +647,11 @@
         "paymentId": {
           "type": "string"
         },
-        "payload": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+        "initiatorId": {
+          "type": "string"
         },
         "processedState": {
           "$ref": "#/definitions/mpesaProcessedState"
-        },
-        "fromCache": {
-          "type": "boolean"
         }
       },
       "description": "Request to publish a b2c payment",
