@@ -25,32 +25,33 @@ endif
 
 run:
 	go build -v -o service && \
+	DISABLE_STK_SERVICE=true
+	DISABLE_MPESA_SERVICE=true
 	JWT_SIGNING_KEY=$(JWT_KEY) \
 	API_BLOCK_KEY=$(API_BLOCK_KEY) \
 	API_HASH_KEY=$(API_HASH_KEY) \
+	QUEUE_TIMEOUT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
+	RESULT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
+	QUERY_BALANCE_URL=https://api.safaricom.co.ke/mpesa/accountbalance/v1/query \
+	B2C_URL=https://api.safaricom.co.ke/mpesa/b2c/v1/paymentrequest \
+	REVERSAL_URL=https://api.safaricom.co.ke/mpesa/reversal/v1/request \
 	MPESA_ACCESS_TOKEN=PmI1UA2pkJOXhxWwqhHmo2b72QZA \
-	MPESA_ACCESS_TOKEN_URL=https://sandbox.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials \
-	SAF_CONSUMER_KEY=QggPD8t1QTEyRDrVOQi9roaEF1KTi8yn \
-	SAF_CONSUMER_SECRET=vtDlJKRFAVREwffQ \
+	MPESA_ACCESS_TOKEN_URL=https://api.safaricom.co.ke/oauth/v1/generate?grant_type=client_credentials \
+	SAF_CONSUMER_KEY=Ne5FBXQ2GQHmy8t3hsMmteh7X5k1zyzv \
+	SAF_CONSUMER_SECRET=rjPVlpAQxmGUcl0W \
 	BUSINESS_SHORT_CODE=174379 \
 	MPESA_ACCOUNT_REFERENCE='mpesa stk test' \
 	MPESA_ACCESS_TIMESTAMP=20171121160303 \
 	LNM_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919 \
 	MPESA_CALLBACK_URL=https://onfon.gidyon.jessegitaka.org/api/mpesa/incoming/stkpush \
-	MPESA_POST_URL=https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest \
-	MPESA_QUERY_URL=https://sandbox.safaricom.co.ke/mpesa/stkpushquery/v1/query \
+	MPESA_POST_URL=https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest \
+	MPESA_QUERY_URL=https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query \
 	PUBLISH_CHANNEL_STK=mpesa:stk:pub \
 	PUBLISH_CHANNEL_PAYBILL=mpesa:paybill:pubsub \
 	PUBLISH_CHANNEL_B2C=mpesa:btc:pubsub \
 	PUBLISH_CHANNEL_LOCAL=local \
-	QUERY_BALANCE_URL=https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query \
-	B2C_URL=https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest \
-	REVERSAL_URL=https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request \
-	QUEUE_TIMEOUT_URL=http:localhost:9090/timeout \
-	RESULT_URL=http:localhost:9090/result \
-	INITIATOR_USERNAME=gideon \
-	INITIATOR_PASSWORD=hakty1111 \
-	INITIATOR_ENCRYPTED_PASSWORD=eghfevfuebefewbf2893fb47bv7v4bv4874v8f9 \
+	INITIATOR_USERNAME=JESEPHINE \
+	INITIATOR_ENCRYPTED_PASSWORD=WDZVY3FeA1dyjX77cfIBUNfHtbsU3wElZT74Vab37GKQtRCM3ZohaMQyAbL/0rwzzn6z7QoCgnOz+HJVru02yIFbCti+USwaI+JLKqapEDeyCJhNitpqm5ALxwFDJcipmhTFY4GdtZCKmWdN0twiJ+nnGmWXc7+0WUhBg4pcANsbe4sMzU+UQjVQ1Qmi8yU6vqLpJKQslJSSpMoT93PV9re75CbDXiqqkDcTuuBm1D3Ts7jaO0OWHbb44fl9h+HngBufI4QQsXZnSb9cGOEM7sYxij4LqXMehrt+fe5Xx469+vv9ua70iboL6/f9U0jzJnYiUbQhtWyN7qLFZMcl/g== \
 	REDIS_KEY_PREFIX="test" \
 	TABLE_PREFIX="test" \
 	./service -config-file=./config.yaml
