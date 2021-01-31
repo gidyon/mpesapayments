@@ -258,8 +258,8 @@ func (_m *LNMAPIMock) ProcessMpesaPayment(ctx context.Context, in *mpesapayment.
 	return r0, r1
 }
 
-// PublishAllMpesaPayment provides a mock function with given fields: ctx, in, opts
-func (_m *LNMAPIMock) PublishAllMpesaPayment(ctx context.Context, in *mpesapayment.PublishAllMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+// PublishAllMpesaPayments provides a mock function with given fields: ctx, in, opts
+func (_m *LNMAPIMock) PublishAllMpesaPayments(ctx context.Context, in *mpesapayment.PublishAllMpesaPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	_va := make([]interface{}, len(opts))
 	for _i := range opts {
 		_va[_i] = opts[_i]
@@ -270,7 +270,7 @@ func (_m *LNMAPIMock) PublishAllMpesaPayment(ctx context.Context, in *mpesapayme
 	ret := _m.Called(_ca...)
 
 	var r0 *emptypb.Empty
-	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest, ...grpc.CallOption) *emptypb.Empty); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentsRequest, ...grpc.CallOption) *emptypb.Empty); ok {
 		r0 = rf(ctx, in, opts...)
 	} else {
 		if ret.Get(0) != nil {
@@ -279,7 +279,7 @@ func (_m *LNMAPIMock) PublishAllMpesaPayment(ctx context.Context, in *mpesapayme
 	}
 
 	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentRequest, ...grpc.CallOption) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *mpesapayment.PublishAllMpesaPaymentsRequest, ...grpc.CallOption) error); ok {
 		r1 = rf(ctx, in, opts...)
 	} else {
 		r1 = ret.Error(1)
