@@ -14,16 +14,16 @@ type AccountBalanceRequest struct {
 
 // B2CRequest is request to transact between an M-Pesa short code to a phone number registered on M-Pesa.
 type B2CRequest struct {
-	InititorName       string  `json:"InititorName,omitempty"`
-	SecurityCredential string  `json:"SecurityCredential,omitempty"`
-	CommandID          string  `json:"CommandID,omitempty"`
-	Amount             float64 `json:"Amount,omitempty"`
-	PartyA             int32   `json:"PartyA,omitempty"`
-	PartyB             int64   `json:"PartyB,omitempty"`
-	Remarks            string  `json:"Remarks,omitempty"`
-	QueueTimeOutURL    string  `json:"QueueTimeOutURL,omitempty"`
-	ResultURL          string  `json:"ResultURL,omitempty"`
-	Occassion          string  `json:"Occassion,omitempty"`
+	InitiatorName      string `json:"InitiatorName,omitempty"`
+	SecurityCredential string `json:"SecurityCredential,omitempty"`
+	CommandID          string `json:"CommandID,omitempty"`
+	Amount             string `json:"Amount,omitempty"`
+	PartyA             string `json:"PartyA,omitempty"`
+	PartyB             int64  `json:"PartyB,omitempty"`
+	Remarks            string `json:"Remarks,omitempty"`
+	QueueTimeOutURL    string `json:"QueueTimeOutURL,omitempty"`
+	ResultURL          string `json:"ResultURL,omitempty"`
+	Occassion          string `json:"Occassion,omitempty"`
 }
 
 // ReversalRequest is request to reverses a M-Pesa transaction.
