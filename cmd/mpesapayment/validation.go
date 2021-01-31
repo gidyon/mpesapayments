@@ -47,6 +47,8 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("stk API")
 	case opt.MpesaAPI == nil && !opt.DisableMpesaService:
 		err = errs.NilObject("mpesa API")
+	case opt.B2CAPI == nil && !opt.DisableB2CService:
+		err = errs.NilObject("b2c API")
 	case !opt.DisableSTKService && opt.RedisKeyPrefix == "":
 		err = errs.MissingField("redis key prefix")
 	case !opt.DisableB2CService && opt.B2CLocalTopic == "":
