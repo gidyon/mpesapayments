@@ -108,22 +108,6 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Stop if the transaction failed
-	if transaction.Result.ResultCode != 0 {
-		w.Write([]byte("mpesa b2c transaction not processed because it was not successful"))
-		gw.Logger.Warningf("%+v", transaction.Result)
-
-		// Publish the failure
-		gw.b2cAPI.PublishB2CPayment(gw.ctxExt, &b2c.PublishB2CPaymentRequest{
-			PaymentId:   transaction.Result.TransactionID,
-			InitiatorId: initiatorID,
-			Payload:     transaction.Result.ResultDesc,
-			Success:     false,
-		})
-
-		return
-	}
-
 	// Validation
 	switch {
 	case transaction == nil:
