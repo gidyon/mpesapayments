@@ -650,8 +650,14 @@
         "initiatorId": {
           "type": "string"
         },
+        "payload": {
+          "type": "string"
+        },
         "processedState": {
           "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "success": {
+          "type": "boolean"
         }
       },
       "description": "Request to publish a b2c payment",

@@ -253,7 +253,9 @@ message PublishB2CPaymentRequest {
 
 	string payment_id = 1;
 	string initiator_id = 2;
-	ProcessedState processed_state = 3;
+	string payload = 3;
+	ProcessedState processed_state = 4;
+	bool success = 5;
 }
 
 message PublishAllB2CPaymentsRequest {
