@@ -44,7 +44,7 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 							PaymentId:   paymentID,
 							InitiatorId: incomingPayment.payment.InitiatorID,
 							Success:     true,
-							Payload:     "payment save successfully",
+							Payload:     incomingPayment.payment.ResultDescription,
 						})
 					if err != nil {
 						b2cAPI.Logger.Errorf("failed to publish b2c trnasaction with id: %%v", err)
