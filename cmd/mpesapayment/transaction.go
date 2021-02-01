@@ -177,8 +177,10 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			Payment: transactionPB,
 			Publish: publishOnCreate,
 		})
-		gw.Logger.Errorf("failed to create b2c payment: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		if err != nil {
+			gw.Logger.Errorf("failed to create b2c payment: %v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 		// Save in cache for later processing
 		bs, err := proto.Marshal(transactionPB)
