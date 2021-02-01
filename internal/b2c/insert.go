@@ -2,8 +2,11 @@ package b2c
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
+
+	"github.com/gidyon/mpesapayments/pkg/api/b2c"
 )
 
 const maxCap = 10000
@@ -31,7 +34,24 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 
 	callback := func() {
 		for _, v := range incomingPayments {
-			go func(incoming incomingPayment) {}(*v)
+			if v.publish {
+				// By value because the slice will be reset
+				go func(incomingPayment incomingPayment) {
+					paymentID := valFunc(fmt.Sprint(incomingPayment.payment.PaymentID), incomingPayment.payment.TransactionID)
+					// Publish the transaction
+					_, err := b2cAPI.PublishB2CPayment(
+						b2cAPI.ctxAdmin, &b2c.PublishB2CPaymentRequest{
+							PaymentId:   paymentID,
+							InitiatorId: incomingPayment.payment.InitiatorID,
+							Success:     true,
+							Payload:     "payment save successfully",
+						})
+					if err != nil {
+						b2cAPI.Logger.Errorf("failed to publish b2c trnasaction with id: %%v", err)
+						return
+					}
+				}(*v)
+			}
 		}
 		ticker.Reset(b2cAPI.insertTimeOut)
 		incomingPayments = incomingPayments[0:0]
