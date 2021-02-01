@@ -64,13 +64,14 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var (
-		requestID       = r.URL.Query().Get("request_id")
-		shortCode       = r.URL.Query().Get("short_code")
-		msisdn          = r.URL.Query().Get("msisdn")
-		txType          = r.URL.Query().Get("tx_type")
-		publishLocal    = r.URL.Query().Get("publish_local") != ""
-		publishOnCreate = r.URL.Query().Get("publish_global") != ""
-		drop            = r.URL.Query().Get("drop") != ""
+		initiatorID     = r.URL.Query().Get(b2capp.InitiatorID)
+		requestID       = r.URL.Query().Get(b2capp.RequestIDQuery)
+		shortCode       = r.URL.Query().Get(b2capp.ShortCodeQuery)
+		msisdn          = r.URL.Query().Get(b2capp.MSISDNQuery)
+		txType          = r.URL.Query().Get(b2capp.TxTypeQuery)
+		publishLocal    = r.URL.Query().Get(b2capp.PublishLocalQuery) != ""
+		publishOnCreate = r.URL.Query().Get(b2capp.PublishGlobalQuery) != ""
+		drop            = r.URL.Query().Get(b2capp.DropQuery) != ""
 		ctx             = r.Context()
 		err             error
 	)
@@ -111,6 +112,15 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if transaction.Result.ResultCode != 0 {
 		w.Write([]byte("mpesa b2c transaction not processed because it was not successful"))
 		gw.Logger.Warningf("%+v", transaction.Result)
+
+		// Publish the failure
+		gw.b2cAPI.PublishB2CPayment(gw.ctxExt, &b2c.PublishB2CPaymentRequest{
+			PaymentId:   transaction.Result.TransactionID,
+			InitiatorId: initiatorID,
+			Payload:     transaction.Result.ResultDesc,
+			Success:     false,
+		})
+
 		return
 	}
 
@@ -133,6 +143,7 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Transaction payload
 	transactionPB := &b2c.B2CPayment{
+		InitiatorId:              initiatorID,
 		OrgShortCode:             shortCode,
 		Msisdn:                   msisdn,
 		ReceiverPartyPublicName:  transaction.ReceiverPartyPublicName(),
