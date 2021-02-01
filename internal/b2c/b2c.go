@@ -51,6 +51,8 @@ const (
 	PublishLocalQuery = "publish_local"
 	// PublishGlobalQuery ...
 	PublishGlobalQuery = "publish_global"
+	// TxTypeQuery ...
+	TxTypeQuery = "tx_type"
 	// DropQuery ...
 	DropQuery = "drop"
 )
@@ -283,6 +285,7 @@ type queryOptions struct {
 	shortCode            string
 	publishLocalChannel  string
 	publishGlobalChannel string
+	txType               string
 	dropTransaction      bool
 }
 
@@ -311,6 +314,9 @@ func addQueryParams(opt *queryOptions, url string) string {
 	}
 	if opt.publishLocalChannel != "" {
 		url += fmt.Sprintf("&%s=%s", PublishLocalQuery, opt.publishLocalChannel)
+	}
+	if opt.txType != "" {
+		url += fmt.Sprintf("&%s=%s", TxTypeQuery, opt.txType)
 	}
 	if opt.dropTransaction {
 		url += fmt.Sprintf("&%s=%s", DropQuery, "true")
@@ -494,6 +500,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		shortCode:            fmt.Sprint(transferReq.ShortCode),
 		publishGlobalChannel: b2cAPI.PublishChannel,
 		publishLocalChannel:  b2cAPI.B2CLocalTopic,
+		txType:               "TransferFunds",
 		dropTransaction:      false,
 	}
 
@@ -956,7 +963,12 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 		return nil, err
 	}
 
-	publishPayload := fmt.Sprintf("TRANSACTION:%s:%s", pubReq.PaymentId, pubReq.InitiatorId)
+	var publishPayload string
+	if pubReq.Success {
+		publishPayload = fmt.Sprintf("SUCCESS:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
+	} else {
+		publishPayload = fmt.Sprintf("FAILED:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
+	}
 
 	// Publish based on state
 	switch pubReq.ProcessedState {
