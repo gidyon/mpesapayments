@@ -682,12 +682,12 @@ func ValidatePayment(paymentPB *b2c.B2CPayment) error {
 	switch {
 	case paymentPB == nil:
 		err = errs.NilObject("payment pb")
-	case paymentPB.ReceiverPartyPublicName == "":
-		err = errs.MissingField("receiver public name")
 	case paymentPB.ResultDescription == "":
 		err = errs.MissingField("result description")
-	case paymentPB.TransactionTimestamp == 0:
-		err = errs.MissingField("transaction timestamp")
+		// case paymentPB.ReceiverPartyPublicName == "":
+		// 	err = errs.MissingField("receiver public name")
+		// case paymentPB.TransactionTimestamp == 0:
+		// 	err = errs.MissingField("transaction timestamp")
 	}
 	return err
 }
