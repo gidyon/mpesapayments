@@ -956,7 +956,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 	}
 
 	// Get the transaction
-	mpesaPayment, err := b2cAPI.GetB2CPayment(ctx, &b2c.GetB2CPaymentRequest{
+	b2cPayment, err := b2cAPI.GetB2CPayment(ctx, &b2c.GetB2CPaymentRequest{
 		PaymentId: pubReq.PaymentId,
 	})
 	if err != nil {
@@ -964,10 +964,10 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 	}
 
 	var publishPayload string
-	if mpesaPayment.Succeeded {
-		publishPayload = fmt.Sprintf("SUCCESS:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
+	if b2cPayment.Succeeded {
+		publishPayload = fmt.Sprintf("SUCCESS:%s:%s:%s", pubReq.PaymentId, firstVal(pubReq.InitiatorId, b2cPayment.InitiatorId), b2cPayment.ResultDescription)
 	} else {
-		publishPayload = fmt.Sprintf("FAILED:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
+		publishPayload = fmt.Sprintf("FAILED:%s:%s:%s", pubReq.PaymentId, firstVal(pubReq.InitiatorId, b2cPayment.InitiatorId), b2cPayment.ResultDescription)
 	}
 
 	// Publish based on state
@@ -981,7 +981,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 		}
 	case mpesapayment.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !mpesaPayment.Processed {
+		if !b2cPayment.Processed {
 			err = b2cAPI.RedisDB.Publish(
 				ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
 			).Err()
@@ -991,7 +991,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 		}
 	case mpesapayment.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
-		if mpesaPayment.Processed {
+		if b2cPayment.Processed {
 			err = b2cAPI.RedisDB.Publish(
 				ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
 			).Err()
