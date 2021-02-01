@@ -964,7 +964,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 	}
 
 	var publishPayload string
-	if pubReq.Success {
+	if mpesaPayment.Succeeded {
 		publishPayload = fmt.Sprintf("SUCCESS:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
 	} else {
 		publishPayload = fmt.Sprintf("FAILED:%s:%s:%s", pubReq.PaymentId, pubReq.InitiatorId, pubReq.Payload)
