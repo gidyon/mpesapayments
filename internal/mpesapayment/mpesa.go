@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
@@ -134,6 +135,9 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 
 	// Insert worker
 	go mpesaAPI.insertWorker(ctx)
+
+	// Update stats worker
+	go mpesaAPI.dailyStatWorker(ctx)
 
 	return mpesaAPI, nil
 }
@@ -1059,4 +1063,176 @@ func (mpesaAPI *mpesaAPIServer) ArchiveTransactions(
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (mpesaAPI *mpesaAPIServer) GetStats(
+	ctx context.Context, getStat *mpesapayment.GetStatsRequest,
+) (*mpesapayment.StatsResponse, error) {
+	// Authentication
+	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case getStat == nil:
+		return nil, errs.NilObject("get stats request")
+	case getStat.ShortCode == "":
+		return nil, errs.NilObject("short code")
+	case getStat.AccountName == "":
+		return nil, errs.NilObject("account name")
+	case len(getStat.Dates) == 0:
+		return nil, errs.MissingField("dates")
+	}
+
+	var (
+		mu      = &sync.Mutex{} // guards statsPB
+		errChan = make(chan error, len(getStat.Dates))
+		statsPB = make([]*mpesapayment.Stat, 0, len(getStat.Dates))
+	)
+
+	for _, date := range getStat.Dates {
+
+		date := date
+
+		go func() {
+
+			// Get stats for each day listed
+			statDB := &Stat{}
+			err = mpesaAPI.SQLDB.First(statDB, "date = ? AND short_code = ? AND account_name = ?", date, getStat.ShortCode, getStat.AccountName).Error
+			if err != nil {
+				errChan <- errs.FailedToFind("stat", err)
+				return
+			}
+
+			statPB, err := GetStatPB(statDB)
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			mu.Lock()
+			statsPB = append(statsPB, statPB)
+			mu.Unlock()
+
+			errChan <- nil
+		}()
+	}
+
+	for range getStat.Dates {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case err := <-errChan:
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	return &mpesapayment.StatsResponse{
+		Stats: statsPB,
+	}, nil
+}
+
+func (mpesaAPI *mpesaAPIServer) ListStats(
+	ctx context.Context, listReq *mpesapayment.ListStatsRequest,
+) (*mpesapayment.StatsResponse, error) {
+	// Authorize the request
+	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case listReq == nil:
+		return nil, errs.NilObject("list request")
+	}
+
+	var (
+		pageSize       = listReq.GetPageSize()
+		pageToken      = listReq.GetPageToken()
+		accountNumbers = listReq.GetFilter().GetAccountsNumber()
+		msisdns        = listReq.GetFilter().GetMsisdns()
+
+		statID uint
+	)
+
+	if pageSize <= 0 || pageSize > defaultPageSize {
+		pageSize = defaultPageSize
+	}
+
+	if pageToken != "" {
+		ids, err := mpesaAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
+		if err != nil {
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
+		}
+		statID = uint(ids[0])
+	}
+
+	stats := make([]*Stat, 0, pageSize+1)
+
+	db := mpesaAPI.SQLDB.Limit(int(pageSize + 1)).Order("stat_id DESC")
+
+	// Apply payment id filter
+	if statID != 0 {
+		db = db.Where("stat_id<?", statID)
+	}
+
+	// Apply filters
+	if len(accountNumbers) > 0 {
+		db = db.Where("reference_number IN(?)", accountNumbers)
+	}
+	if len(msisdns) > 0 {
+		db = db.Where("msisdn IN(?)", msisdns)
+	}
+	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
+		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
+	} else if listReq.GetFilter().GetTxDate() != "" {
+		t, err := getTime(listReq.Filter.TxDate)
+		if err != nil {
+			return nil, err
+		}
+		db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+	}
+
+	err = db.Find(&stats).Error
+	switch {
+	case err == nil:
+	default:
+		return nil, errs.FailedToFind("ussd channels", err)
+	}
+
+	statsPB := make([]*mpesapayment.Stat, 0, len(stats))
+
+	for i, stat := range stats {
+		statPB, err := GetStatPB(stat)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ignore the last element
+		if i == int(pageSize) {
+			break
+		}
+
+		statsPB = append(statsPB, statPB)
+		statID = stat.StatID
+	}
+
+	var token string
+	if len(stats) > int(pageSize) {
+		// Next page token
+		token, err = mpesaAPI.PaginationHasher.EncodeInt64([]int64{int64(statID)})
+		if err != nil {
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to generate next page token")
+		}
+	}
+
+	return &mpesapayment.StatsResponse{
+		Stats:         statsPB,
+		NextPageToken: token,
+	}, nil
 }
