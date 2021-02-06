@@ -3,9 +3,11 @@ package mpesapayment
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"gorm.io/gorm"
 )
 
 // MpesaPayments is table for mpesa payments
@@ -81,4 +83,47 @@ func GetMpesaPB(MpesaDB *PaymentMpesa) (*mpesapayment.MPESAPayment, error) {
 	}
 
 	return mpesaPB, nil
+}
+
+const statsTable = "stats"
+
+// Stat is model containing transactions statistic
+type Stat struct {
+	StatID            uint    `gorm:"primaryKey;autoIncrement"`
+	ShortCode         string  `gorm:"index;type:varchar(20);not null"`
+	AccountName       string  `gorm:"index;type:varchar(20);not null"`
+	Date              string  `gorm:"index;type:varchar()"`
+	TotalTransactions int32   `gorm:"type:int(10);not null"`
+	TotalAmount       float32 `gorm:"type:float(12);not null"`
+	CreatedAt         time.Time
+	UpdatedAt         time.Time
+	DeletedAt         gorm.DeletedAt `gorm:"index"`
+}
+
+// TableName ...
+func (*Stat) TableName() string {
+	return statsTable
+}
+
+// GetStatDB gets mpesa statistics model from protobuf message
+func GetStatDB(statPB *mpesapayment.Stat) (*Stat, error) {
+	return &Stat{
+		ShortCode:         statPB.ShortCode,
+		AccountName:       statPB.AccountName,
+		Date:              statPB.ShortCode,
+		TotalTransactions: statPB.TotalTransactions,
+		TotalAmount:       statPB.TotalAmount,
+	}, nil
+}
+
+// GetStatPB gets mpesa statistics protobuf from model
+func GetStatPB(statDB *Stat) (*mpesapayment.Stat, error) {
+	return &mpesapayment.Stat{
+		StatId:            fmt.Sprint(statDB.StatID),
+		Date:              statDB.ShortCode,
+		ShortCode:         statDB.ShortCode,
+		AccountName:       statDB.AccountName,
+		TotalTransactions: statDB.TotalTransactions,
+		TotalAmount:       statDB.TotalAmount,
+	}, nil
 }
