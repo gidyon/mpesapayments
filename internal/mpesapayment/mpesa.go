@@ -393,9 +393,11 @@ func (mpesaAPI *mpesaAPIServer) ListMPESAPayments(
 	// Update percentage
 	switch {
 	case percent > 100:
-		percent = 1
+		percent = 100
 	case percent < 0:
 		percent = 1
+	case percent == 0:
+		percent = 100
 	}
 
 	// Jan 27 2021 and wasted 30 minutes
@@ -967,12 +969,16 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 	)
 
 	for next {
+		amounts := []float32{}
+		if getReq.Amount > 0 {
+			amounts = []float32{getReq.Amount}
+		}
 		listRes, err := mpesaAPI.ListMPESAPayments(ctx, &mpesapayment.ListMPESAPaymentsRequest{
 			PageToken: pageToken,
 			PageSize:  defaultPageSize,
 			Filter: &mpesapayment.ListMPESAPaymentsFilter{
 				AccountsNumber: getReq.GetAccountsNumber(),
-				Amounts:        []float32{getReq.GetAmount()},
+				Amounts:        amounts,
 				StartTimestamp: getReq.GetStartTimeSeconds(),
 				EndTimestamp:   getReq.GetEndTimeSeconds(),
 			},
