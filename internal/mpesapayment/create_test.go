@@ -93,13 +93,6 @@ var _ = Describe("Creating MPESA payment @create", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
-		It("should fail when tx reference number is missing", func() {
-			createReq.MpesaPayment.RefNumber = ""
-			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(createRes).Should(BeNil())
-		})
 		It("should fail when tx id is missing", func() {
 			createReq.MpesaPayment.TransactionId = ""
 			createRes, err := MpesaPaymentAPI.CreateMPESAPayment(ctx, createReq)
