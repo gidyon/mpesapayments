@@ -937,14 +937,22 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	percent := scopesPB.GetScopes().GetPercentage()
 	switch {
 	case percent > 100:
-		percent = 1
+		percent = 100
 	case percent < 0:
 		percent = 1
+	case percent == 0:
+		percent = 100
+	}
+
+	totalTransactions := int32((float32(transactions) * percent) / 100)
+	totalAmount2 := (totalAmountF * percent) / 100
+	if totalTransactions == 0 {
+		totalAmount2 = 0
 	}
 
 	return &mpesapayment.TransactionsSummary{
-		TotalAmount:       (totalAmountF * percent) / 100,
-		TransactionsCount: int32((float32(transactions) * percent) / 100),
+		TotalAmount:       totalAmount2,
+		TransactionsCount: totalTransactions,
 	}, nil
 }
 
