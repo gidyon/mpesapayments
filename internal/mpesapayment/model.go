@@ -85,14 +85,14 @@ func GetMpesaPB(MpesaDB *PaymentMpesa) (*mpesapayment.MPESAPayment, error) {
 	return mpesaPB, nil
 }
 
-const statsTable = "stats"
+const statsTable = "daily_stats"
 
 // Stat is model containing transactions statistic
 type Stat struct {
 	StatID            uint    `gorm:"primaryKey;autoIncrement"`
 	ShortCode         string  `gorm:"index;type:varchar(20);not null"`
 	AccountName       string  `gorm:"index;type:varchar(20);not null"`
-	Date              string  `gorm:"index;type:varchar()"`
+	Date              string  `gorm:"index;type:varchar(10);not null"`
 	TotalTransactions int32   `gorm:"type:int(10);not null"`
 	TotalAmount       float32 `gorm:"type:float(12);not null"`
 	CreatedAt         time.Time
