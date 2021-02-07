@@ -133,6 +133,13 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (mpesapayment.LipaNaMP
 		}
 	}
 
+	if !mpesaAPI.SQLDB.Migrator().HasTable(&Stat{}) {
+		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&Stat{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Insert worker
 	go mpesaAPI.insertWorker(ctx)
 
@@ -251,7 +258,7 @@ func (mpesaAPI *mpesaAPIServer) GetMPESAPayment(
 	return GetMpesaPB(mpesaDB)
 }
 
-const defaultPageSize = 20
+const defaultPageSize = 50
 
 func userAllowedAccSet(userID string) string {
 	return fmt.Sprintf("user:%s:allowedaccounts", userID)
@@ -1107,7 +1114,12 @@ func (mpesaAPI *mpesaAPIServer) GetStats(
 			// Get stats for each day listed
 			statDB := &Stat{}
 			err = mpesaAPI.SQLDB.First(statDB, "date = ? AND short_code = ? AND account_name = ?", date, getStat.ShortCode, getStat.AccountName).Error
-			if err != nil {
+			switch {
+			case err == nil:
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				errChan <- nil
+				return
+			default:
 				errChan <- errs.FailedToFind("stat", err)
 				return
 			}
