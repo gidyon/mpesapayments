@@ -40,6 +40,10 @@ type LipaNaMPESAClient interface {
 	GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
 	// Archives transactions in a separate table`
 	ArchiveTransactions(ctx context.Context, in *ArchiveTransactionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Get statistics for transactions
+	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
+	// Retrieves a collection of statistics
+	ListStats(ctx context.Context, in *ListStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 }
 
 type lipaNaMPESAClient struct {
@@ -149,6 +153,24 @@ func (c *lipaNaMPESAClient) ArchiveTransactions(ctx context.Context, in *Archive
 	return out, nil
 }
 
+func (c *lipaNaMPESAClient) GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
+	out := new(StatsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lipaNaMPESAClient) ListStats(ctx context.Context, in *ListStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
+	out := new(StatsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ListStats", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LipaNaMPESAServer is the server API for LipaNaMPESA service.
 // All implementations must embed UnimplementedLipaNaMPESAServer
 // for forward compatibility
@@ -175,6 +197,10 @@ type LipaNaMPESAServer interface {
 	GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error)
 	// Archives transactions in a separate table`
 	ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error)
+	// Get statistics for transactions
+	GetStats(context.Context, *GetStatsRequest) (*StatsResponse, error)
+	// Retrieves a collection of statistics
+	ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error)
 	mustEmbedUnimplementedLipaNaMPESAServer()
 }
 
@@ -214,6 +240,12 @@ func (UnimplementedLipaNaMPESAServer) GetRandomTransaction(context.Context, *Get
 }
 func (UnimplementedLipaNaMPESAServer) ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ArchiveTransactions not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) GetStats(context.Context, *GetStatsRequest) (*StatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStats not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListStats not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) mustEmbedUnimplementedLipaNaMPESAServer() {}
 
@@ -426,6 +458,42 @@ func _LipaNaMPESA_ArchiveTransactions_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LipaNaMPESA_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/GetStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).GetStats(ctx, req.(*GetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LipaNaMPESA_ListStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ListStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ListStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ListStats(ctx, req.(*ListStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.LipaNaMPESA",
 	HandlerType: (*LipaNaMPESAServer)(nil),
@@ -473,6 +541,14 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ArchiveTransactions",
 			Handler:    _LipaNaMPESA_ArchiveTransactions_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _LipaNaMPESA_GetStats_Handler,
+		},
+		{
+			MethodName: "ListStats",
+			Handler:    _LipaNaMPESA_ListStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

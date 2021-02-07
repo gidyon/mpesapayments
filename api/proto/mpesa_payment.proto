@@ -254,6 +254,92 @@ message ArchiveTransactionsRequest {
 	int64 to_time_seconds = 2;
 	repeated string ref_numbers = 3;
 	string archive_name = 4;
+	bool generate_stat = 5;
+}
+
+message GetRandomTransactionRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "RandomTransactionRequest"
+			description: "Request to a random transaction information"
+		}
+	};
+
+	repeated string accounts_number = 1;
+	int64 start_time_seconds = 2;
+	int64 end_time_seconds = 3;
+	float amount = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+
+message Stat {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "Stat"
+			description: "Transaction statistics"
+		}
+	};
+
+	string stat_id = 1;
+	string date = 2;
+	string short_code = 3;
+	string account_name = 4;
+	int32 total_transactions = 5;
+	float total_amount = 6;
+}
+
+message GetStatsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "GetStatsRequest"
+			description: "Request to get mpesa transaction statistics for a short code"
+		}
+	};
+
+	repeated string dates = 1;
+	string short_code = 2;
+	string account_name = 3;
+}
+
+message StatsResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "StatsResponse"
+			description: "Response containing multiple statistics"
+		}
+	};
+
+	repeated Stat stats = 1;
+	string next_page_token = 2;
+}
+
+message ListStatsFilter {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStatsFilter"
+			description: "Filter criteria for listing statistics"
+		}
+	};
+
+	repeated string short_codes = 1;
+	repeated string msisdns = 2;
+	repeated string accounts_number = 3;
+	int64 start_timestamp = 4;
+	int64 end_timestamp = 5;
+	string tx_date = 6;
+}
+
+message ListStatsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStatsRequest"
+			description: "Request to retrieve statistics"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+	ListStatsFilter filter = 3;
 }
 
 // Stores and retrieves LIPA NA MPESA payments 
@@ -371,20 +457,28 @@ service LipaNaMPESA {
 			}
 		};
 	};
-}
 
-message GetRandomTransactionRequest {
-	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-		json_schema: {
-			title: "RandomTransactionRequest"
-			description: "Request to a random transaction information"
-		}
+	// Get statistics for transactions
+	rpc GetStats (GetStatsRequest) returns (StatsResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/payments/actions/get-stats"
+			additional_bindings {
+				post: "/api/mpestx/payments:getStats"
+				body: "*"
+			}
+		};
 	};
 
-	repeated string accounts_number = 1;
-	int64 start_time_seconds = 2;
-	int64 end_time_seconds = 3;
-	float amount = 4 [(google.api.field_behavior) = REQUIRED];
+	// Retrieves a collection of statistics
+	rpc ListStats (ListStatsRequest) returns (StatsResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/payments/actions/list-stats"
+			additional_bindings {
+				post: "/api/mpestx/payments:listStats"
+				body: "*"
+			}
+		};	
+	};
 }
 
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {

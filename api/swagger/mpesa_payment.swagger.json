@@ -205,6 +205,12 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "generateStat",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -261,6 +267,141 @@
             "required": false,
             "type": "number",
             "format": "float"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments/actions/get-stats": {
+      "get": {
+        "summary": "Get statistics for transactions",
+        "operationId": "LipaNaMPESA_GetStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "dates",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "shortCode",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "accountName",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments/actions/list-stats": {
+      "get": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "LipaNaMPESA_ListStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "filter.shortCodes",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.msisdns",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.accountsNumber",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.startTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.txDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -567,6 +708,39 @@
         ]
       }
     },
+    "/api/mpestx/payments:getStats": {
+      "post": {
+        "summary": "Get statistics for transactions",
+        "operationId": "LipaNaMPESA_GetStats2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaGetStatsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/payments:getTransactionsCount": {
       "post": {
         "summary": "Get transactions count summary",
@@ -592,6 +766,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaGetTransactionsCountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/payments:listStats": {
+      "post": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "LipaNaMPESA_ListStats2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaListStatsRequest"
             }
           }
         ],
@@ -847,6 +1054,9 @@
         },
         "archiveName": {
           "type": "string"
+        },
+        "generateStat": {
+          "type": "boolean"
         }
       },
       "description": "Request to archive all transactions in active table to a separate table",
@@ -925,6 +1135,25 @@
       },
       "description": "Reponse containing scopes",
       "title": "GetScopesResponse"
+    },
+    "mpesaGetStatsRequest": {
+      "type": "object",
+      "properties": {
+        "dates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shortCode": {
+          "type": "string"
+        },
+        "accountName": {
+          "type": "string"
+        }
+      },
+      "description": "Request to get mpesa transaction statistics for a short code",
+      "title": "GetStatsRequest"
     },
     "mpesaGetTransactionsCountRequest": {
       "type": "object",
@@ -1015,6 +1244,59 @@
       },
       "description": "Reponse containing a collection of mpesa payments",
       "title": "ListMPESAPaymentsResponse"
+    },
+    "mpesaListStatsFilter": {
+      "type": "object",
+      "properties": {
+        "shortCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "msisdns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "accountsNumber": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "txDate": {
+          "type": "string"
+        }
+      },
+      "description": "Filter criteria for listing statistics",
+      "title": "ListStatsFilter"
+    },
+    "mpesaListStatsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/mpesaListStatsFilter"
+        }
+      },
+      "description": "Request to retrieve statistics",
+      "title": "ListStatsRequest"
     },
     "mpesaMPESAPayment": {
       "type": "object",
@@ -1139,6 +1421,49 @@
         "user_id",
         "scopes"
       ]
+    },
+    "mpesaStat": {
+      "type": "object",
+      "properties": {
+        "statId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "shortCode": {
+          "type": "string"
+        },
+        "accountName": {
+          "type": "string"
+        },
+        "totalTransactions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "totalAmount": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      "description": "Transaction statistics",
+      "title": "Stat"
+    },
+    "mpesaStatsResponse": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mpesaStat"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      },
+      "description": "Response containing multiple statistics",
+      "title": "StatsResponse"
     },
     "mpesaTransactionsSummary": {
       "type": "object",
