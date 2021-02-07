@@ -69,7 +69,7 @@ var _ = BeforeSuite(func() {
 	db, err := startDB()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(db.Migrator().DropTable(MpesaPayments)).ShouldNot(HaveOccurred())
+	Expect(db.Migrator().DropTable((&PaymentMpesa{}).TableName())).ShouldNot(HaveOccurred())
 
 	Expect(db.AutoMigrate(&PaymentMpesa{})).ShouldNot(HaveOccurred())
 
