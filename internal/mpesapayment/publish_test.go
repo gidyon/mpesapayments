@@ -82,6 +82,26 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 				Expect(status.Code(err)).Should(Equal(codes.OK))
 				Expect(pubRes).ShouldNot(BeNil())
 			})
+			It("should succeed when processed state is processed", func() {
+				pubRes, err := MpesaPaymentAPI.PublishMpesaPayment(ctx, &mpesapayment.PublishMpesaPaymentRequest{
+					PaymentId:      paymentID,
+					InitiatorId:    randomdata.RandStringRunes(16),
+					ProcessedState: mpesapayment.ProcessedState_PROCESSED,
+				})
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(status.Code(err)).Should(Equal(codes.OK))
+				Expect(pubRes).ShouldNot(BeNil())
+			})
+			It("should succeed when processed state is not processed", func() {
+				pubRes, err := MpesaPaymentAPI.PublishMpesaPayment(ctx, &mpesapayment.PublishMpesaPaymentRequest{
+					PaymentId:      paymentID,
+					InitiatorId:    randomdata.RandStringRunes(16),
+					ProcessedState: mpesapayment.ProcessedState_NOT_PROCESSED,
+				})
+				Expect(err).ShouldNot(HaveOccurred())
+				Expect(status.Code(err)).Should(Equal(codes.OK))
+				Expect(pubRes).ShouldNot(BeNil())
+			})
 		})
 
 		Specify("Payment gotten is what was published", func() {
