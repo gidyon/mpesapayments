@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -73,7 +73,7 @@ var _ = Describe("Publishing stk payload @publish", func() {
 			It("should succeed", func() {
 				pubRes, err := StkAPI.PublishStkPayload(ctx, &stk.PublishStkPayloadRequest{
 					PayloadId:      payloadID,
-					ProcessedState: mpesapayment.ProcessedState_NOT_PROCESSED,
+					ProcessedState: c2b.ProcessedState_NOT_PROCESSED,
 					Payload: map[string]string{
 						"service_id": randomdata.RandStringRunes(32),
 					},

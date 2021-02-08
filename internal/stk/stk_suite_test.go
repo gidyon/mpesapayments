@@ -14,7 +14,7 @@ import (
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/mocks"
 	"github.com/gidyon/micro/v2/utils/encryption"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
@@ -25,7 +25,7 @@ import (
 	"github.com/onsi/gomega"
 )
 
-func TestMPESAPayment(t *testing.T) {
+func TestC2B(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "StkAPI Suite")
 }
@@ -78,7 +78,7 @@ var _ = BeforeSuite(func() {
 		Addr: "localhost:6379",
 	})
 
-	logger := micro.NewLogger("MPESAPayment_app", zerolog.TraceLevel)
+	logger := micro.NewLogger("C2B_app", zerolog.TraceLevel)
 
 	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
 	Expect(err).ShouldNot(HaveOccurred())
@@ -113,7 +113,7 @@ var _ = BeforeSuite(func() {
 		RedisKeyPrefix:            "test",
 	}
 
-	mpesaAPI := mpesapayment.UnimplementedLipaNaMPESAServer{}
+	mpesaAPI := c2b.UnimplementedLipaNaMPESAServer{}
 
 	// Create STK API
 	StkAPI, err = NewStkAPI(ctx, opt, mpesaAPI)

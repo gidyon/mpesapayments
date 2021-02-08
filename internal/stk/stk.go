@@ -16,7 +16,7 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/speps/go-hashids"
@@ -52,7 +52,7 @@ type HTTPClient interface {
 type stkAPIServer struct {
 	stk.UnimplementedStkPushAPIServer
 	lastProcessedTxTime time.Time
-	mpesaAPI            mpesapayment.LipaNaMPESAServer
+	mpesaAPI            c2b.LipaNaMPESAServer
 	insertChan          chan *incomingPayment
 	insertTimeOut       time.Duration
 	ctxAdmin            context.Context
@@ -152,7 +152,7 @@ func ValidateOptionsSTK(opt *OptionsSTK) error {
 
 // NewStkAPI creates a singleton instance of mpesa stk API
 func NewStkAPI(
-	ctx context.Context, opt *Options, mpesaAPI mpesapayment.LipaNaMPESAServer,
+	ctx context.Context, opt *Options, mpesaAPI c2b.LipaNaMPESAServer,
 ) (stk.StkPushAPIServer, error) {
 	// Validation
 	var err error
@@ -459,7 +459,7 @@ func (stkAPI *stkAPIServer) CreateStkPayload(
 
 	if !stkAPI.DisableMpesaService {
 		// Update mpesa payment
-		stkAPI.mpesaAPI.ProcessMpesaPayment(ctx, &mpesapayment.ProcessMpesaPaymentRequest{
+		stkAPI.mpesaAPI.ProcessC2BPayment(ctx, &c2b.ProcessC2BPaymentRequest{
 			PaymentId: stkPayloadDB.TransactionID,
 			State:     true,
 		})
@@ -596,12 +596,12 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 			}
 		}
 
-		if listReq.Filter.ProcessState != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
+		if listReq.Filter.ProcessState != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 			switch listReq.Filter.ProcessState {
-			case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-			case mpesapayment.ProcessedState_NOT_PROCESSED:
+			case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+			case c2b.ProcessedState_NOT_PROCESSED:
 				db = db.Where("processed=false")
-			case mpesapayment.ProcessedState_PROCESSED:
+			case c2b.ProcessedState_PROCESSED:
 				db = db.Where("processed=true")
 			}
 		}
@@ -762,12 +762,12 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 
 	// Publish based on state
 	switch pubReq.ProcessedState {
-	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+	case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 		err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
-	case mpesapayment.ProcessedState_PROCESSED:
+	case c2b.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
 		if mpesaPayload.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
@@ -775,7 +775,7 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
-	case mpesapayment.ProcessedState_NOT_PROCESSED:
+	case c2b.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
 		if !mpesaPayload.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()

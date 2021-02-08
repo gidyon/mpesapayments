@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +38,7 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 		Context("Lets publish the stk payloads", func() {
 			It("should succeed", func() {
 				pubRes, err := StkAPI.PublishAllStkPayload(ctx, &stk.PublishAllStkPayloadRequest{
-					ProcessedState: mpesapayment.ProcessedState_NOT_PROCESSED,
+					ProcessedState: c2b.ProcessedState_NOT_PROCESSED,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
