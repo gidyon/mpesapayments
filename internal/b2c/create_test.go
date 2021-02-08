@@ -69,23 +69,8 @@ var _ = Describe("Creating B2CPayment @create", func() {
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createdRes).Should(BeNil())
 		})
-		It("should fail when receiver public name is missing", func() {
-			createReq.Payment.ReceiverPartyPublicName = ""
-			createdRes, err := B2CAPI.CreateB2CPayment(ctx, createReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(createdRes).Should(BeNil())
-
-		})
 		It("should fail when transaction description is missing", func() {
 			createReq.Payment.ResultDescription = ""
-			createdRes, err := B2CAPI.CreateB2CPayment(ctx, createReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(createdRes).Should(BeNil())
-		})
-		It("should fail when transaction timestamp is missing", func() {
-			createReq.Payment.TransactionTimestamp = 0
 			createdRes, err := B2CAPI.CreateB2CPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
