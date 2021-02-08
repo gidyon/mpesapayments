@@ -16,7 +16,7 @@ import (
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/go-redis/redis/v8"
 	"github.com/golang/protobuf/proto"
@@ -851,12 +851,12 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 			db = db.Where("msisdn IN(?)", listReq.Filter.Msisdns)
 		}
 
-		if listReq.Filter.ProcessState != mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED {
+		if listReq.Filter.ProcessState != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 			switch listReq.Filter.ProcessState {
-			case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-			case mpesapayment.ProcessedState_NOT_PROCESSED:
+			case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+			case c2b.ProcessedState_NOT_PROCESSED:
 				db = db.Where("processed=false")
-			case mpesapayment.ProcessedState_PROCESSED:
+			case c2b.ProcessedState_PROCESSED:
 				db = db.Where("processed=true")
 			}
 		}
@@ -972,14 +972,14 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 
 	// Publish based on state
 	switch pubReq.ProcessedState {
-	case mpesapayment.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+	case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 		err = b2cAPI.RedisDB.Publish(
 			ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
 		).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
-	case mpesapayment.ProcessedState_NOT_PROCESSED:
+	case c2b.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
 		if !b2cPayment.Processed {
 			err = b2cAPI.RedisDB.Publish(
@@ -989,7 +989,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
-	case mpesapayment.ProcessedState_PROCESSED:
+	case c2b.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
 		if b2cPayment.Processed {
 			err = b2cAPI.RedisDB.Publish(
