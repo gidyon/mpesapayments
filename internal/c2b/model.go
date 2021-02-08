@@ -129,3 +129,17 @@ func GetStatPB(statDB *Stat) (*c2b.Stat, error) {
 		UpdateTimeSeconds: statDB.UpdatedAt.Unix(),
 	}, nil
 }
+
+// Scopes is model user scopes
+type Scopes struct {
+	UserID    string `gorm:"primaryKey;type:varchar(15)"`
+	Scopes    []byte `gorm:"type:json"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+}
+
+// TableName ...
+func (*Scopes) TableName() string {
+	return "scopes"
+}

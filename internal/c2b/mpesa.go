@@ -3,6 +3,7 @@ package c2b
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -18,6 +19,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
@@ -135,6 +137,13 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (c2b.LipaNaMPESAServer
 
 	if !mpesaAPI.SQLDB.Migrator().HasTable(&Stat{}) {
 		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&Stat{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if !mpesaAPI.SQLDB.Migrator().HasTable(&Scopes{}) {
+		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&Scopes{})
 		if err != nil {
 			return nil, err
 		}
@@ -259,6 +268,13 @@ func (mpesaAPI *mpesaAPIServer) GetC2BPayment(
 }
 
 const defaultPageSize = 50
+
+func userScopesKey(userID string) string {
+	return fmt.Sprintf("user:%s:scopes", userID)
+}
+func userAllowedShortCodes(userID string) string {
+	return fmt.Sprintf("user:%s:allowedshortcodes", userID)
+}
 
 func userAllowedAccSet(userID string) string {
 	return fmt.Sprintf("user:%s:allowedaccounts", userID)
@@ -476,47 +492,33 @@ func (mpesaAPI *mpesaAPIServer) SaveScopes(
 		return nil, errs.NilObject("scopes")
 	}
 
-	// Add allowed account numbers scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)))
-	if len(addReq.Scopes.AllowedAccNumber) > 0 {
-		err = mpesaAPI.RedisDB.SAdd(
-			ctx, mpesaAPI.AddPrefix(userAllowedAccSet(addReq.UserId)), addReq.Scopes.AllowedAccNumber,
-		).Err()
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "sadd")
-		}
+	// Scopes json
+	bs, err := json.Marshal(addReq.Scopes)
+	if err != nil {
+		return nil, errs.FromJSONMarshal(err, "scopes")
 	}
 
-	// Add allowed phone numbers scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)))
-	if len(addReq.Scopes.AllowedPhones) > 0 {
-		err = mpesaAPI.RedisDB.SAdd(
-			ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(addReq.UserId)), addReq.Scopes.AllowedPhones,
-		).Err()
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "sadd")
-		}
+	// Save in database
+	scopesDB := &Scopes{
+		UserID: addReq.UserId,
+		Scopes: bs,
 	}
 
-	// Add allowed amount scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedAmounts(addReq.UserId)))
-	if len(addReq.Scopes.AllowedAmounts) > 0 {
-		allowedAmount := float32ArrToString(addReq.Scopes.AllowedAmounts)
-		err = mpesaAPI.RedisDB.SAdd(
-			ctx, mpesaAPI.AddPrefix(userAllowedAmounts(addReq.UserId)), allowedAmount,
-		).Err()
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "sadd")
-		}
+	err = mpesaAPI.SQLDB.Save(scopesDB).Error
+	if err != nil {
+		return nil, errs.FailedToSave("scopes", err)
 	}
 
-	// Add percent scopes
-	mpesaAPI.RedisDB.Del(ctx, mpesaAPI.AddPrefix(userAllowedPercent(addReq.UserId)))
-	if addReq.Scopes.Percentage != 0 {
-		err = mpesaAPI.RedisDB.Set(ctx, mpesaAPI.AddPrefix(userAllowedPercent(addReq.UserId)), addReq.Scopes.Percentage, 0).Err()
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "set")
-		}
+	// Proto marshal scopes
+	bs, err = proto.Marshal(addReq.Scopes)
+	if err != nil {
+		return nil, errs.FromProtoMarshal(err, "scopes")
+	}
+
+	// Set in cache
+	err = mpesaAPI.RedisDB.Set(ctx, userScopesKey(addReq.UserId), bs, 0).Err()
+	if err != nil {
+		return nil, errs.RedisCmdFailed(err, "set")
 	}
 
 	return &emptypb.Empty{}, nil
@@ -539,51 +541,59 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 		return nil, errs.MissingField("user id")
 	}
 
-	// Read from redis set of acc numbers
-	allowedAccNo, err := mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.AddPrefix(userAllowedAccSet(getReq.UserId)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return nil, errs.RedisCmdFailed(err, "smembers")
-	}
+	// Get scopes from redis
+	key := userScopesKey(getReq.UserId)
+	val, err := mpesaAPI.RedisDB.Get(ctx, key).Result()
+	switch {
+	case err == nil:
+	case errors.Is(err, redis.Nil):
+		// Get from db
+		scopesDB := &Scopes{}
+		err = mpesaAPI.SQLDB.First(scopesDB, "user_id = ?", getReq.UserId).Error
+		switch {
+		case err == nil:
+			scopesPB := &c2b.Scopes{}
 
-	// Read from redis set of phone numbers
-	allowedPhones, err := mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.AddPrefix(userAllowedPhonesSet(getReq.UserId)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return nil, errs.RedisCmdFailed(err, "smembers")
-	}
+			// Json unmarshal
+			if len(scopesDB.Scopes) > 0 {
+				err = json.Unmarshal(scopesDB.Scopes, scopesPB)
+				if err != nil {
+					return nil, errs.FromJSONUnMarshal(err, "scopes")
+				}
+			}
 
-	// Read from redis set of amounts
-	allowedAmounts, err := mpesaAPI.RedisDB.SMembers(
-		ctx, mpesaAPI.AddPrefix(userAllowedAmounts(getReq.UserId)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
-		return nil, errs.RedisCmdFailed(err, "smembers")
-	}
-	allowedAmountsFloat32 := stringArrToFloat32(allowedAmounts)
+			// Save scopes
+			_, err = mpesaAPI.SaveScopes(ctx, &c2b.SaveScopesRequest{
+				Scopes: scopesPB,
+				UserId: getReq.UserId,
+			})
+			if err != nil {
+				return nil, err
+			}
 
-	// Get allowed percentage
-	percent, err := mpesaAPI.RedisDB.Get(
-		ctx, mpesaAPI.AddPrefix(userAllowedPercent(getReq.UserId)),
-	).Result()
-	if err != nil && !errors.Is(err, redis.Nil) {
+			return &c2b.GetScopesResponse{
+				Scopes: scopesPB,
+			}, nil
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			return &c2b.GetScopesResponse{}, nil
+		default:
+			return nil, errs.FailedToFind("scopes", err)
+		}
+	default:
 		return nil, errs.RedisCmdFailed(err, "get")
 	}
-	var percentFloat32 float32
-	v2, err := strconv.ParseFloat(percent, 32)
-	if err == nil {
-		percentFloat32 = float32(v2)
+
+	// Proto unmarshal scopes
+	scopesPB := &c2b.Scopes{}
+	if val != "" {
+		err = proto.Unmarshal([]byte(val), scopesPB)
+		if err != nil {
+			return nil, errs.FromJSONMarshal(err, "scopes")
+		}
 	}
 
 	return &c2b.GetScopesResponse{
-		Scopes: &c2b.Scopes{
-			AllowedAccNumber: allowedAccNo,
-			AllowedPhones:    allowedPhones,
-			AllowedAmounts:   allowedAmountsFloat32,
-			Percentage:       percentFloat32,
-		},
+		Scopes: scopesPB,
 	}, nil
 }
 
