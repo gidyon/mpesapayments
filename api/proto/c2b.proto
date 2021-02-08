@@ -123,10 +123,11 @@ message Scopes {
 		}
 	};
 
-	repeated string allowed_phones = 1;
-	repeated string allowed_acc_number = 2;
-	repeated float allowed_amounts = 3;
-	float percentage = 4;
+	repeated string allowed_short_codes = 1;
+	repeated string allowed_phones = 2;
+	repeated string allowed_acc_number = 3;
+	repeated float allowed_amounts = 4;
+	float percentage = 5;
 }
 
 message SaveScopesRequest {
@@ -324,11 +325,10 @@ message ListStatsFilter {
 	};
 
 	repeated string short_codes = 1;
-	repeated string msisdns = 2;
-	repeated string accounts_number = 3;
-	int64 start_timestamp = 4;
-	int64 end_timestamp = 5;
-	string tx_date = 6;
+	repeated string accounts_number = 2;
+	int64 start_timestamp = 3;
+	int64 end_timestamp = 4;
+	string tx_date = 5;
 }
 
 message ListStatsRequest {
