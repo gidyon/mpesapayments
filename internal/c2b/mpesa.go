@@ -1166,7 +1166,7 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 	ctx context.Context, listReq *c2b.ListStatsRequest,
 ) (*c2b.StatsResponse, error) {
 	// Authorize the request
-	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	actor, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1177,12 +1177,20 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 		return nil, errs.NilObject("list request")
 	}
 
+	// Get scopes for actor
+	scopesPB, err := mpesaAPI.GetScopes(ctx, &c2b.GetScopesRequest{
+		UserId: actor.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Union request filter with scopes ACL
 	var (
 		pageSize       = listReq.GetPageSize()
 		pageToken      = listReq.GetPageToken()
-		accountNumbers = listReq.GetFilter().GetAccountsNumber()
-		msisdns        = listReq.GetFilter().GetMsisdns()
-		shortCodes     = listReq.GetFilter().GetShortCodes()
+		accountNumbers = getStringUnion(scopesPB.GetScopes().GetAllowedAccNumber(), listReq.GetFilter().GetAccountsNumber())
+		shortCodes     = getStringUnion(scopesPB.GetScopes().GetAllowedShortCodes(), listReq.GetFilter().GetShortCodes())
 
 		statID uint
 	)
@@ -1211,9 +1219,6 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 	// Apply filters
 	if len(accountNumbers) > 0 {
 		db = db.Where("account_name IN(?)", accountNumbers)
-	}
-	if len(msisdns) > 0 {
-		db = db.Where("msisdn IN(?)", msisdns)
 	}
 	if len(shortCodes) > 0 {
 		db = db.Where("short_code IN(?)", shortCodes)
