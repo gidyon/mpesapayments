@@ -19,25 +19,25 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type LipaNaMPESAClient interface {
 	// Creates a record of mpesa payment.
-	CreateMPESAPayment(ctx context.Context, in *CreateMPESAPaymentRequest, opts ...grpc.CallOption) (*CreateMPESAPaymentResponse, error)
+	CreateC2BPayment(ctx context.Context, in *CreateC2BPaymentRequest, opts ...grpc.CallOption) (*CreateC2BPaymentResponse, error)
 	// Retrieves MPESA payment.
-	GetMPESAPayment(ctx context.Context, in *GetMPESAPaymentRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
+	GetC2BPayment(ctx context.Context, in *GetC2BPaymentRequest, opts ...grpc.CallOption) (*C2BPayment, error)
 	// Retrieves a collection of MPESA payments.
-	ListMPESAPayments(ctx context.Context, in *ListMPESAPaymentsRequest, opts ...grpc.CallOption) (*ListMPESAPaymentsResponse, error)
+	ListC2BPayments(ctx context.Context, in *ListC2BPaymentsRequest, opts ...grpc.CallOption) (*ListC2BPaymentsResponse, error)
 	// Saves scopes for a user.
 	SaveScopes(ctx context.Context, in *SaveScopesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(ctx context.Context, in *GetScopesRequest, opts ...grpc.CallOption) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
-	ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	ProcessC2BPayment(ctx context.Context, in *ProcessC2BPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
-	PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PublishC2BPayment(ctx context.Context, in *PublishC2BPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayments(ctx context.Context, in *PublishAllMpesaPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	PublishAllC2BPayments(ctx context.Context, in *PublishAllC2BPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(ctx context.Context, in *GetTransactionsCountRequest, opts ...grpc.CallOption) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
-	GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error)
+	GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*C2BPayment, error)
 	// Archives transactions in a separate table`
 	ArchiveTransactions(ctx context.Context, in *ArchiveTransactionsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Get statistics for transactions
@@ -54,27 +54,27 @@ func NewLipaNaMPESAClient(cc grpc.ClientConnInterface) LipaNaMPESAClient {
 	return &lipaNaMPESAClient{cc}
 }
 
-func (c *lipaNaMPESAClient) CreateMPESAPayment(ctx context.Context, in *CreateMPESAPaymentRequest, opts ...grpc.CallOption) (*CreateMPESAPaymentResponse, error) {
-	out := new(CreateMPESAPaymentResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/CreateMPESAPayment", in, out, opts...)
+func (c *lipaNaMPESAClient) CreateC2BPayment(ctx context.Context, in *CreateC2BPaymentRequest, opts ...grpc.CallOption) (*CreateC2BPaymentResponse, error) {
+	out := new(CreateC2BPaymentResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/CreateC2BPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) GetMPESAPayment(ctx context.Context, in *GetMPESAPaymentRequest, opts ...grpc.CallOption) (*MPESAPayment, error) {
-	out := new(MPESAPayment)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetMPESAPayment", in, out, opts...)
+func (c *lipaNaMPESAClient) GetC2BPayment(ctx context.Context, in *GetC2BPaymentRequest, opts ...grpc.CallOption) (*C2BPayment, error) {
+	out := new(C2BPayment)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetC2BPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) ListMPESAPayments(ctx context.Context, in *ListMPESAPaymentsRequest, opts ...grpc.CallOption) (*ListMPESAPaymentsResponse, error) {
-	out := new(ListMPESAPaymentsResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ListMPESAPayments", in, out, opts...)
+func (c *lipaNaMPESAClient) ListC2BPayments(ctx context.Context, in *ListC2BPaymentsRequest, opts ...grpc.CallOption) (*ListC2BPaymentsResponse, error) {
+	out := new(ListC2BPaymentsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ListC2BPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -99,27 +99,27 @@ func (c *lipaNaMPESAClient) GetScopes(ctx context.Context, in *GetScopesRequest,
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) ProcessMpesaPayment(ctx context.Context, in *ProcessMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) ProcessC2BPayment(ctx context.Context, in *ProcessC2BPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ProcessMpesaPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ProcessC2BPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) PublishMpesaPayment(ctx context.Context, in *PublishMpesaPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) PublishC2BPayment(ctx context.Context, in *PublishC2BPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishMpesaPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishC2BPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) PublishAllMpesaPayments(ctx context.Context, in *PublishAllMpesaPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) PublishAllC2BPayments(ctx context.Context, in *PublishAllC2BPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayments", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/PublishAllC2BPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +135,8 @@ func (c *lipaNaMPESAClient) GetTransactionsCount(ctx context.Context, in *GetTra
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*MPESAPayment, error) {
-	out := new(MPESAPayment)
+func (c *lipaNaMPESAClient) GetRandomTransaction(ctx context.Context, in *GetRandomTransactionRequest, opts ...grpc.CallOption) (*C2BPayment, error) {
+	out := new(C2BPayment)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetRandomTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -176,25 +176,25 @@ func (c *lipaNaMPESAClient) ListStats(ctx context.Context, in *ListStatsRequest,
 // for forward compatibility
 type LipaNaMPESAServer interface {
 	// Creates a record of mpesa payment.
-	CreateMPESAPayment(context.Context, *CreateMPESAPaymentRequest) (*CreateMPESAPaymentResponse, error)
+	CreateC2BPayment(context.Context, *CreateC2BPaymentRequest) (*CreateC2BPaymentResponse, error)
 	// Retrieves MPESA payment.
-	GetMPESAPayment(context.Context, *GetMPESAPaymentRequest) (*MPESAPayment, error)
+	GetC2BPayment(context.Context, *GetC2BPaymentRequest) (*C2BPayment, error)
 	// Retrieves a collection of MPESA payments.
-	ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error)
+	ListC2BPayments(context.Context, *ListC2BPaymentsRequest) (*ListC2BPaymentsResponse, error)
 	// Saves scopes for a user.
 	SaveScopes(context.Context, *SaveScopesRequest) (*emptypb.Empty, error)
 	// Retrieves scopes for a user.
 	GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error)
 	// Updates Mpesa transaction processed state to either true or false.
-	ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*emptypb.Empty, error)
+	ProcessC2BPayment(context.Context, *ProcessC2BPaymentRequest) (*emptypb.Empty, error)
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
-	PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error)
+	PublishC2BPayment(context.Context, *PublishC2BPaymentRequest) (*emptypb.Empty, error)
 	// Publish all failed Mpesa transaction for listeners to process.
-	PublishAllMpesaPayments(context.Context, *PublishAllMpesaPaymentsRequest) (*emptypb.Empty, error)
+	PublishAllC2BPayments(context.Context, *PublishAllC2BPaymentsRequest) (*emptypb.Empty, error)
 	// Get transactions count summary
 	GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error)
 	// Retrives a random transaction using RM=NG algorithm
-	GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error)
+	GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*C2BPayment, error)
 	// Archives transactions in a separate table`
 	ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error)
 	// Get statistics for transactions
@@ -208,14 +208,14 @@ type LipaNaMPESAServer interface {
 type UnimplementedLipaNaMPESAServer struct {
 }
 
-func (UnimplementedLipaNaMPESAServer) CreateMPESAPayment(context.Context, *CreateMPESAPaymentRequest) (*CreateMPESAPaymentResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateMPESAPayment not implemented")
+func (UnimplementedLipaNaMPESAServer) CreateC2BPayment(context.Context, *CreateC2BPaymentRequest) (*CreateC2BPaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateC2BPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) GetMPESAPayment(context.Context, *GetMPESAPaymentRequest) (*MPESAPayment, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetMPESAPayment not implemented")
+func (UnimplementedLipaNaMPESAServer) GetC2BPayment(context.Context, *GetC2BPaymentRequest) (*C2BPayment, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetC2BPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) ListMPESAPayments(context.Context, *ListMPESAPaymentsRequest) (*ListMPESAPaymentsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMPESAPayments not implemented")
+func (UnimplementedLipaNaMPESAServer) ListC2BPayments(context.Context, *ListC2BPaymentsRequest) (*ListC2BPaymentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListC2BPayments not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) SaveScopes(context.Context, *SaveScopesRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveScopes not implemented")
@@ -223,19 +223,19 @@ func (UnimplementedLipaNaMPESAServer) SaveScopes(context.Context, *SaveScopesReq
 func (UnimplementedLipaNaMPESAServer) GetScopes(context.Context, *GetScopesRequest) (*GetScopesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetScopes not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) ProcessMpesaPayment(context.Context, *ProcessMpesaPaymentRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ProcessMpesaPayment not implemented")
+func (UnimplementedLipaNaMPESAServer) ProcessC2BPayment(context.Context, *ProcessC2BPaymentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessC2BPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) PublishMpesaPayment(context.Context, *PublishMpesaPaymentRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishMpesaPayment not implemented")
+func (UnimplementedLipaNaMPESAServer) PublishC2BPayment(context.Context, *PublishC2BPaymentRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishC2BPayment not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) PublishAllMpesaPayments(context.Context, *PublishAllMpesaPaymentsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishAllMpesaPayments not implemented")
+func (UnimplementedLipaNaMPESAServer) PublishAllC2BPayments(context.Context, *PublishAllC2BPaymentsRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishAllC2BPayments not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) GetTransactionsCount(context.Context, *GetTransactionsCountRequest) (*TransactionsSummary, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTransactionsCount not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*MPESAPayment, error) {
+func (UnimplementedLipaNaMPESAServer) GetRandomTransaction(context.Context, *GetRandomTransactionRequest) (*C2BPayment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetRandomTransaction not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) ArchiveTransactions(context.Context, *ArchiveTransactionsRequest) (*emptypb.Empty, error) {
@@ -260,56 +260,56 @@ func RegisterLipaNaMPESAServer(s grpc.ServiceRegistrar, srv LipaNaMPESAServer) {
 	s.RegisterService(&_LipaNaMPESA_serviceDesc, srv)
 }
 
-func _LipaNaMPESA_CreateMPESAPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateMPESAPaymentRequest)
+func _LipaNaMPESA_CreateC2BPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateC2BPaymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).CreateMPESAPayment(ctx, in)
+		return srv.(LipaNaMPESAServer).CreateC2BPayment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/CreateMPESAPayment",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/CreateC2BPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).CreateMPESAPayment(ctx, req.(*CreateMPESAPaymentRequest))
+		return srv.(LipaNaMPESAServer).CreateC2BPayment(ctx, req.(*CreateC2BPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_GetMPESAPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetMPESAPaymentRequest)
+func _LipaNaMPESA_GetC2BPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetC2BPaymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).GetMPESAPayment(ctx, in)
+		return srv.(LipaNaMPESAServer).GetC2BPayment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/GetMPESAPayment",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/GetC2BPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).GetMPESAPayment(ctx, req.(*GetMPESAPaymentRequest))
+		return srv.(LipaNaMPESAServer).GetC2BPayment(ctx, req.(*GetC2BPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_ListMPESAPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMPESAPaymentsRequest)
+func _LipaNaMPESA_ListC2BPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListC2BPaymentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).ListMPESAPayments(ctx, in)
+		return srv.(LipaNaMPESAServer).ListC2BPayments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ListMPESAPayments",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ListC2BPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).ListMPESAPayments(ctx, req.(*ListMPESAPaymentsRequest))
+		return srv.(LipaNaMPESAServer).ListC2BPayments(ctx, req.(*ListC2BPaymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -350,56 +350,56 @@ func _LipaNaMPESA_GetScopes_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_ProcessMpesaPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProcessMpesaPaymentRequest)
+func _LipaNaMPESA_ProcessC2BPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessC2BPaymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).ProcessMpesaPayment(ctx, in)
+		return srv.(LipaNaMPESAServer).ProcessC2BPayment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ProcessMpesaPayment",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ProcessC2BPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).ProcessMpesaPayment(ctx, req.(*ProcessMpesaPaymentRequest))
+		return srv.(LipaNaMPESAServer).ProcessC2BPayment(ctx, req.(*ProcessC2BPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_PublishMpesaPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishMpesaPaymentRequest)
+func _LipaNaMPESA_PublishC2BPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishC2BPaymentRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).PublishMpesaPayment(ctx, in)
+		return srv.(LipaNaMPESAServer).PublishC2BPayment(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishMpesaPayment",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishC2BPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).PublishMpesaPayment(ctx, req.(*PublishMpesaPaymentRequest))
+		return srv.(LipaNaMPESAServer).PublishC2BPayment(ctx, req.(*PublishC2BPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_PublishAllMpesaPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishAllMpesaPaymentsRequest)
+func _LipaNaMPESA_PublishAllC2BPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishAllC2BPaymentsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).PublishAllMpesaPayments(ctx, in)
+		return srv.(LipaNaMPESAServer).PublishAllC2BPayments(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishAllMpesaPayments",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/PublishAllC2BPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).PublishAllMpesaPayments(ctx, req.(*PublishAllMpesaPaymentsRequest))
+		return srv.(LipaNaMPESAServer).PublishAllC2BPayments(ctx, req.(*PublishAllC2BPaymentsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -499,16 +499,16 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*LipaNaMPESAServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateMPESAPayment",
-			Handler:    _LipaNaMPESA_CreateMPESAPayment_Handler,
+			MethodName: "CreateC2BPayment",
+			Handler:    _LipaNaMPESA_CreateC2BPayment_Handler,
 		},
 		{
-			MethodName: "GetMPESAPayment",
-			Handler:    _LipaNaMPESA_GetMPESAPayment_Handler,
+			MethodName: "GetC2BPayment",
+			Handler:    _LipaNaMPESA_GetC2BPayment_Handler,
 		},
 		{
-			MethodName: "ListMPESAPayments",
-			Handler:    _LipaNaMPESA_ListMPESAPayments_Handler,
+			MethodName: "ListC2BPayments",
+			Handler:    _LipaNaMPESA_ListC2BPayments_Handler,
 		},
 		{
 			MethodName: "SaveScopes",
@@ -519,16 +519,16 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 			Handler:    _LipaNaMPESA_GetScopes_Handler,
 		},
 		{
-			MethodName: "ProcessMpesaPayment",
-			Handler:    _LipaNaMPESA_ProcessMpesaPayment_Handler,
+			MethodName: "ProcessC2BPayment",
+			Handler:    _LipaNaMPESA_ProcessC2BPayment_Handler,
 		},
 		{
-			MethodName: "PublishMpesaPayment",
-			Handler:    _LipaNaMPESA_PublishMpesaPayment_Handler,
+			MethodName: "PublishC2BPayment",
+			Handler:    _LipaNaMPESA_PublishC2BPayment_Handler,
 		},
 		{
-			MethodName: "PublishAllMpesaPayments",
-			Handler:    _LipaNaMPESA_PublishAllMpesaPayments_Handler,
+			MethodName: "PublishAllC2BPayments",
+			Handler:    _LipaNaMPESA_PublishAllC2BPayments_Handler,
 		},
 		{
 			MethodName: "GetTransactionsCount",
