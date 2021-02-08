@@ -1216,7 +1216,7 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 		db = db.Where("msisdn IN(?)", msisdns)
 	}
 	if len(shortCodes) > 0 {
-		db = db.Where("short_code IN(?)", msisdns)
+		db = db.Where("short_code IN(?)", shortCodes)
 	}
 	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
 		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
