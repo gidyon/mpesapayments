@@ -575,7 +575,9 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 				Scopes: scopesPB,
 			}, nil
 		case errors.Is(err, gorm.ErrRecordNotFound):
-			return &c2b.GetScopesResponse{}, nil
+			return &c2b.GetScopesResponse{
+				Scopes: &c2b.Scopes{},
+			}, nil
 		default:
 			return nil, errs.FailedToFind("scopes", err)
 		}
