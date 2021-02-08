@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package gidyon.mpesa;
 
-option go_package="github.com/gidyon/mpesapayments/pkg/api/mpesapayment";
+option go_package="github.com/gidyon/mpesapayments/pkg/api/c2b";
 
 import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
