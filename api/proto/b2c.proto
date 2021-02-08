@@ -8,7 +8,7 @@ import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 import "google/api/field_behaviour.proto";
 import "protoc-gen-swagger/options/annotations.proto";
-import "mpesa_payment.proto";
+import "c2b.proto";
 
 message QueryTransactionStatusRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
