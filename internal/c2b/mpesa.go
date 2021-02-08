@@ -504,6 +504,23 @@ func (mpesaAPI *mpesaAPIServer) SaveScopes(
 		Scopes: bs,
 	}
 
+	// Check if table exists
+	err = mpesaAPI.SQLDB.First(&Scopes{}, "user_id = ?", addReq.UserId).Error
+	switch {
+	case err == nil:
+		// Update
+		err = mpesaAPI.SQLDB.Where("user_id = ?", addReq.UserId).Updates(scopesDB).Error
+		if err != nil {
+			return nil, errs.FailedToUpdate("scopes", err)
+		}
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		// Create
+		err = mpesaAPI.SQLDB.Create(scopesDB).Error
+		if err != nil {
+			return nil, errs.FailedToSave("scopes", err)
+		}
+	}
+
 	err = mpesaAPI.SQLDB.Save(scopesDB).Error
 	if err != nil {
 		return nil, errs.FailedToSave("scopes", err)
