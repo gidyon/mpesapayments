@@ -9,10 +9,10 @@ import "google/protobuf/empty.proto";
 import "google/api/field_behaviour.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 
-message MPESAPayment {
+message C2BPayment {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "MPESAPayment"
+			title: "C2BPayment"
 			description: "Lipa na MPESA Payment information"
 		}
 	};
@@ -31,23 +31,23 @@ message MPESAPayment {
 	bool processed = 12;
 }
 
-message CreateMPESAPaymentRequest {
+message CreateC2BPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "CreateMPESAPaymentRequest"
+			title: "CreateC2BPaymentRequest"
 			description: "Request to create record of mpesa payment"
 			required: ["mpesa_payment"]
 		}
 	};
 
-	MPESAPayment mpesa_payment = 1 [(google.api.field_behavior) = REQUIRED];
+	C2BPayment mpesa_payment = 1 [(google.api.field_behavior) = REQUIRED];
 	bool publish = 2;
 }
 
-message CreateMPESAPaymentResponse {
+message CreateC2BPaymentResponse {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "CreateMPESAPaymentResponse"
+			title: "CreateC2BPaymentResponse"
 			description: "Response after creating payment containing payment id"
 		}
 	};
@@ -55,10 +55,10 @@ message CreateMPESAPaymentResponse {
 	string payment_id = 1;
 }
 
-message GetMPESAPaymentRequest {
+message GetC2BPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "GetMPESAPaymentRequest"
+			title: "GetC2BPaymentRequest"
 			description: "Request to retrieve mpesa payment"
 			required: ["payment_id"]
 		}
@@ -73,10 +73,10 @@ enum ProcessedState {
 	NOT_PROCESSED = 2;
 }
 
-message ListMPESAPaymentsFilter {
+message ListC2BPaymentsFilter {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "ListMPESAPaymentsFilter"
+			title: "ListC2BPaymentsFilter"
 			description: "Filter payload for querying payments"
 		}
 	};
@@ -90,29 +90,29 @@ message ListMPESAPaymentsFilter {
 	int64 end_timestamp = 7;
 }
 
-message ListMPESAPaymentsRequest {
+message ListC2BPaymentsRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "ListMPESAPaymentsRequest"
+			title: "ListC2BPaymentsRequest"
 			description: "Request to retrieve a collection of mpesa payments"
 		}
 	};
 
 	string page_token = 1;
 	int32 page_size = 2;
-	ListMPESAPaymentsFilter filter = 3;
+	ListC2BPaymentsFilter filter = 3;
 }
 
-message ListMPESAPaymentsResponse {
+message ListC2BPaymentsResponse {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "ListMPESAPaymentsResponse"
+			title: "ListC2BPaymentsResponse"
 			description: "Reponse containing a collection of mpesa payments"
 		}
 	};
 
 	string next_page_token = 1;
-	repeated MPESAPayment mpesa_payments = 2;
+	repeated C2BPayment mpesa_payments = 2;
 }
 
 message Scopes {
@@ -176,10 +176,10 @@ message GetScopesResponse {
 	Scopes scopes = 1;
 }
 
-message ProcessMpesaPaymentRequest {
+message ProcessC2BPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "ProcessMpesaPaymentRequest"
+			title: "ProcessC2BPaymentRequest"
 			description: "Request to update Mpesa transaction processed state"
 		}
 	};
@@ -189,10 +189,10 @@ message ProcessMpesaPaymentRequest {
 	bool retry = 3;
 }
 
-message PublishMpesaPaymentRequest {
+message PublishC2BPaymentRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "PublishMpesaPaymentRequest"
+			title: "PublishC2BPaymentRequest"
 			description: "Request to publish an mpesa transaction for listerners to process"
 		}
 	};
@@ -202,10 +202,10 @@ message PublishMpesaPaymentRequest {
 	ProcessedState processed_state = 3;
 }
 
-message PublishAllMpesaPaymentsRequest {
+message PublishAllC2BPaymentsRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "PublishAllMpesaPaymentsRequest"
+			title: "PublishAllC2BPaymentsRequest"
 			description: "Update Mpesa tx processed state to either true or false"
 		}
 	};
@@ -345,7 +345,7 @@ message ListStatsRequest {
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
 	// Creates a record of mpesa payment.
-	rpc CreateMPESAPayment (CreateMPESAPaymentRequest) returns (CreateMPESAPaymentResponse) {
+	rpc CreateC2BPayment (CreateC2BPaymentRequest) returns (CreateC2BPaymentResponse) {
 		option (google.api.http) = {
 			post: "/api/mpestx/c2b"
 			body: "*"
@@ -353,14 +353,14 @@ service LipaNaMPESA {
 	};
 
 	// Retrieves MPESA payment.
-	rpc GetMPESAPayment (GetMPESAPaymentRequest) returns (MPESAPayment) {
+	rpc GetC2BPayment (GetC2BPaymentRequest) returns (C2BPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/c2b/{payment_id}"
 		};
 	};
 
 	// Retrieves a collection of MPESA payments.
-	rpc ListMPESAPayments (ListMPESAPaymentsRequest) returns (ListMPESAPaymentsResponse) {
+	rpc ListC2BPayments (ListC2BPaymentsRequest) returns (ListC2BPaymentsResponse) {
 		option (google.api.http) = {
 			get: "/api/mpestx/c2b"
 		};
@@ -390,36 +390,36 @@ service LipaNaMPESA {
 	};
 
 	// Updates Mpesa transaction processed state to either true or false.
-	rpc ProcessMpesaPayment (ProcessMpesaPaymentRequest) returns (google.protobuf.Empty) {
+	rpc ProcessC2BPayment (ProcessC2BPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx/c2b/actions/process"
 			body: "*"
 			additional_bindings {
-				post: "/api/mpestx/c2b:processMpesaPayment"
+				post: "/api/mpestx/c2b:processC2B"
 				body: "*"
 			}
 		};
 	};
 
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
-	rpc PublishMpesaPayment (PublishMpesaPaymentRequest) returns (google.protobuf.Empty) {
+	rpc PublishC2BPayment (PublishC2BPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx/c2b/actions/publish"
 			body: "*"
 			additional_bindings {
-				post: "/api/mpestx/c2b:publishMpesaPayment"
+				post: "/api/mpestx/c2b:publishC2B"
 				body: "*"
 			}
 		};
 	};
 
 	// Publish all failed Mpesa transaction for listeners to process.
-	rpc PublishAllMpesaPayments (PublishAllMpesaPaymentsRequest) returns (google.protobuf.Empty) {
+	rpc PublishAllC2BPayments (PublishAllC2BPaymentsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
 			post: "/api/mpestx/c2b/actions/publishall"
 			body: "*"
 			additional_bindings {
-				post: "/api/mpestx/c2b:publishAllMpesaPayments"
+				post: "/api/mpestx/c2b:publishAllC2Bs"
 				body: "*"
 			}
 		};
@@ -437,7 +437,7 @@ service LipaNaMPESA {
 	};
 
 	// Retrives a random transaction using RM=NG algorithm
-	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (MPESAPayment) {
+	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (C2BPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/c2b/actions/get-random-transaction"
 			additional_bindings {
@@ -484,7 +484,7 @@ service LipaNaMPESA {
 option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
 	info: {
 		title: "MPESA Payment Service";
-		description: "Gateway for c2b MPESA payments, and a CRUD Rest + gRPC API for MpesaPayment resource"
+		description: "Gateway for c2b MPESA payments, and a CRUD Rest + gRPC API for C2B resource"
 		version: "0.1";
 		contact: {
 			name: "Github <Gideon Kamau>";
