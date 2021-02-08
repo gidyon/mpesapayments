@@ -1248,6 +1248,16 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 		return nil, errs.FailedToFind("c2b stat", err)
 	}
 
+	percent := scopesPB.GetScopes().GetPercentage()
+	switch {
+	case percent > 100:
+		percent = 100
+	case percent < 0:
+		percent = 1
+	case percent == 0:
+		percent = 100
+	}
+
 	statsPB := make([]*c2b.Stat, 0, len(stats))
 
 	for i, stat := range stats {
@@ -1260,6 +1270,16 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 		if i == int(pageSize) {
 			break
 		}
+
+		// Update total transactions and cost using scopes
+		totalTransactions := int32((float32(statPB.TotalTransactions) * percent) / 100)
+		totalAmount := (statPB.TotalAmount * percent) / 100
+		if totalTransactions == 0 {
+			totalAmount = 0
+		}
+
+		statPB.TotalAmount = totalAmount
+		statPB.TotalTransactions = totalTransactions
 
 		statsPB = append(statsPB, statPB)
 		statID = stat.StatID
