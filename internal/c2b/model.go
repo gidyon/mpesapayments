@@ -125,5 +125,7 @@ func GetStatPB(statDB *Stat) (*c2b.Stat, error) {
 		AccountName:       statDB.AccountName,
 		TotalTransactions: statDB.TotalTransactions,
 		TotalAmount:       statDB.TotalAmount,
+		CreateDateSeconds: statDB.CreatedAt.Unix(),
+		UpdateTimeSeconds: statDB.UpdatedAt.Unix(),
 	}, nil
 }
