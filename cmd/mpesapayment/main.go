@@ -14,10 +14,10 @@ import (
 	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/micro/v2/utils/errs"
 	b2capp "github.com/gidyon/mpesapayments/internal/b2c"
-	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
+	mpesa "github.com/gidyon/mpesapayments/internal/c2b"
 	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gorilla/securecookie"
 	"go.uber.org/zap"
@@ -122,7 +122,7 @@ func main() {
 			disableSTKAPI   = os.Getenv("DISABLE_STK_SERVICE") != ""
 			disableMpesaAPI = os.Getenv("DISABLE_MPESA_SERVICE") != ""
 			disableB2CAPI   = os.Getenv("DISABLE_B2C_SERVICE") != ""
-			mpesaAPI        mpesapayment.LipaNaMPESAServer
+			mpesaAPI        c2b.LipaNaMPESAServer
 			stkAPI          stk.StkPushAPIServer
 			b2cAPI          b2c.B2CAPIServer
 		)
@@ -141,8 +141,8 @@ func main() {
 			mpesaAPI, err = mpesa.NewAPIServerMPESA(ctx, &opt)
 			errs.Panic(err)
 
-			mpesapayment.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
-			errs.Panic(mpesapayment.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+			c2b.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
+			errs.Panic(c2b.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		if !disableSTKAPI {

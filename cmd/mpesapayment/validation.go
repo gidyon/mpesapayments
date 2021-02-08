@@ -7,7 +7,7 @@ import (
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/grpclog"
@@ -20,7 +20,7 @@ type Options struct {
 	RedisDB             *redis.Client
 	Logger              grpclog.LoggerV2
 	AuthAPI             auth.API
-	MpesaAPI            mpesapayment.LipaNaMPESAServer
+	MpesaAPI            c2b.LipaNaMPESAServer
 	StkAPI              stk.StkPushAPIServer
 	B2CAPI              b2c.B2CAPIServer
 	DisableMpesaService bool

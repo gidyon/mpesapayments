@@ -10,16 +10,16 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
-	mpesa "github.com/gidyon/mpesapayments/internal/mpesapayment"
-	"github.com/gidyon/mpesapayments/pkg/api/mpesapayment"
+	mpesa "github.com/gidyon/mpesapayments/internal/c2b"
+	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
 
 type gateway struct {
-	mpesaPaymentServer mpesapayment.LipaNaMPESAServer
-	ctxExt             context.Context
+	C2BServer c2b.LipaNaMPESAServer
+	ctxExt    context.Context
 	*Options
 }
 
@@ -31,8 +31,8 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 	}
 
 	gw := &gateway{
-		mpesaPaymentServer: opt.MpesaAPI,
-		Options:            opt,
+		C2BServer: opt.MpesaAPI,
+		Options:   opt,
 	}
 
 	// Generate token
@@ -148,7 +148,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	mpesaPaymentPB := &mpesapayment.MPESAPayment{
+	C2BPB := &c2b.C2BPayment{
 		TransactionId:        mpesaPayload.TransID,
 		TransactionType:      mpesaPayload.TransactionType,
 		TransactionTimestamp: transactionTime.Unix(),
@@ -162,13 +162,13 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Save to database
-	_, err = gw.mpesaPaymentServer.CreateMPESAPayment(
-		gw.ctxExt, &mpesapayment.CreateMPESAPaymentRequest{
-			MpesaPayment: mpesaPaymentPB,
+	_, err = gw.C2BServer.CreateC2BPayment(
+		gw.ctxExt, &c2b.CreateC2BPaymentRequest{
+			MpesaPayment: C2BPB,
 		})
 	if err != nil {
 		gw.Logger.Errorf("failed to save mpesa payment: %v", err)
-		bs, err := proto.Marshal(mpesaPaymentPB)
+		bs, err := proto.Marshal(C2BPB)
 		if err == nil {
 			gw.RedisDB.LPush(r.Context(), mpesa.FailedTxList, bs)
 		}
