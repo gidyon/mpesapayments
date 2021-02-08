@@ -286,6 +286,8 @@ message Stat {
 	string account_name = 4;
 	int32 total_transactions = 5;
 	float total_amount = 6;
+	int64 create_date_seconds = 7;
+	int64 update_time_seconds = 8;
 }
 
 message GetStatsRequest {
