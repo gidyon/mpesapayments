@@ -1221,11 +1221,7 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
 		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
 	} else if listReq.GetFilter().GetTxDate() != "" {
-		t, err := getTime(listReq.Filter.TxDate)
-		if err != nil {
-			return nil, err
-		}
-		db = db.Where("created_at BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+		db = db.Where("date = ?", listReq.GetFilter().GetTxDate())
 	}
 
 	err = db.Find(&stats).Error
