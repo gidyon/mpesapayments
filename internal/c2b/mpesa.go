@@ -1182,6 +1182,7 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 		pageToken      = listReq.GetPageToken()
 		accountNumbers = listReq.GetFilter().GetAccountsNumber()
 		msisdns        = listReq.GetFilter().GetMsisdns()
+		shortCodes     = listReq.GetFilter().GetShortCodes()
 
 		statID uint
 	)
@@ -1209,10 +1210,13 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 
 	// Apply filters
 	if len(accountNumbers) > 0 {
-		db = db.Where("reference_number IN(?)", accountNumbers)
+		db = db.Where("account_name IN(?)", accountNumbers)
 	}
 	if len(msisdns) > 0 {
 		db = db.Where("msisdn IN(?)", msisdns)
+	}
+	if len(shortCodes) > 0 {
+		db = db.Where("short_code IN(?)", msisdns)
 	}
 	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
 		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
