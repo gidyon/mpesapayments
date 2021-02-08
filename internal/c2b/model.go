@@ -89,14 +89,14 @@ const statsTable = "daily_stats"
 
 // Stat is model containing transactions statistic
 type Stat struct {
-	StatID            uint    `gorm:"primaryKey;autoIncrement"`
-	ShortCode         string  `gorm:"index;type:varchar(20);not null"`
-	AccountName       string  `gorm:"index;type:varchar(20);not null"`
-	Date              string  `gorm:"index;type:varchar(10);not null"`
-	TotalTransactions int32   `gorm:"type:int(10);not null"`
-	TotalAmount       float32 `gorm:"type:float(12);not null"`
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+	StatID            uint           `gorm:"primaryKey;autoIncrement"`
+	ShortCode         string         `gorm:"index;type:varchar(20);not null"`
+	AccountName       string         `gorm:"index;type:varchar(20);not null"`
+	Date              string         `gorm:"index;type:varchar(10);not null"`
+	TotalTransactions int32          `gorm:"type:int(10);not null"`
+	TotalAmount       float32        `gorm:"type:float(12);not null"`
+	CreatedAt         time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt         time.Time      `gorm:"autoCreateTime"`
 	DeletedAt         gorm.DeletedAt `gorm:"index"`
 }
 
@@ -132,10 +132,10 @@ func GetStatPB(statDB *Stat) (*c2b.Stat, error) {
 
 // Scopes is model user scopes
 type Scopes struct {
-	UserID    string `gorm:"primaryKey;type:varchar(15)"`
-	Scopes    []byte `gorm:"type:json"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	UserID    string         `gorm:"primaryKey;type:varchar(15)"`
+	Scopes    []byte         `gorm:"type:json"`
+	CreatedAt time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `gorm:"autoCreateTime"`
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
