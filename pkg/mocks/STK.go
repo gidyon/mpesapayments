@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/micro/v2/utils/errs"
+	"github.com/gidyon/micro/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/mocks/mocks"
 	"github.com/stretchr/testify/mock"
