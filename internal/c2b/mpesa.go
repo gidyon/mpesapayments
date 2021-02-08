@@ -521,11 +521,6 @@ func (mpesaAPI *mpesaAPIServer) SaveScopes(
 		}
 	}
 
-	err = mpesaAPI.SQLDB.Save(scopesDB).Error
-	if err != nil {
-		return nil, errs.FailedToSave("scopes", err)
-	}
-
 	// Proto marshal scopes
 	bs, err = proto.Marshal(addReq.Scopes)
 	if err != nil {
