@@ -1149,7 +1149,16 @@ func (mpesaAPI *mpesaAPIServer) GetStats(
 			switch {
 			case err == nil:
 			case errors.Is(err, gorm.ErrRecordNotFound):
-				errChan <- nil
+				// generate stat
+				startTime, err := getTime(date)
+				if err != nil {
+					errChan <- err
+				}
+				mpesaAPI.generateStatistics(ctx, startTime.Unix(), startTime.Unix()+(24*3600))
+				err = mpesaAPI.SQLDB.First(statDB, "date = ? AND short_code = ? AND account_name = ?", date, getStat.ShortCode, getStat.AccountName).Error
+				if err != nil && errors.Is(err, gorm.ErrRecordNotFound) == false {
+					errChan <- err
+				}
 				return
 			default:
 				errChan <- errs.FailedToFind("stat", err)
