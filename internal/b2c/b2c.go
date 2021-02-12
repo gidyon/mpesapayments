@@ -342,6 +342,50 @@ func (b2cAPI *b2cAPIServer) AddPrefix(key string) string {
 	return AddPrefix(key, b2cAPI.RedisKeyPrefix)
 }
 
+// GetInitiatorKey creates an initiator key for b2c transaction
+func GetInitiatorKey(msidn string) string {
+	return "initiator:b2c:" + msidn
+}
+
+func (b2cAPI *b2cAPIServer) InitiateTransaction(
+	ctx context.Context, initiateReq *b2c.InitiateTransactionRequest,
+) (*emptypb.Empty, error) {
+	// Authorize the request
+	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate the request
+	switch {
+	case initiateReq == nil:
+		return nil, errs.NilObject("initiate request")
+	case initiateReq.Initiator == nil:
+		return nil, errs.NilObject("initiator")
+	case initiateReq.Initiator.Msisdn == "":
+		return nil, errs.MissingField("initiator msisdn")
+	case initiateReq.Initiator.InitiatorId == "":
+		return nil, errs.MissingField("initiator id")
+	}
+
+	// Get key
+	key := GetInitiatorKey(initiateReq.Initiator.Msisdn)
+
+	// Marshal initiator data
+	bs, err := proto.Marshal(initiateReq.Initiator)
+	if err != nil {
+		return nil, errs.FromProtoMarshal(err, "initiator")
+	}
+
+	// Save in cache temporarily
+	err = b2cAPI.RedisDB.Set(ctx, key, bs, 5*time.Minute).Err()
+	if err != nil {
+		return nil, errs.RedisCmdFailed(err, "set")
+	}
+
+	return &emptypb.Empty{}, nil
+}
+
 func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 	ctx context.Context, queryReq *b2c.QueryAccountBalanceRequest,
 ) (*b2c.QueryAccountBalanceResponse, error) {
