@@ -2,6 +2,7 @@ package payload
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -46,7 +47,7 @@ func (tx *Transaction) MSISDN() string {
 	return ""
 }
 
-// TransactionReceipt retrievs phone number
+// TransactionReceipt retrieves transaction receipt
 func (tx *Transaction) TransactionReceipt() string {
 	if tx.Result.TransactionID != "" {
 		return tx.Result.TransactionID
@@ -59,7 +60,7 @@ func (tx *Transaction) TransactionReceipt() string {
 	return ""
 }
 
-// TransactionAmount retrievs phone number
+// TransactionAmount retrievs transaction phone number
 func (tx *Transaction) TransactionAmount() float64 {
 	for _, v := range tx.Result.ResultParameters.ResultParameter {
 		if v.Key == "TransactionAmount" {
@@ -174,4 +175,66 @@ func (tx *Transaction) QueueTimeoutURL() string {
 		return v
 	}
 	return fmt.Sprint(tx.Result.ReferenceData.ReferenceItem.Value)
+}
+
+// IncomingTransactionOnfon is the payload for incoming transaction from onfon
+type IncomingTransactionOnfon struct {
+	OriginatorConversationID         string `json:"originatorConversationID"`
+	ResultType                       string `json:"resultType"`
+	ResultCode                       string `json:"resultCode"`
+	ResultDesc                       string `json:"resultDesc"`
+	ConversationID                   string `json:"conversationID"`
+	TransactionAmount                string `json:"transactionAmount"`
+	TransactionID                    string `json:"transactionID"`
+	TransactionReceipt               string `json:"transactionReceipt"`
+	ReceiverPartyPublicName          string `json:"receiverPartyPublicName"`
+	B2CUtilityAccountAvailableFunds  string `json:"b2CUtilityAccountAvailableFunds"`
+	TransactionCompletedDateTime     string `json:"transactionCompletedDateTime"`
+	B2CRecipientIsRegisteredCustomer string `json:"b2CRecipientIsRegisteredCustomer"`
+}
+
+// MSISDN retrieves phone number
+func (tx *IncomingTransactionOnfon) MSISDN() string {
+	vals := strings.Split(fmt.Sprint(tx.ReceiverPartyPublicName), " - ")
+	if len(vals) == 1 {
+		vals = strings.Split(fmt.Sprint(tx.ReceiverPartyPublicName), " ")
+	}
+	return strings.TrimSpace(vals[0])
+}
+
+// CompletedDateTime is time the transacction was completed
+func (tx *IncomingTransactionOnfon) CompletedDateTime() time.Time {
+	t, err := getTransactionTimev2(fmt.Sprint(tx.TransactionCompletedDateTime))
+	if err == nil {
+		return t
+	}
+	return time.Now()
+}
+
+// B2CUtilityAccountAvailableFundsV2 retrievs B2CUtilityAccountAvailableFunds as float64
+func (tx *IncomingTransactionOnfon) B2CUtilityAccountAvailableFundsV2() float64 {
+	val, err := strconv.ParseFloat(tx.B2CUtilityAccountAvailableFunds, 64)
+	if err == nil {
+		return val
+	}
+	return 0
+}
+
+// Amount retrievs transaction amount
+func (tx *IncomingTransactionOnfon) Amount() float64 {
+	val, err := strconv.ParseFloat(tx.TransactionAmount, 64)
+	if err == nil {
+		return val
+	}
+	return 0
+}
+
+// B2CRecipientIsRegisteredCustomerV2 checks whether the b2c recipient is a registred customer
+func (tx *IncomingTransactionOnfon) B2CRecipientIsRegisteredCustomerV2() bool {
+	return tx.B2CRecipientIsRegisteredCustomer == "Y"
+}
+
+// Succeeded checks whether transaction was successful
+func (tx *IncomingTransactionOnfon) Succeeded() bool {
+	return tx.ResultCode == "0"
 }
