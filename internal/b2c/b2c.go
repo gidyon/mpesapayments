@@ -775,14 +775,11 @@ func (b2cAPI *b2cAPIServer) CreateB2CPayment(
 func (b2cAPI *b2cAPIServer) GetB2CPayment(
 	ctx context.Context, getReq *b2c.GetB2CPaymentRequest,
 ) (*b2c.B2CPayment, error) {
-	// Authorization
-	err := b2cAPI.AuthAPI.AuthenticateRequest(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// Validation
-	var paymentID int
+	var (
+		paymentID int
+		err       error
+	)
 	switch {
 	case getReq == nil:
 		return nil, errs.NilObject("get request")
@@ -828,7 +825,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 	ctx context.Context, listReq *b2c.ListB2CPaymentsRequest,
 ) (*b2c.ListB2CPaymentsResponse, error) {
 	// Authorization
-	payload, err := b2cAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	payload, err := b2cAPI.AuthAPI.GetJwtPayload(ctx)
 	if err != nil {
 		return nil, err
 	}
