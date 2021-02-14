@@ -18,7 +18,7 @@ type Payment struct {
 	OrgShortCode             string  `gorm:"index;type:varchar(15)"`
 	ReceiverPublicName       string  `gorm:"type:varchar(50)"`
 	TransactionType          string  `gorm:"type:varchar(50)"`
-	TransactionID            string  `gorm:"index;type:varchar(50)"`
+	TransactionID            string  `gorm:"index;type:varchar(50);unique"`
 	ConversationID           string  `gorm:"type:varchar(50)"`
 	OriginatorConversationID string  `gorm:"type:varchar(50)"`
 	ResultCode               string  `gorm:"type:varchar(2)"`
