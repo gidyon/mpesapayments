@@ -173,6 +173,39 @@
         ]
       }
     },
+    "/api/mpestx/b2c:initiateTransaction": {
+      "post": {
+        "summary": "Initiates a b2c transaction",
+        "operationId": "B2CAPI_InitiateTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaInitiateTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
     "/api/mpestx/b2c:listB2CPayments": {
       "post": {
         "summary": "Retrieves a collection of b2c payments",
@@ -537,6 +570,53 @@
       "required": [
         "payment"
       ]
+    },
+    "mpesaInitiateTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "initiator": {
+          "$ref": "#/definitions/mpesaInitiatorPayload"
+        }
+      },
+      "description": "Request to start a b2c transaction",
+      "title": "InitiateTransactionRequest",
+      "required": [
+        "initiator"
+      ]
+    },
+    "mpesaInitiatorPayload": {
+      "type": "object",
+      "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "msisdn": {
+          "type": "string"
+        },
+        "shortCode": {
+          "type": "string"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "publishLocal": {
+          "type": "boolean"
+        },
+        "publishOnCreate": {
+          "type": "boolean"
+        },
+        "dropTransaction": {
+          "type": "boolean"
+        }
+      },
+      "description": "Initiator payload",
+      "title": "InitiatorPayload"
     },
     "mpesaListB2CPaymentFilter": {
       "type": "object",

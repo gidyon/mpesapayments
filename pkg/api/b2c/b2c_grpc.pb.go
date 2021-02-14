@@ -18,6 +18,8 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type B2CAPIClient interface {
+	// Initiates a b2c transaction
+	InitiateTransaction(ctx context.Context, in *InitiateTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Queries for query transaction
 	QueryTransactionStatus(ctx context.Context, in *QueryTransactionStatusRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	// Queries for account balance
@@ -46,6 +48,15 @@ type b2CAPIClient struct {
 
 func NewB2CAPIClient(cc grpc.ClientConnInterface) B2CAPIClient {
 	return &b2CAPIClient{cc}
+}
+
+func (c *b2CAPIClient) InitiateTransaction(ctx context.Context, in *InitiateTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/InitiateTransaction", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *b2CAPIClient) QueryTransactionStatus(ctx context.Context, in *QueryTransactionStatusRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
@@ -142,6 +153,8 @@ func (c *b2CAPIClient) PublishAllB2CPayments(ctx context.Context, in *PublishAll
 // All implementations must embed UnimplementedB2CAPIServer
 // for forward compatibility
 type B2CAPIServer interface {
+	// Initiates a b2c transaction
+	InitiateTransaction(context.Context, *InitiateTransactionRequest) (*emptypb.Empty, error)
 	// Queries for query transaction
 	QueryTransactionStatus(context.Context, *QueryTransactionStatusRequest) (*QueryResponse, error)
 	// Queries for account balance
@@ -169,6 +182,9 @@ type B2CAPIServer interface {
 type UnimplementedB2CAPIServer struct {
 }
 
+func (UnimplementedB2CAPIServer) InitiateTransaction(context.Context, *InitiateTransactionRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InitiateTransaction not implemented")
+}
 func (UnimplementedB2CAPIServer) QueryTransactionStatus(context.Context, *QueryTransactionStatusRequest) (*QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTransactionStatus not implemented")
 }
@@ -210,6 +226,24 @@ type UnsafeB2CAPIServer interface {
 
 func RegisterB2CAPIServer(s grpc.ServiceRegistrar, srv B2CAPIServer) {
 	s.RegisterService(&_B2CAPI_serviceDesc, srv)
+}
+
+func _B2CAPI_InitiateTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InitiateTransactionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(B2CAPIServer).InitiateTransaction(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.B2CAPI/InitiateTransaction",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(B2CAPIServer).InitiateTransaction(ctx, req.(*InitiateTransactionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _B2CAPI_QueryTransactionStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -396,6 +430,10 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.B2CAPI",
 	HandlerType: (*B2CAPIServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "InitiateTransaction",
+			Handler:    _B2CAPI_InitiateTransaction_Handler,
+		},
 		{
 			MethodName: "QueryTransactionStatus",
 			Handler:    _B2CAPI_QueryTransactionStatus_Handler,
