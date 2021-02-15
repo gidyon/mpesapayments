@@ -875,17 +875,21 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		endTimestamp := listReq.Filter.GetEndTimestamp()
 
 		if endTimestamp > startTimestamp {
-			db = db.Where("create_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
+			db = db.Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
 		} else if listReq.Filter.TxDate != "" {
 			t, err := getTime(listReq.Filter.TxDate)
 			if err != nil {
 				return nil, err
 			}
-			db = db.Where("create_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+			db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 		}
 
 		if listReq.Filter.InitiatorId != "" {
-			db = db.Where("initiator_id = ?", listReq.Filter.InitiatorId)
+			if listReq.Filter.UseLikeInitiator {
+				db = db.Where("initiator_id LIKE ?", "%s"+listReq.Filter.InitiatorId+"%s")
+			} else {
+				db = db.Where("initiator_id = ?", listReq.Filter.InitiatorId)
+			}
 		}
 
 		if len(listReq.Filter.Msisdns) > 0 {
