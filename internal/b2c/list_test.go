@@ -84,6 +84,20 @@ var _ = Describe("Listing b2c transactions @list", func() {
 					Expect(listRes).ShouldNot(BeNil())
 				})
 			})
+
+			Describe("Listing payments with use like initiator filter", func() {
+				It("should succeed", func() {
+					listReq.Filter = &b2c.ListB2CPaymentFilter{
+						TxDate:           time.Now().String()[:10],
+						Msisdns:          []string{"345678"},
+						UseLikeInitiator: true,
+					}
+					listRes, err := B2CAPI.ListB2CPayments(ctx, listReq)
+					Expect(err).ShouldNot(HaveOccurred())
+					Expect(status.Code(err)).Should(Equal(codes.OK))
+					Expect(listRes).ShouldNot(BeNil())
+				})
+			})
 		})
 	})
 })
