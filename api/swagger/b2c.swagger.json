@@ -104,6 +104,12 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "filter.useLikeInitiator",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -643,6 +649,9 @@
         "endTimestamp": {
           "type": "string",
           "format": "int64"
+        },
+        "useLikeInitiator": {
+          "type": "boolean"
         }
       },
       "description": "Filter payment for querying stk payments",

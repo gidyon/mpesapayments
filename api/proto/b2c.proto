@@ -235,6 +235,7 @@ message ListB2CPaymentFilter {
 	gidyon.mpesa.ProcessedState process_state = 4;
 	int64 start_timestamp = 5;
 	int64 end_timestamp = 6;
+	bool use_like_initiator = 7;
 }
 
 message ListB2CPaymentsRequest {
