@@ -886,7 +886,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 
 		if listReq.Filter.InitiatorId != "" {
 			if listReq.Filter.UseLikeInitiator {
-				db = db.Where("initiator_id LIKE ?", "%s"+listReq.Filter.InitiatorId+"%s")
+				db = db.Where("initiator_id LIKE ?", "%"+listReq.Filter.InitiatorId+"%")
 			} else {
 				db = db.Where("initiator_id = ?", listReq.Filter.InitiatorId)
 			}
