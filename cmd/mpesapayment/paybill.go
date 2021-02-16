@@ -149,16 +149,16 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	C2BPB := &c2b.C2BPayment{
-		TransactionId:        mpesaPayload.TransID,
-		TransactionType:      mpesaPayload.TransactionType,
-		TransactionTimestamp: transactionTime.Unix(),
-		Msisdn:               mpesaPayload.MSISDN,
-		Names:                fmt.Sprintf("%s %s", mpesaPayload.FirstName, mpesaPayload.LastName),
-		RefNumber:            mpesaPayload.BillRefNumber,
-		Amount:               float32(transactionAmount),
-		OrgBalance:           float32(orgBalance),
-		BusinessShortCode:    int32(businessShortCode),
-		Processed:            false,
+		TransactionId:          mpesaPayload.TransID,
+		TransactionType:        mpesaPayload.TransactionType,
+		TransactionTimeSeconds: transactionTime.Unix(),
+		Msisdn:                 mpesaPayload.MSISDN,
+		Names:                  fmt.Sprintf("%s %s", mpesaPayload.FirstName, mpesaPayload.LastName),
+		RefNumber:              mpesaPayload.BillRefNumber,
+		Amount:                 float32(transactionAmount),
+		OrgBalance:             float32(orgBalance),
+		BusinessShortCode:      int32(businessShortCode),
+		Processed:              false,
 	}
 
 	// Save to database
