@@ -69,9 +69,12 @@ var _ = Describe("Getting stats @getstat", func() {
 	Describe("Getting stats with valid request", func() {
 		Context("We create some random transactions", func() {
 			It("should always succeed", func() {
-				var err error
-				payments := make([]*PaymentMpesa, 0, 50)
-				for i := 0; i < 50; i++ {
+				var (
+					err   error
+					count = 1000
+				)
+				payments := make([]*PaymentMpesa, 0, 5)
+				for i := 0; i < count; i++ {
 					paymentDB, err := GetMpesaDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
@@ -79,12 +82,8 @@ var _ = Describe("Getting stats @getstat", func() {
 					paymentDB.BusinessShortCode = shortCodeX
 					payments = append(payments, paymentDB)
 				}
-				err = C2BAPIServer.SQLDB.CreateInBatches(payments, 50).Error
+				err = C2BAPIServer.SQLDB.CreateInBatches(payments, count).Error
 				Expect(err).ShouldNot(HaveOccurred())
-
-				// Lets wait for stats to be generated
-				C2BAPIServer.Logger.Infoln("waiting 5sec for worker to calculate statistics")
-				time.Sleep(5 * time.Second)
 			})
 		})
 
