@@ -76,7 +76,7 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 	// Get all unique short_code
 	shortCodes := make([]*shortCode, 0)
 	err := mpesaAPI.SQLDB.Table((&PaymentMpesa{}).TableName()).
-		Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp).
+		Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 		Distinct("business_short_code").
 		Select("business_short_code").
 		Scan(&shortCodes).Error
@@ -90,7 +90,7 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 		// Get all unique account_numbers for short_code
 		accountNumbers := make([]*referenceNumber, 0)
 		err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).
-			Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp).
+			Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 			Where("business_short_code = ?", shortCode.BusinessShortCode).
 			Distinct("reference_number").
 			Select("reference_number").
@@ -104,7 +104,7 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 		for _, accountNumber := range accountNumbers {
 
 			db := mpesaAPI.SQLDB.Model(&PaymentMpesa{}).
-				Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp).
+				Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 				Where("business_short_code = ?", shortCode.BusinessShortCode).
 				Where("reference_number = ?", accountNumber.ReferenceNumber)
 
