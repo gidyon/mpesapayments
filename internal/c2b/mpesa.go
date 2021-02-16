@@ -362,13 +362,13 @@ func (mpesaAPI *mpesaAPIServer) ListC2BPayments(
 		db = db.Where("amount IN(?)", amounts)
 	}
 	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
-		db = db.Where("transaction_timestamp BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
+		db = db.Where("transaction_time BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
 	} else if listReq.GetFilter().GetTxDate() != "" {
 		t, err := getTime(listReq.Filter.TxDate)
 		if err != nil {
 			return nil, err
 		}
-		db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+		db = db.Where("transaction_time BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 	}
 	if listReq.GetFilter().GetProcessState() != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 		switch listReq.Filter.ProcessState {
@@ -476,12 +476,6 @@ func stringArrToFloat32(arr []string) []float32 {
 func (mpesaAPI *mpesaAPIServer) SaveScopes(
 	ctx context.Context, addReq *c2b.SaveScopesRequest,
 ) (*emptypb.Empty, error) {
-	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// Validation
 	switch {
 	case addReq == nil:
@@ -933,7 +927,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		db = db.Where("msisdn IN (?)", msisdns)
 	}
 	if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
-		db = db.Where("transaction_timestamp BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
+		db = db.Where("transaction_time BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
 	}
 
 	var transactions int64
@@ -1139,9 +1133,7 @@ func (mpesaAPI *mpesaAPIServer) GetStats(
 
 	for _, date := range getStat.Dates {
 
-		date := date
-
-		go func() {
+		go func(date string) {
 
 			// Get stats for each day listed
 			statDB := &Stat{}
@@ -1149,17 +1141,18 @@ func (mpesaAPI *mpesaAPIServer) GetStats(
 			switch {
 			case err == nil:
 			case errors.Is(err, gorm.ErrRecordNotFound):
-				// generate stat
 				startTime, err := getTime(date)
 				if err != nil {
 					errChan <- err
+					return
 				}
+				// generate stat
 				mpesaAPI.generateStatistics(ctx, startTime.Unix(), startTime.Unix()+(24*3600))
 				err = mpesaAPI.SQLDB.First(statDB, "date = ? AND short_code = ? AND account_name = ?", date, getStat.ShortCode, getStat.AccountName).Error
 				if err != nil && errors.Is(err, gorm.ErrRecordNotFound) == false {
 					errChan <- err
+					return
 				}
-				return
 			default:
 				errChan <- errs.FailedToFind("stat", err)
 				return
@@ -1176,7 +1169,7 @@ func (mpesaAPI *mpesaAPIServer) GetStats(
 			mu.Unlock()
 
 			errChan <- nil
-		}()
+		}(date)
 	}
 
 	for range getStat.Dates {
