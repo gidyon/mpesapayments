@@ -23,8 +23,8 @@ message C2BPayment {
 	string msisdn = 4;
 	string names = 5;
 	string ref_number = 6;
-	int64 transaction_timestamp = 7;
-	int64 create_timestamp = 8;
+	int64 transaction_time_seconds = 7;
+	int64 create_time_seconds = 8;
 	float amount = 9;
 	float org_balance = 10;
 	int32 business_short_code = 11;
@@ -86,8 +86,8 @@ message ListC2BPaymentsFilter {
 	repeated string accounts_number = 3;
 	repeated float amounts = 4;
 	ProcessedState process_state = 5;
-	int64 start_timestamp = 6;
-	int64 end_timestamp = 7;
+	int64 start_time_seconds = 6;
+	int64 end_time_seconds = 7;
 }
 
 message ListC2BPaymentsRequest {
@@ -212,8 +212,8 @@ message PublishAllC2BPaymentsRequest {
 	};
 	
 	ProcessedState processed_state = 1;
-	int64 start_timestamp = 2;
-	int64 end_timestamp = 3;
+	int64 start_time_seconds = 2;
+	int64 end_time_seconds = 3;
 }
 
 message GetTransactionsCountRequest {
@@ -326,8 +326,8 @@ message ListStatsFilter {
 
 	repeated string short_codes = 1;
 	repeated string accounts_number = 2;
-	int64 start_timestamp = 3;
-	int64 end_timestamp = 4;
+	int64 start_time_seconds = 3;
+	int64 end_time_seconds = 4;
 	string tx_date = 5;
 }
 

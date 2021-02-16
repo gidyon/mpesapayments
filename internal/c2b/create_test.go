@@ -18,14 +18,14 @@ var (
 
 func fakeC2BPayment() *c2b.C2BPayment {
 	return &c2b.C2BPayment{
-		TransactionId:        strings.ToUpper(randomdata.RandStringRunes(32)),
-		TransactionType:      txTypes[randomdata.Number(0, len(txTypes))],
-		TransactionTimestamp: time.Now().Unix(),
-		Msisdn:               randomdata.PhoneNumber()[:10],
-		Names:                randomdata.SillyName(),
-		RefNumber:            txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
-		Amount:               float32(randomdata.Decimal(1000, 100000)),
-		BusinessShortCode:    int32(randomdata.Number(1000, 20000)),
+		TransactionId:          strings.ToUpper(randomdata.RandStringRunes(32)),
+		TransactionType:        txTypes[randomdata.Number(0, len(txTypes))],
+		TransactionTimeSeconds: time.Now().Unix(),
+		Msisdn:                 randomdata.PhoneNumber()[:10],
+		Names:                  randomdata.SillyName(),
+		RefNumber:              txBillRefNumbers[randomdata.Number(0, len(txBillRefNumbers))],
+		Amount:                 float32(randomdata.Decimal(1000, 100000)),
+		BusinessShortCode:      int32(randomdata.Number(1000, 20000)),
 	}
 }
 
@@ -73,7 +73,7 @@ var _ = Describe("Creating MPESA payment @create", func() {
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when tx time is missing", func() {
-			createReq.MpesaPayment.TransactionTimestamp = 0
+			createReq.MpesaPayment.TransactionTimeSeconds = 0
 			createRes, err := C2BAPI.CreateC2BPayment(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))

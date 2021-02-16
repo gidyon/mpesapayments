@@ -17,8 +17,8 @@ var _ = Describe("Publishing an Mpesa Payment @publishall", func() {
 
 	BeforeEach(func() {
 		pubReq = &c2b.PublishAllC2BPaymentsRequest{
-			StartTimestamp: time.Now().Unix() - int64(time.Minute)/1000,
-			EndTimestamp:   time.Now().Unix(),
+			StartTimeSeconds: time.Now().Unix() - int64(time.Minute)/1000,
+			EndTimeSeconds:   time.Now().Unix(),
 		}
 		ctx = context.Background()
 	})

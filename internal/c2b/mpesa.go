@@ -176,7 +176,7 @@ func ValidateC2BPayment(payment *c2b.C2BPayment) error {
 		err = errs.MissingField("transaction amount")
 	case payment.TransactionId == "":
 		err = errs.MissingField("transaction id")
-	case payment.TransactionTimestamp == 0:
+	case payment.TransactionTimeSeconds == 0:
 		err = errs.MissingField("transaction time")
 	}
 	return err
@@ -361,8 +361,8 @@ func (mpesaAPI *mpesaAPIServer) ListC2BPayments(
 	if len(amounts) > 0 {
 		db = db.Where("amount IN(?)", amounts)
 	}
-	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
-		db = db.Where("transaction_timestamp BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
+	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
+		db = db.Where("transaction_timestamp BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
 	} else if listReq.GetFilter().GetTxDate() != "" {
 		t, err := getTime(listReq.Filter.TxDate)
 		if err != nil {
@@ -754,11 +754,11 @@ func (mpesaAPI *mpesaAPIServer) PublishAllC2BPayments(
 	switch {
 	case pubReq == nil:
 		return nil, errs.NilObject("publish all request")
-	case pubReq.StartTimestamp > time.Now().Unix() || pubReq.EndTimestamp > time.Now().Unix():
+	case pubReq.StartTimeSeconds > time.Now().Unix() || pubReq.EndTimeSeconds > time.Now().Unix():
 		return nil, errs.WrapMessage(codes.InvalidArgument, "cannot work with future times")
 	default:
-		if pubReq.EndTimestamp != 0 || pubReq.StartTimestamp != 0 {
-			if pubReq.EndTimestamp < pubReq.StartTimestamp {
+		if pubReq.EndTimeSeconds != 0 || pubReq.StartTimeSeconds != 0 {
+			if pubReq.EndTimeSeconds < pubReq.StartTimeSeconds {
 				return nil, errs.WrapMessage(
 					codes.InvalidArgument, "start timestamp cannot be greater than end timestamp",
 				)
@@ -766,13 +766,13 @@ func (mpesaAPI *mpesaAPIServer) PublishAllC2BPayments(
 		}
 	}
 
-	if pubReq.StartTimestamp == 0 {
-		if pubReq.EndTimestamp == 0 {
-			pubReq.EndTimestamp = time.Now().Unix()
+	if pubReq.StartTimeSeconds == 0 {
+		if pubReq.EndTimeSeconds == 0 {
+			pubReq.EndTimeSeconds = time.Now().Unix()
 		}
-		pubReq.StartTimestamp = pubReq.EndTimestamp - int64(7*24*60*60)
-		if pubReq.StartTimestamp < 0 {
-			pubReq.StartTimestamp = 0
+		pubReq.StartTimeSeconds = pubReq.EndTimeSeconds - int64(7*24*60*60)
+		if pubReq.StartTimeSeconds < 0 {
+			pubReq.StartTimeSeconds = 0
 		}
 	}
 
@@ -788,9 +788,9 @@ func (mpesaAPI *mpesaAPIServer) PublishAllC2BPayments(
 			PageToken: nextPageToken,
 			PageSize:  pageSize,
 			Filter: &c2b.ListC2BPaymentsFilter{
-				ProcessState:   pubReq.ProcessedState,
-				StartTimestamp: pubReq.StartTimestamp,
-				EndTimestamp:   pubReq.StartTimestamp,
+				ProcessState:     pubReq.ProcessedState,
+				StartTimeSeconds: pubReq.StartTimeSeconds,
+				EndTimeSeconds:   pubReq.StartTimeSeconds,
 			},
 		})
 		if err != nil {
@@ -1016,10 +1016,10 @@ func (mpesaAPI *mpesaAPIServer) GetRandomTransaction(
 			PageToken: pageToken,
 			PageSize:  defaultPageSize,
 			Filter: &c2b.ListC2BPaymentsFilter{
-				AccountsNumber: getReq.GetAccountsNumber(),
-				Amounts:        amounts,
-				StartTimestamp: getReq.GetStartTimeSeconds(),
-				EndTimestamp:   getReq.GetEndTimeSeconds(),
+				AccountsNumber:   getReq.GetAccountsNumber(),
+				Amounts:          amounts,
+				StartTimeSeconds: getReq.GetStartTimeSeconds(),
+				EndTimeSeconds:   getReq.GetEndTimeSeconds(),
 			},
 		})
 		if err != nil {
@@ -1256,8 +1256,8 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 	if len(shortCodes) > 0 {
 		db = db.Where("short_code IN(?)", shortCodes)
 	}
-	if listReq.GetFilter().GetStartTimestamp() < listReq.GetFilter().GetEndTimestamp() {
-		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimestamp(), listReq.GetFilter().GetEndTimestamp())
+	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
+		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
 	} else if listReq.GetFilter().GetTxDate() != "" {
 		db = db.Where("date = ?", listReq.GetFilter().GetTxDate())
 	}
