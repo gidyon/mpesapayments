@@ -11,22 +11,22 @@ import (
 )
 
 // C2Bs is table for mpesa payments
-const C2Bs = "payments_mpesa"
+const C2Bs = "mawingu_payments_mpesa_v2"
 
 // PaymentMpesa contains mpesa transaction details
 type PaymentMpesa struct {
-	PaymentID            uint    `gorm:"primaryKey;autoIncrement"`
-	TransactionType      string  `gorm:"type:varchar(50);not null"`
-	TransactionID        string  `gorm:"type:varchar(50);not null;unique"`
-	MSISDN               string  `gorm:"index;type:varchar(15);not null"`
-	Names                string  `gorm:"type:varchar(50)"`
-	ReferenceNumber      string  `gorm:"index;type:varchar(20)"`
-	Amount               float32 `gorm:"type:float(10);not null"`
-	OrgAccountBalance    float32 `gorm:"type:float(10)"`
-	BusinessShortCode    int32   `gorm:"index;type:varchar(10);not null"`
-	TransactionTimestamp int64   `gorm:"type:int(15);not null"`
-	CreateTimesatamp     int64   `gorm:"autoCreateTime"`
-	Processed            bool    `gorm:"type:tinyint(1);not null"`
+	PaymentID         uint      `gorm:"primaryKey;autoIncrement"`
+	TransactionType   string    `gorm:"type:varchar(50);not null"`
+	TransactionID     string    `gorm:"type:varchar(50);not null;unique"`
+	MSISDN            string    `gorm:"index;type:varchar(15);not null"`
+	Names             string    `gorm:"type:varchar(50)"`
+	ReferenceNumber   string    `gorm:"index;type:varchar(20)"`
+	Amount            float32   `gorm:"type:float(10);not null"`
+	OrgAccountBalance float32   `gorm:"type:float(10)"`
+	BusinessShortCode int32     `gorm:"index;type:varchar(10);not null"`
+	TransactionTime   time.Time `gorm:"autoCreateTime"`
+	CreateTime        time.Time `gorm:"autoCreateTime"`
+	Processed         bool      `gorm:"type:tinyint(1);not null"`
 }
 
 // TableName returns the name of the table
@@ -46,16 +46,16 @@ func GetMpesaDB(MpesaPB *c2b.C2BPayment) (*PaymentMpesa, error) {
 	}
 
 	mpesaDB := &PaymentMpesa{
-		TransactionID:        MpesaPB.TransactionId,
-		TransactionType:      MpesaPB.TransactionType,
-		TransactionTimestamp: MpesaPB.TransactionTimestamp,
-		MSISDN:               MpesaPB.Msisdn,
-		Names:                MpesaPB.Names,
-		ReferenceNumber:      MpesaPB.RefNumber,
-		Amount:               MpesaPB.Amount,
-		OrgAccountBalance:    MpesaPB.OrgBalance,
-		BusinessShortCode:    MpesaPB.BusinessShortCode,
-		Processed:            MpesaPB.Processed,
+		TransactionID:     MpesaPB.TransactionId,
+		TransactionType:   MpesaPB.TransactionType,
+		TransactionTime:   time.Unix(MpesaPB.TransactionTimeSeconds, 0),
+		MSISDN:            MpesaPB.Msisdn,
+		Names:             MpesaPB.Names,
+		ReferenceNumber:   MpesaPB.RefNumber,
+		Amount:            MpesaPB.Amount,
+		OrgAccountBalance: MpesaPB.OrgBalance,
+		BusinessShortCode: MpesaPB.BusinessShortCode,
+		Processed:         MpesaPB.Processed,
 	}
 
 	return mpesaDB, nil
@@ -68,18 +68,18 @@ func GetMpesaPB(MpesaDB *PaymentMpesa) (*c2b.C2BPayment, error) {
 	}
 
 	mpesaPB := &c2b.C2BPayment{
-		PaymentId:            fmt.Sprint(MpesaDB.PaymentID),
-		TransactionType:      MpesaDB.TransactionType,
-		TransactionId:        MpesaDB.TransactionID,
-		TransactionTimestamp: MpesaDB.TransactionTimestamp,
-		Msisdn:               MpesaDB.MSISDN,
-		Names:                MpesaDB.Names,
-		RefNumber:            MpesaDB.ReferenceNumber,
-		Amount:               MpesaDB.Amount,
-		OrgBalance:           MpesaDB.OrgAccountBalance,
-		BusinessShortCode:    MpesaDB.BusinessShortCode,
-		Processed:            MpesaDB.Processed,
-		CreateTimestamp:      MpesaDB.CreateTimesatamp,
+		PaymentId:              fmt.Sprint(MpesaDB.PaymentID),
+		TransactionType:        MpesaDB.TransactionType,
+		TransactionId:          MpesaDB.TransactionID,
+		TransactionTimeSeconds: MpesaDB.TransactionTime.Unix(),
+		Msisdn:                 MpesaDB.MSISDN,
+		Names:                  MpesaDB.Names,
+		RefNumber:              MpesaDB.ReferenceNumber,
+		Amount:                 MpesaDB.Amount,
+		OrgBalance:             MpesaDB.OrgAccountBalance,
+		BusinessShortCode:      MpesaDB.BusinessShortCode,
+		Processed:              MpesaDB.Processed,
+		CreateTimeSeconds:      MpesaDB.CreateTime.Unix(),
 	}
 
 	return mpesaPB, nil
