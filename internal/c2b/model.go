@@ -102,6 +102,11 @@ type Stat struct {
 
 // TableName ...
 func (*Stat) TableName() string {
+	// Get table prefix
+	prefix := os.Getenv("TABLE_PREFIX")
+	if prefix != "" {
+		return fmt.Sprintf("%s_%s", prefix, statsTable)
+	}
 	return statsTable
 }
 
