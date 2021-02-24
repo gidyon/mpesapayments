@@ -297,10 +297,12 @@ func (mpesaAPI *mpesaAPIServer) ExistC2BPayment(
 	case err == nil:
 		return &c2b.ExistC2BPaymentResponse{
 			Exists: true,
+			Amount: mpesaDB.Amount,
 		}, nil
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		return &c2b.ExistC2BPaymentResponse{
 			Exists: false,
+			Amount: mpesaDB.Amount,
 		}, nil
 	default:
 		return nil, errs.FailedToFind("mpesa payment", err)
