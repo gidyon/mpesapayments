@@ -1214,6 +1214,10 @@
       "properties": {
         "exists": {
           "type": "boolean"
+        },
+        "amount": {
+          "type": "number",
+          "format": "float"
         }
       },
       "description": "Response indicating whether c2b payment exists",
