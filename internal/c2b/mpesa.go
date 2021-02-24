@@ -267,6 +267,46 @@ func (mpesaAPI *mpesaAPIServer) GetC2BPayment(
 	return GetMpesaPB(mpesaDB)
 }
 
+func (mpesaAPI *mpesaAPIServer) ExistC2BPayment(
+	ctx context.Context, existReq *c2b.ExistC2BPaymentRequest,
+) (*c2b.ExistC2BPaymentResponse, error) {
+	// Authentication
+	err := mpesaAPI.AuthAPI.AuthenticateRequest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case existReq == nil:
+		return nil, errs.NilObject("exist request")
+	case existReq.PaymentId == "":
+		return nil, errs.MissingField("payment id")
+	default:
+	}
+
+	mpesaDB := &PaymentMpesa{}
+
+	if paymentID, err1 := strconv.Atoi(existReq.PaymentId); err1 == nil && paymentID != 0 {
+		err = mpesaAPI.SQLDB.First(mpesaDB, paymentID).Error
+	} else {
+		err = mpesaAPI.SQLDB.First(mpesaDB, "transaction_id=?", existReq.PaymentId).Error
+	}
+
+	switch {
+	case err == nil:
+		return &c2b.ExistC2BPaymentResponse{
+			Exists: true,
+		}, nil
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return &c2b.ExistC2BPaymentResponse{
+			Exists: false,
+		}, nil
+	default:
+		return nil, errs.FailedToFind("mpesa payment", err)
+	}
+}
+
 const defaultPageSize = 50
 
 func userScopesKey(userID string) string {
