@@ -20,7 +20,7 @@ var _ = Describe("Getting random transaction @random", func() {
 	BeforeEach(func() {
 		getReq = &c2b.GetRandomTransactionRequest{
 			AccountsNumber:   accountsNum,
-			StartTimeSeconds: time.Now().Unix() - 1000,
+			StartTimeSeconds: time.Now().Unix() - (1 * 3600),
 			EndTimeSeconds:   time.Now().Unix(),
 		}
 		ctx = context.Background()
