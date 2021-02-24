@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"os"
 	"time"
@@ -74,10 +75,27 @@ func main() {
 	errs.Panic(err)
 
 	// Generate jwt token
-	token, err := authAPI.GenToken(context.Background(), &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(time.Hour*24))
+	token, err := authAPI.GenToken(context.Background(), &auth.Payload{}, time.Now().Add(time.Hour*24))
 	if err == nil {
-		app.Logger().Infof("Test jwt is %s", token)
+		app.Logger().Infof("test jwt is [%s]", token)
 	}
+
+	// Default jwt
+	app.AddEndpointFunc("/api/mpestx/jwt/default", func(w http.ResponseWriter, r *http.Request) {
+		token, err := authAPI.GenToken(ctx, &auth.Payload{}, time.Now().Add(time.Hour*24*365))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("content-type", "application/json")
+
+		err = json.NewEncoder(w).Encode(map[string]string{"default_token": token})
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	})
 
 	// Authentication middleware
 	app.AddGRPCUnaryServerInterceptors(grpc_auth.UnaryServerInterceptor(authAPI.AuthorizeFunc))
