@@ -67,6 +67,29 @@ message GetC2BPaymentRequest {
 	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
+message ExistC2BPaymentRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ExistC2BPaymentRequest"
+			description: "Request to check whether mpesa c2b payment exist"
+			required: ["payment_id"]
+		}
+	};
+
+	string payment_id = 1;
+}
+
+message ExistC2BPaymentResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ExistC2BPaymentResponse"
+			description: "Response indicating whether c2b payment exists"
+		}
+	};
+
+	bool exists = 1;
+}
+
 enum ProcessedState {
 	PROCESS_STATE_UNSPECIFIED = 0;
 	PROCESSED = 1;
@@ -358,6 +381,17 @@ service LipaNaMPESA {
 	rpc GetC2BPayment (GetC2BPaymentRequest) returns (C2BPayment) {
 		option (google.api.http) = {
 			get: "/api/mpestx/c2b/{payment_id}"
+		};
+	};
+
+	// Checks whether c2b payment exists
+	rpc ExistC2BPayment (ExistC2BPaymentRequest) returns (ExistC2BPaymentResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/c2b/{payment_id}/exists"
+			additional_bindings {
+				post: "/api/mpestx/c2b:existC2BPayment"
+				body: "*"
+			}
 		};
 	};
 

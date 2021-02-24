@@ -22,6 +22,8 @@ type LipaNaMPESAClient interface {
 	CreateC2BPayment(ctx context.Context, in *CreateC2BPaymentRequest, opts ...grpc.CallOption) (*CreateC2BPaymentResponse, error)
 	// Retrieves MPESA payment.
 	GetC2BPayment(ctx context.Context, in *GetC2BPaymentRequest, opts ...grpc.CallOption) (*C2BPayment, error)
+	// Checks whether c2b payment exists
+	ExistC2BPayment(ctx context.Context, in *ExistC2BPaymentRequest, opts ...grpc.CallOption) (*ExistC2BPaymentResponse, error)
 	// Retrieves a collection of MPESA payments.
 	ListC2BPayments(ctx context.Context, in *ListC2BPaymentsRequest, opts ...grpc.CallOption) (*ListC2BPaymentsResponse, error)
 	// Saves scopes for a user.
@@ -66,6 +68,15 @@ func (c *lipaNaMPESAClient) CreateC2BPayment(ctx context.Context, in *CreateC2BP
 func (c *lipaNaMPESAClient) GetC2BPayment(ctx context.Context, in *GetC2BPaymentRequest, opts ...grpc.CallOption) (*C2BPayment, error) {
 	out := new(C2BPayment)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/GetC2BPayment", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lipaNaMPESAClient) ExistC2BPayment(ctx context.Context, in *ExistC2BPaymentRequest, opts ...grpc.CallOption) (*ExistC2BPaymentResponse, error) {
+	out := new(ExistC2BPaymentResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ExistC2BPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +190,8 @@ type LipaNaMPESAServer interface {
 	CreateC2BPayment(context.Context, *CreateC2BPaymentRequest) (*CreateC2BPaymentResponse, error)
 	// Retrieves MPESA payment.
 	GetC2BPayment(context.Context, *GetC2BPaymentRequest) (*C2BPayment, error)
+	// Checks whether c2b payment exists
+	ExistC2BPayment(context.Context, *ExistC2BPaymentRequest) (*ExistC2BPaymentResponse, error)
 	// Retrieves a collection of MPESA payments.
 	ListC2BPayments(context.Context, *ListC2BPaymentsRequest) (*ListC2BPaymentsResponse, error)
 	// Saves scopes for a user.
@@ -213,6 +226,9 @@ func (UnimplementedLipaNaMPESAServer) CreateC2BPayment(context.Context, *CreateC
 }
 func (UnimplementedLipaNaMPESAServer) GetC2BPayment(context.Context, *GetC2BPaymentRequest) (*C2BPayment, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetC2BPayment not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ExistC2BPayment(context.Context, *ExistC2BPaymentRequest) (*ExistC2BPaymentResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExistC2BPayment not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) ListC2BPayments(context.Context, *ListC2BPaymentsRequest) (*ListC2BPaymentsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListC2BPayments not implemented")
@@ -292,6 +308,24 @@ func _LipaNaMPESA_GetC2BPayment_Handler(srv interface{}, ctx context.Context, de
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(LipaNaMPESAServer).GetC2BPayment(ctx, req.(*GetC2BPaymentRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LipaNaMPESA_ExistC2BPayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExistC2BPaymentRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ExistC2BPayment(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ExistC2BPayment",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ExistC2BPayment(ctx, req.(*ExistC2BPaymentRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -505,6 +539,10 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetC2BPayment",
 			Handler:    _LipaNaMPESA_GetC2BPayment_Handler,
+		},
+		{
+			MethodName: "ExistC2BPayment",
+			Handler:    _LipaNaMPESA_ExistC2BPayment_Handler,
 		},
 		{
 			MethodName: "ListC2BPayments",
