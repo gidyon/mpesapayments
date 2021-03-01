@@ -16,6 +16,8 @@ func (b2cAPI *b2cAPIServer) updateAccessTokenWorker(ctx context.Context, dur tim
 		err = b2cAPI.updateAccessToken()
 		if err != nil {
 			b2cAPI.Logger.Errorf("failed to update access token: %v", err)
+			time.Sleep(10 * time.Second)
+			continue
 		} else {
 			b2cAPI.Logger.Infoln("access token updated")
 		}
