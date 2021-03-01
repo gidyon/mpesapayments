@@ -11,13 +11,6 @@ import (
 
 const maxCap = 10000
 
-func valFunc(v1, v2 string) string {
-	if v1 == "" || v1 == "0" {
-		return v2
-	}
-	return v1
-}
-
 func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 	ticker := time.NewTicker(b2cAPI.insertTimeOut)
 	defer ticker.Stop()
@@ -37,7 +30,7 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 			if v.publish {
 				// By value because the slice will be reset
 				go func(incomingPayment incomingPayment) {
-					paymentID := valFunc(fmt.Sprint(incomingPayment.payment.PaymentID), incomingPayment.payment.TransactionID)
+					paymentID := firstVal(fmt.Sprint(incomingPayment.payment.PaymentID), incomingPayment.payment.TransactionID)
 					// Publish the transaction
 					_, err := b2cAPI.PublishB2CPayment(
 						b2cAPI.ctxAdmin, &b2c.PublishB2CPaymentRequest{
