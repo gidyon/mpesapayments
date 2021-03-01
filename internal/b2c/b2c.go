@@ -117,19 +117,20 @@ type b2cAPIServer struct {
 
 // Options contains options for starting b2c service
 type Options struct {
-	RedisKeyPrefix   string
-	PublishChannel   string
-	B2CLocalTopic    string
-	QueryBalanceURL  string
-	B2CURL           string
-	ReversalURL      string
-	SQLDB            *gorm.DB
-	RedisDB          *redis.Client
-	Logger           grpclog.LoggerV2
-	AuthAPI          auth.API
-	PaginationHasher *hashids.HashID
-	HTTPClient       httpClient
-	OptionsB2C       *OptionsB2C
+	RedisKeyPrefix     string
+	PublishChannel     string
+	B2CLocalTopic      string
+	QueryBalanceURL    string
+	B2CURL             string
+	ReversalURL        string
+	SQLDB              *gorm.DB
+	RedisDB            *redis.Client
+	Logger             grpclog.LoggerV2
+	AuthAPI            auth.API
+	PaginationHasher   *hashids.HashID
+	HTTPClient         httpClient
+	OptionsB2C         *OptionsB2C
+	TransactionCharges float32
 }
 
 // ValidateOptions validates options required by stk service
@@ -401,6 +402,8 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		return nil, errs.NilObject("query request")
 	case queryReq.PartyA == 0:
 		return nil, errs.MissingField("party")
+	case queryReq.InitiatorId == "":
+		return nil, errs.MissingField("initiator id")
 	case queryReq.Remarks == "":
 		return nil, errs.MissingField("remarks")
 	case queryReq.IdentifierType == b2c.QueryAccountBalanceRequest_QUERY_ACCOUNT_UNSPECIFIED:
@@ -639,6 +642,8 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.MissingField("short code")
 	case reverseReq.TransactionId == "":
 		return nil, errs.MissingField("transaction id")
+	case reverseReq.Remarks == "":
+		return nil, errs.MissingField("remarks")
 	}
 
 	requestID := firstVal(reverseReq.RequestId, uuid.New().String())
