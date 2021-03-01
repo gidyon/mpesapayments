@@ -35,6 +35,7 @@ var _ = Describe("Querying balance from an API @querybalance", func() {
 			PartyA:         fakePhoneNumber(),
 			Remarks:        randParagraph(),
 			RequestId:      randomdata.RandStringRunes(32),
+			InitiatorId:    randomdata.RandStringRunes(24),
 		}
 		ctx = context.Background()
 	})
