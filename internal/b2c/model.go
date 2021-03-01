@@ -3,8 +3,10 @@ package b2c
 import (
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	"gorm.io/gorm"
 )
 
 // B2CTable is table name for b2c transactions
@@ -12,26 +14,27 @@ const B2CTable = "b2c_transactions"
 
 // Payment is B2C payment model
 type Payment struct {
-	PaymentID                uint    `gorm:"primaryKey;autoIncrement"`
-	InitiatorID              string  `gorm:"index;type:varchar(50)"`
-	Msisdn                   string  `gorm:"index;type:varchar(15)"`
-	OrgShortCode             string  `gorm:"index;type:varchar(15)"`
-	ReceiverPublicName       string  `gorm:"type:varchar(50)"`
-	TransactionType          string  `gorm:"type:varchar(50)"`
-	TransactionID            string  `gorm:"index;type:varchar(50);unique"`
-	ConversationID           string  `gorm:"type:varchar(50)"`
-	OriginatorConversationID string  `gorm:"type:varchar(50)"`
-	ResultCode               string  `gorm:"type:varchar(2)"`
-	ResultDescription        string  `gorm:"type:varchar(100)"`
-	TransactionTimestamp     int64   `gorm:"type:int"`
-	CreateTimestamp          int64   `gorm:"type:int;autoCreateTime"`
-	Amount                   float32 `gorm:"type:float(10)"`
-	WorkingAccountFunds      float32 `gorm:"type:float(10)"`
-	UtilityAccountFunds      float32 `gorm:"type:float(10)"`
-	ChargesPaidFunds         float32 `gorm:"type:float(10)"`
-	RecipientRegistered      bool    `gorm:"type:tinyint(1)"`
-	Succeeded                bool    `gorm:"type:tinyint(1)"`
-	Processed                bool    `gorm:"type:tinyint(1)"`
+	PaymentID                uint      `gorm:"primaryKey;autoIncrement"`
+	InitiatorID              string    `gorm:"index;type:varchar(50)"`
+	Msisdn                   string    `gorm:"index;type:varchar(15)"`
+	OrgShortCode             string    `gorm:"index;type:varchar(15)"`
+	ReceiverPublicName       string    `gorm:"type:varchar(50)"`
+	TransactionType          string    `gorm:"type:varchar(50)"`
+	TransactionID            string    `gorm:"index;type:varchar(50);unique"`
+	ConversationID           string    `gorm:"type:varchar(50)"`
+	OriginatorConversationID string    `gorm:"type:varchar(50)"`
+	ResultCode               string    `gorm:"type:varchar(2)"`
+	ResultDescription        string    `gorm:"type:varchar(100)"`
+	TransactionTime          time.Time `gorm:"autoCreateTime"`
+	CreateAt                 time.Time `gorm:"autoCreateTime"`
+	Amount                   float32   `gorm:"type:float(10)"`
+	WorkingAccountFunds      float32   `gorm:"type:float(10)"`
+	UtilityAccountFunds      float32   `gorm:"type:float(10)"`
+	ChargesPaidFunds         float32   `gorm:"type:float(10)"`
+	TransactionCharge        float32   `gorm:"type:float(10)"`
+	RecipientRegistered      bool      `gorm:"type:tinyint(1)"`
+	Succeeded                bool      `gorm:"type:tinyint(1)"`
+	Processed                bool      `gorm:"type:tinyint(1)"`
 }
 
 // TableName is table name for model
@@ -57,11 +60,12 @@ func GetB2CPaymentDB(paymentPB *b2c.B2CPayment) (*Payment, error) {
 		OriginatorConversationID: paymentPB.OriginatorConversationId,
 		ResultCode:               paymentPB.ResultCode,
 		ResultDescription:        paymentPB.ResultDescription,
-		TransactionTimestamp:     paymentPB.TransactionTimestamp,
+		CreateAt:                 time.Unix(paymentPB.TransactionTimestamp, 0),
 		Amount:                   paymentPB.Amount,
 		WorkingAccountFunds:      paymentPB.WorkingAccountFunds,
 		UtilityAccountFunds:      paymentPB.UtilityAccountFunds,
 		ChargesPaidFunds:         paymentPB.ChargesPaidFunds,
+		TransactionCharge:        paymentPB.TransactionCharge,
 		RecipientRegistered:      paymentPB.RecipientRegistered,
 		Succeeded:                paymentPB.Succeeded,
 		Processed:                paymentPB.Processed,
@@ -83,15 +87,71 @@ func GetB2CPaymentPB(paymentDB *Payment) (*b2c.B2CPayment, error) {
 		OriginatorConversationId: paymentDB.OriginatorConversationID,
 		ResultCode:               paymentDB.ResultCode,
 		ResultDescription:        paymentDB.ResultDescription,
-		TransactionTimestamp:     paymentDB.TransactionTimestamp,
-		CreateTimestamp:          paymentDB.CreateTimestamp,
+		TransactionTimestamp:     paymentDB.TransactionTime.Unix(),
+		CreateTimestamp:          paymentDB.CreateAt.Unix(),
 		Amount:                   paymentDB.Amount,
 		WorkingAccountFunds:      paymentDB.WorkingAccountFunds,
 		UtilityAccountFunds:      paymentDB.UtilityAccountFunds,
 		ChargesPaidFunds:         paymentDB.ChargesPaidFunds,
+		TransactionCharge:        paymentDB.TransactionCharge,
 		RecipientRegistered:      paymentDB.RecipientRegistered,
 		Succeeded:                paymentDB.Succeeded,
 		Processed:                paymentDB.Processed,
 	}
 	return paymentPB, nil
+}
+
+const statsTable = "b2c_daily_stats"
+
+// DailyStat contains statistics for a day
+type DailyStat struct {
+	ID                     uint   `gorm:"primaryKey;autoIncrement"`
+	OrgShortCode           string `gorm:"index;type:varchar(20);not null"`
+	Date                   string `gorm:"index;type:varchar(10);not null"`
+	TotalTransactions      int32  `gorm:"type:int(10);not null"`
+	SuccessfulTransactions int32
+	FailedTransactions     int32
+	TotalAmountTransacted  float32        `gorm:"index;type:float(15)"`
+	TotalCharges           float32        `gorm:"index;type:float(15)"`
+	CreatedAt              time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt              time.Time      `gorm:"autoCreateTime"`
+	DeletedAt              gorm.DeletedAt `gorm:"index"`
+}
+
+// TableName ...
+func (*DailyStat) TableName() string {
+	// Get table prefix
+	prefix := os.Getenv("TABLE_PREFIX")
+	if prefix != "" {
+		return fmt.Sprintf("%s_%s", prefix, statsTable)
+	}
+	return statsTable
+}
+
+// GetDailyStatDB gets mpesa statistics model from protobuf message
+func GetDailyStatDB(statPB *b2c.DailyStat) (*DailyStat, error) {
+	return &DailyStat{
+		OrgShortCode:           statPB.OrgShortCode,
+		Date:                   statPB.Date,
+		TotalTransactions:      statPB.TotalTransactions,
+		SuccessfulTransactions: int32(statPB.SuccessfulTransactions),
+		FailedTransactions:     int32(statPB.FailedTransactions),
+		TotalAmountTransacted:  statPB.TotalAmountTransacted,
+		TotalCharges:           statPB.TotalCharges,
+	}, nil
+}
+
+// GetDailyStatPB gets mpesa statistics protobuf from model
+func GetDailyStatPB(statDB *DailyStat) (*b2c.DailyStat, error) {
+	return &b2c.DailyStat{
+		StatId:                 fmt.Sprint(statDB.ID),
+		OrgShortCode:           statDB.OrgShortCode,
+		TotalTransactions:      statDB.TotalTransactions,
+		SuccessfulTransactions: int64(statDB.SuccessfulTransactions),
+		FailedTransactions:     int64(statDB.FailedTransactions),
+		TotalAmountTransacted:  statDB.TotalAmountTransacted,
+		TotalCharges:           statDB.TotalCharges,
+		CreateTimeSeconds:      statDB.CreatedAt.Unix(),
+		UpdateTimeSeconds:      statDB.UpdatedAt.Unix(),
+	}, nil
 }
