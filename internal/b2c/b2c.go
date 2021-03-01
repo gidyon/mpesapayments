@@ -267,6 +267,13 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 		}
 	}
 
+	if !b2cAPI.SQLDB.Migrator().HasTable(&DailyStat{}) {
+		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&DailyStat{})
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// Worker for updating access token
 	go b2cAPI.updateAccessTokenWorker(ctx, 30*time.Minute)
 
@@ -275,6 +282,9 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 
 	// Start worker to reconcile subscriptions
 	go b2cAPI.subscriptionsWorker(ctx)
+
+	// Worker to generate daily statistics
+	go b2cAPI.dailyDailyStatWorker(ctx)
 
 	return b2cAPI, nil
 }
@@ -880,13 +890,13 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		endTimestamp := listReq.Filter.GetEndTimestamp()
 
 		if endTimestamp > startTimestamp {
-			db = db.Where("transaction_timestamp BETWEEN ? AND ?", startTimestamp, endTimestamp)
+			db = db.Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp)
 		} else if listReq.Filter.TxDate != "" {
 			t, err := getTime(listReq.Filter.TxDate)
 			if err != nil {
 				return nil, err
 			}
-			db = db.Where("transaction_timestamp BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+			db = db.Where("transaction_time BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
 		}
 
 		if listReq.Filter.InitiatorId != "" {
@@ -1136,4 +1146,91 @@ func (b2cAPI *b2cAPIServer) PublishAllB2CPayments(
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (b2cAPI *b2cAPIServer) ListDailyStats(
+	ctx context.Context, listReq *b2c.ListDailyStatsRequest,
+) (*b2c.StatsResponse, error) {
+	// Validation
+	switch {
+	case listReq == nil:
+		return nil, errs.NilObject("list request")
+	}
+
+	var (
+		pageSize      = listReq.GetPageSize()
+		pageToken     = listReq.GetPageToken()
+		orgShortCodes = listReq.GetFilter().GetOrganizationShortCodes()
+		statID        uint
+		err           error
+	)
+
+	if pageSize <= 0 || pageSize > defaultPageSize {
+		pageSize = defaultPageSize
+	}
+
+	if pageToken != "" {
+		ids, err := b2cAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
+		if err != nil {
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
+		}
+		statID = uint(ids[0])
+	}
+
+	db := b2cAPI.SQLDB.Limit(int(pageSize + 1)).Order("id DESC")
+
+	// Apply payment id filter
+	if statID != 0 {
+		db = db.Where("id<?", statID)
+	}
+
+	// Apply filters
+	if len(orgShortCodes) > 0 {
+		db = db.Where("short_code IN(?)", orgShortCodes)
+	}
+	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
+		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
+	} else if len(listReq.GetFilter().GetTxDates()) > 0 {
+		db = db.Where("date IN (?)", listReq.GetFilter().GetTxDates())
+	}
+
+	stats := make([]*DailyStat, 0, pageSize+1)
+
+	err = db.Find(&stats).Error
+	switch {
+	case err == nil:
+	default:
+		return nil, errs.FailedToFind("c2b stat", err)
+	}
+
+	dailyStatsPB := make([]*b2c.DailyStat, 0, len(stats))
+
+	for i, stat := range stats {
+		statPB, err := GetDailyStatPB(stat)
+		if err != nil {
+			return nil, err
+		}
+
+		// Ignore the last element
+		if i == int(pageSize) {
+			break
+		}
+
+		dailyStatsPB = append(dailyStatsPB, statPB)
+		statID = stat.ID
+	}
+
+	var token string
+	if len(stats) > int(pageSize) {
+		// Next page token
+		token, err = b2cAPI.PaginationHasher.EncodeInt64([]int64{int64(statID)})
+		if err != nil {
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to generate next page token")
+		}
+	}
+
+	return &b2c.StatsResponse{
+		Stats:         dailyStatsPB,
+		NextPageToken: token,
+	}, nil
 }
