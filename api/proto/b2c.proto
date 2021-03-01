@@ -25,10 +25,10 @@ message QueryTransactionStatusRequest {
         ORGANIZATION_SHORT_CODE = 3;
     }
 
-    IdentifierType identifier_type = 1;
-    int64 party_a = 3;
-    string remarks = 4;
-    string initiator = 5;
+    IdentifierType identifier_type = 1 [(google.api.field_behavior) = REQUIRED];
+    int64 party_a = 3 [(google.api.field_behavior) = REQUIRED];
+    string remarks = 4 [(google.api.field_behavior) = REQUIRED];
+    string initiator = 5 [(google.api.field_behavior) = REQUIRED];
     string security_credential = 6;
     string queue_timeout_url = 7;
     string result_url = 8;
@@ -52,11 +52,11 @@ message QueryAccountBalanceRequest {
         ORGANIZATION_SHORT_CODE = 4;
     }
 
-    IdentifierType identifier_type = 1;
-    int64 party_a = 2;
-	string remarks = 3;
-	string request_id = 4;
-	string initiator_id = 5;
+    IdentifierType identifier_type = 1 [(google.api.field_behavior) = REQUIRED];
+    int64 party_a = 2 [(google.api.field_behavior) = REQUIRED];
+	string remarks = 3 [(google.api.field_behavior) = REQUIRED];
+	string initiator_id = 4 [(google.api.field_behavior) = REQUIRED];
+	string request_id = 5;
 	bool synchronous = 6;
 }
 
@@ -92,14 +92,14 @@ message TransferFundsRequest {
         PROMOTION_PAYMENT = 3;
     }	
 
-    float amount = 1;
-    int64 msisdn = 2;
-	int32 short_code = 3;
-    string remarks = 4;
+    float amount = 1 [(google.api.field_behavior) = REQUIRED];
+    int64 msisdn = 2 [(google.api.field_behavior) = REQUIRED];
+	int32 short_code = 3 [(google.api.field_behavior) = REQUIRED];
+    string remarks = 4 [(google.api.field_behavior) = REQUIRED];
 	string occassion = 5;
 	CommandId command_id = 6;
 	string request_id = 7;
-	string initiator_id = 8;
+	string initiator_id = 8 [(google.api.field_behavior) = REQUIRED];
 	bool synchronous = 9;
 }
 
@@ -111,13 +111,13 @@ message ReverseTransactionRequest {
 		}
 	};
 
-    int64 receiver_type = 1;
-    int32 short_code = 2;
-    string remarks = 3;
-    string transaction_id = 4;
+    int64 receiver_type = 1 [(google.api.field_behavior) = REQUIRED];
+    int32 short_code = 2 [(google.api.field_behavior) = REQUIRED];
+    string remarks = 3 [(google.api.field_behavior) = REQUIRED];
+    string transaction_id = 4 [(google.api.field_behavior) = REQUIRED];
 	string occassion = 5;
 	string request_id = 6;
-	string initiator_id = 7;
+	string initiator_id = 7 [(google.api.field_behavior) = REQUIRED];
 	bool synchronous = 8;
 }
 
@@ -143,11 +143,11 @@ message InitiatorPayload {
 		}
 	};
 
-	string initiator_id = 1;
-	string request_id = 2;
-	string msisdn = 3;
-	string short_code = 4;
-	string transaction_type = 5;
+	string initiator_id = 1 [(google.api.field_behavior) = REQUIRED];
+	string request_id = 2 [(google.api.field_behavior) = REQUIRED];
+	string msisdn = 3 [(google.api.field_behavior) = REQUIRED];
+	string short_code = 4 [(google.api.field_behavior) = REQUIRED];
+	string transaction_type = 5 [(google.api.field_behavior) = REQUIRED];
 	string source = 6;
 	bool publish_local = 7;
 	bool publish_on_create = 8;
@@ -179,9 +179,10 @@ message B2CPayment {
 	float working_account_funds = 15;
 	float utility_account_funds = 16;
 	float charges_paid_funds = 17;
-	bool recipient_registered = 18;
-	bool succeeded = 19;
-	bool processed = 20;
+	float transaction_charge = 18;
+	bool recipient_registered = 19;
+	bool succeeded = 20;
+	bool processed = 21;
 }
 
 message InitiateTransactionRequest {
@@ -193,7 +194,7 @@ message InitiateTransactionRequest {
 		}
     };
 
-	InitiatorPayload initiator = 2;
+	InitiatorPayload initiator = 2 [(google.api.field_behavior) = REQUIRED];
 }
 
 message CreateB2CPaymentRequest {
@@ -218,7 +219,7 @@ message GetB2CPaymentRequest {
 		}
     };
     
-    string payment_id = 1;
+    string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
 }
 
 message ListB2CPaymentFilter {
@@ -271,7 +272,7 @@ message ProcessB2CPaymentRequest {
 		}
 	};
 
-	string payment_id = 1;
+	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
 	bool processed = 2;
 }
 
@@ -283,8 +284,8 @@ message PublishB2CPaymentRequest {
 		}
 	};
 
-	string payment_id = 1;
-	string initiator_id = 2;
+	string payment_id = 1 [(google.api.field_behavior) = REQUIRED];
+	string initiator_id = 2 [(google.api.field_behavior) = REQUIRED];
 	ProcessedState processed_state = 3;
 }
 

@@ -548,6 +548,10 @@
           "type": "number",
           "format": "float"
         },
+        "transactionCharge": {
+          "type": "number",
+          "format": "float"
+        },
         "recipientRegistered": {
           "type": "boolean"
         },
@@ -759,10 +763,10 @@
         "remarks": {
           "type": "string"
         },
-        "requestId": {
+        "initiatorId": {
           "type": "string"
         },
-        "initiatorId": {
+        "requestId": {
           "type": "string"
         },
         "synchronous": {
