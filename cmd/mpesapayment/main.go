@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	micro "github.com/gidyon/micro/v2"
@@ -232,20 +233,23 @@ func main() {
 			b2c.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn())
 		}
 
+		b2cTxCost, _ := strconv.ParseFloat(os.Getenv("B2C_TRANSACTION_CHARGES"), 32)
+
 		// Options for gateways
 		optGateway := &Options{
-			SQLDB:               app.GormDBByName("sqlWrites"),
-			RedisDB:             app.RedisClientByName("redisWrites"),
-			Logger:              app.Logger(),
-			AuthAPI:             authAPI,
-			MpesaAPI:            mpesaAPI,
-			StkAPI:              stkAPI,
-			B2CAPI:              b2cAPI,
-			DisableMpesaService: disableMpesaAPI,
-			DisableSTKService:   disableSTKAPI,
-			DisableB2CService:   disableB2CAPI,
-			RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
-			B2CLocalTopic:       os.Getenv("PUBLISH_CHANNEL_LOCAL"),
+			SQLDB:                 app.GormDBByName("sqlWrites"),
+			RedisDB:               app.RedisClientByName("redisWrites"),
+			Logger:                app.Logger(),
+			AuthAPI:               authAPI,
+			MpesaAPI:              mpesaAPI,
+			StkAPI:                stkAPI,
+			B2CAPI:                b2cAPI,
+			DisableMpesaService:   disableMpesaAPI,
+			DisableSTKService:     disableSTKAPI,
+			DisableB2CService:     disableB2CAPI,
+			RedisKeyPrefix:        os.Getenv("REDIS_KEY_PREFIX"),
+			B2CLocalTopic:         os.Getenv("PUBLISH_CHANNEL_LOCAL"),
+			B2CTransactionCharges: float32(b2cTxCost),
 		}
 
 		if !disableMpesaAPI {
