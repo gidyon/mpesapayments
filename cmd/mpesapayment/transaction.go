@@ -85,8 +85,8 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
-		gw.Logger.Infoln("only post allowed")
-		http.Error(w, "bad method; only POST allowed", http.StatusBadRequest)
+		gw.Logger.Infof("only POST allowed; received %v http method", r.Method)
+		http.Error(w, fmt.Sprintf("bad method; only POST allowed; received %v method", r.Method), http.StatusBadRequest)
 		return
 	}
 
@@ -197,6 +197,7 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 		UtilityAccountFunds:      float32(transaction.B2CUtilityAccountAvailableFunds()),
 		ChargesPaidFunds:         float32(transaction.B2CChargesPaidAccountAvailableFunds()),
 		RecipientRegistered:      transaction.B2CRecipientIsRegisteredCustomer(),
+		TransactionCharge:        gw.B2CTransactionCharges,
 		Succeeded:                transaction.Succeeded(),
 	}
 
@@ -220,8 +221,8 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 		// Publish the transaction for local goroutines
 		err = gw.RedisDB.Publish(ctx, gw.B2CLocalTopic, initiator.RequestId).Err()
 		if err != nil {
-			http.Error(w, "failed to publish b2c to local listener", http.StatusInternalServerError)
-			gw.Logger.Errorln("failed to publish b2c transaction to local listener: %s", err)
+			http.Error(w, "failed to publish b2c to local listeners", http.StatusInternalServerError)
+			gw.Logger.Errorln("failed to publish b2c transaction to local listeners: %s", err)
 			return
 		}
 	}
@@ -254,8 +255,8 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
-		gw.Logger.Infof("only post allowed; hot %v http method", r.Method)
-		http.Error(w, "bad method; only POST allowed", http.StatusBadRequest)
+		gw.Logger.Infof("only POST allowed; received %v http method", r.Method)
+		http.Error(w, fmt.Sprintf("bad method; only POST allowed; received %v method", r.Method), http.StatusBadRequest)
 		return
 	}
 
@@ -342,6 +343,7 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 		Amount:                   float32(transaction.Amount()),
 		WorkingAccountFunds:      float32(transaction.B2CUtilityAccountAvailableFundsV2()),
 		RecipientRegistered:      transaction.B2CRecipientIsRegisteredCustomerV2(),
+		TransactionCharge:        gw.B2CTransactionCharges,
 		Succeeded:                transaction.Succeeded(),
 	}
 
@@ -365,8 +367,8 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 		// Publish the transaction for local goroutines
 		err = gw.RedisDB.Publish(ctx, gw.B2CLocalTopic, initiator.RequestId).Err()
 		if err != nil {
-			http.Error(w, "failed to publish b2c to local listener", http.StatusInternalServerError)
-			gw.Logger.Errorln("failed to publish b2c transaction to local listener: %s", err)
+			http.Error(w, "failed to publish b2c to local listeners", http.StatusInternalServerError)
+			gw.Logger.Errorln("failed to publish b2c transaction to local listeners: %s", err)
 			return
 		}
 	}
