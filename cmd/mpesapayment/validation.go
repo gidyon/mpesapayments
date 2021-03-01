@@ -14,20 +14,21 @@ import (
 	"gorm.io/gorm"
 )
 
-// Options contains parameters passed to NewUSSDGateway
+// Options contains parameters passed to mpesa gateways
 type Options struct {
-	SQLDB               *gorm.DB
-	RedisDB             *redis.Client
-	Logger              grpclog.LoggerV2
-	AuthAPI             auth.API
-	MpesaAPI            c2b.LipaNaMPESAServer
-	StkAPI              stk.StkPushAPIServer
-	B2CAPI              b2c.B2CAPIServer
-	DisableMpesaService bool
-	DisableSTKService   bool
-	DisableB2CService   bool
-	RedisKeyPrefix      string
-	B2CLocalTopic       string
+	SQLDB                 *gorm.DB
+	RedisDB               *redis.Client
+	Logger                grpclog.LoggerV2
+	AuthAPI               auth.API
+	MpesaAPI              c2b.LipaNaMPESAServer
+	StkAPI                stk.StkPushAPIServer
+	B2CAPI                b2c.B2CAPIServer
+	DisableMpesaService   bool
+	DisableSTKService     bool
+	DisableB2CService     bool
+	RedisKeyPrefix        string
+	B2CLocalTopic         string
+	B2CTransactionCharges float32
 }
 
 func validateOptions(opt *Options) error {
