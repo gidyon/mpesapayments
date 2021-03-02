@@ -404,13 +404,17 @@ func (mpesaAPI *mpesaAPIServer) ListC2BPayments(
 		db = db.Where("amount IN(?)", amounts)
 	}
 	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
-		db = db.Where("transaction_time BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
+		db = db.Where(
+			"transaction_time BETWEEN ? AND ?",
+			time.Unix(listReq.GetFilter().GetStartTimeSeconds(), 0),
+			time.Unix(listReq.GetFilter().GetEndTimeSeconds(), 0),
+		)
 	} else if listReq.GetFilter().GetTxDate() != "" {
 		t, err := getTime(listReq.Filter.TxDate)
 		if err != nil {
 			return nil, err
 		}
-		db = db.Where("transaction_time BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+		db = db.Where("transaction_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
 	}
 	if listReq.GetFilter().GetProcessState() != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
 		switch listReq.Filter.ProcessState {
@@ -969,7 +973,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 		db = db.Where("msisdn IN (?)", msisdns)
 	}
 	if getReq.StartTimeSeconds > 0 || getReq.EndTimeSeconds > 0 {
-		db = db.Where("transaction_time BETWEEN ? AND ?", getReq.StartTimeSeconds, getReq.EndTimeSeconds)
+		db = db.Where("transaction_time BETWEEN ? AND ?", time.Unix(getReq.StartTimeSeconds, 0), time.Unix(getReq.EndTimeSeconds, 0))
 	}
 
 	var transactions int64
