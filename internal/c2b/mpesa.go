@@ -544,7 +544,7 @@ func (mpesaAPI *mpesaAPIServer) SaveScopes(
 		Scopes: bs,
 	}
 
-	// Check if table exists
+	// Check if record exists
 	err = mpesaAPI.SQLDB.First(&Scopes{}, "user_id = ?", addReq.UserId).Error
 	switch {
 	case err == nil:
@@ -599,39 +599,13 @@ func (mpesaAPI *mpesaAPIServer) GetScopes(
 	switch {
 	case err == nil:
 	case errors.Is(err, redis.Nil):
-		// Get from db
-		scopesDB := &Scopes{}
-		err = mpesaAPI.SQLDB.First(scopesDB, "user_id = ?", getReq.UserId).Error
-		switch {
-		case err == nil:
-			scopesPB := &c2b.Scopes{}
-
-			// Json unmarshal
-			if len(scopesDB.Scopes) > 0 {
-				err = json.Unmarshal(scopesDB.Scopes, scopesPB)
-				if err != nil {
-					return nil, errs.FromJSONUnMarshal(err, "scopes")
-				}
-			}
-
-			// Save scopes
-			_, err = mpesaAPI.SaveScopes(ctx, &c2b.SaveScopesRequest{
-				Scopes: scopesPB,
-				UserId: getReq.UserId,
-			})
-			if err != nil {
-				return nil, err
-			}
-
-			return &c2b.GetScopesResponse{
-				Scopes: scopesPB,
-			}, nil
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			return &c2b.GetScopesResponse{
-				Scopes: &c2b.Scopes{},
-			}, nil
-		default:
-			return nil, errs.FailedToFind("scopes", err)
+		// Save default scopes
+		_, err = mpesaAPI.SaveScopes(ctx, &c2b.SaveScopesRequest{
+			Scopes: &c2b.Scopes{},
+			UserId: getReq.UserId,
+		})
+		if err != nil {
+			return nil, err
 		}
 	default:
 		return nil, errs.RedisCmdFailed(err, "get")
