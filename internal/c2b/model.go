@@ -11,7 +11,7 @@ import (
 )
 
 // C2Bs is table for mpesa payments
-const C2Bs = "mawingu_payments_mpesa_v2"
+const C2Bs = "c2b_transactions"
 
 // PaymentMpesa contains mpesa transaction details
 type PaymentMpesa struct {
