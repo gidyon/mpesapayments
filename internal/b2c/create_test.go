@@ -33,7 +33,7 @@ func fakeB2CPayment() *b2c.B2CPayment {
 		Amount:                   float32(randomdata.Decimal(999, 99999)),
 		WorkingAccountFunds:      float32(randomdata.Decimal(99999, 999999)),
 		UtilityAccountFunds:      float32(randomdata.Decimal(99999, 999999)),
-		ChargesPaidFunds:         float32(randomdata.Decimal(10, 999)),
+		MpesaCharges:             float32(randomdata.Decimal(10, 999)),
 		RecipientRegistered:      time.Now().Unix()%2 == 0,
 		Succeeded:                time.Now().Unix()%2 == 0,
 		Processed:                time.Now().Unix()%2 == 0,

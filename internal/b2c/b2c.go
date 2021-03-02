@@ -512,7 +512,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		Party:               queryReq.PartyA,
 		WorkingAccountFunds: transaction.WorkingAccountFunds,
 		UtilityAccountFunds: transaction.UtilityAccountFunds,
-		ChargesPaidFunds:    transaction.ChargesPaidFunds,
+		ChargesPaidFunds:    transaction.MpesaCharges,
 		Completed:           queryReq.Synchronous,
 	}, nil
 }

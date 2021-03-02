@@ -30,8 +30,8 @@ type Payment struct {
 	Amount                   float32   `gorm:"type:float(10)"`
 	WorkingAccountFunds      float32   `gorm:"type:float(10)"`
 	UtilityAccountFunds      float32   `gorm:"type:float(10)"`
-	ChargesPaidFunds         float32   `gorm:"type:float(10)"`
-	TransactionCharge        float32   `gorm:"type:float(10)"`
+	MpesaCharges             float32   `gorm:"type:float(10)"`
+	OnfonCharges             float32   `gorm:"type:float(10)"`
 	RecipientRegistered      bool      `gorm:"type:tinyint(1)"`
 	Succeeded                bool      `gorm:"type:tinyint(1)"`
 	Processed                bool      `gorm:"type:tinyint(1)"`
@@ -64,8 +64,8 @@ func GetB2CPaymentDB(paymentPB *b2c.B2CPayment) (*Payment, error) {
 		Amount:                   paymentPB.Amount,
 		WorkingAccountFunds:      paymentPB.WorkingAccountFunds,
 		UtilityAccountFunds:      paymentPB.UtilityAccountFunds,
-		ChargesPaidFunds:         paymentPB.ChargesPaidFunds,
-		TransactionCharge:        paymentPB.TransactionCharge,
+		MpesaCharges:             paymentPB.MpesaCharges,
+		OnfonCharges:             paymentPB.OnfonCharges,
 		RecipientRegistered:      paymentPB.RecipientRegistered,
 		Succeeded:                paymentPB.Succeeded,
 		Processed:                paymentPB.Processed,
@@ -92,8 +92,8 @@ func GetB2CPaymentPB(paymentDB *Payment) (*b2c.B2CPayment, error) {
 		Amount:                   paymentDB.Amount,
 		WorkingAccountFunds:      paymentDB.WorkingAccountFunds,
 		UtilityAccountFunds:      paymentDB.UtilityAccountFunds,
-		ChargesPaidFunds:         paymentDB.ChargesPaidFunds,
-		TransactionCharge:        paymentDB.TransactionCharge,
+		MpesaCharges:             paymentDB.MpesaCharges,
+		OnfonCharges:             paymentDB.OnfonCharges,
 		RecipientRegistered:      paymentDB.RecipientRegistered,
 		Succeeded:                paymentDB.Succeeded,
 		Processed:                paymentDB.Processed,
