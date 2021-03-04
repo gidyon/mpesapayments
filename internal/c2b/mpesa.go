@@ -148,6 +148,12 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (c2b.LipaNaMPESAServer
 			return nil, err
 		}
 	}
+	if !mpesaAPI.SQLDB.Migrator().HasTable(&QueueBulk{}) {
+		err = mpesaAPI.SQLDB.Migrator().AutoMigrate(&QueueBulk{})
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	// Insert worker
 	go mpesaAPI.insertWorker(ctx)
@@ -233,11 +239,7 @@ func (mpesaAPI *mpesaAPIServer) CreateC2BPayment(
 func (mpesaAPI *mpesaAPIServer) GetC2BPayment(
 	ctx context.Context, getReq *c2b.GetC2BPaymentRequest,
 ) (*c2b.C2BPayment, error) {
-	// Authentication
-	err := mpesaAPI.AuthAPI.AuthenticateRequest(ctx)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 
 	// Validation
 	switch {
@@ -270,11 +272,7 @@ func (mpesaAPI *mpesaAPIServer) GetC2BPayment(
 func (mpesaAPI *mpesaAPIServer) ExistC2BPayment(
 	ctx context.Context, existReq *c2b.ExistC2BPaymentRequest,
 ) (*c2b.ExistC2BPaymentResponse, error) {
-	// Authentication
-	err := mpesaAPI.AuthAPI.AuthenticateRequest(ctx)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 
 	// Validation
 	switch {
@@ -579,11 +577,7 @@ func (mpesaAPI *mpesaAPIServer) SaveScopes(
 func (mpesaAPI *mpesaAPIServer) GetScopes(
 	ctx context.Context, getReq *c2b.GetScopesRequest,
 ) (*c2b.GetScopesResponse, error) {
-	// Authentication
-	_, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
-	if err != nil {
-		return nil, err
-	}
+	var err error
 
 	// Validation
 	switch {
@@ -902,7 +896,7 @@ func (mpesaAPI *mpesaAPIServer) GetTransactionsCount(
 	ctx context.Context, getReq *c2b.GetTransactionsCountRequest,
 ) (*c2b.TransactionsSummary, error) {
 	// Authentication
-	actor, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	actor, err := mpesaAPI.AuthAPI.GetJwtPayload(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1212,7 +1206,7 @@ func (mpesaAPI *mpesaAPIServer) ListStats(
 	ctx context.Context, listReq *c2b.ListStatsRequest,
 ) (*c2b.StatsResponse, error) {
 	// Authorize the request
-	actor, err := mpesaAPI.AuthAPI.AuthenticateRequestV2(ctx)
+	actor, err := mpesaAPI.AuthAPI.GetJwtPayload(ctx)
 	if err != nil {
 		return nil, err
 	}
