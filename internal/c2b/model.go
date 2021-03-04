@@ -148,3 +148,23 @@ type Scopes struct {
 func (*Scopes) TableName() string {
 	return "scopes"
 }
+
+// QueueBulk contains exported data for bulk
+type QueueBulk struct {
+	ID          uint   `gorm:"primaryKey;type:varchar(15)"`
+	Originator  string `gorm:"index;type:varchar(25);not null;default:''"`
+	Destination string `gorm:"index;type:varchar(15);not null;default:''"`
+	Message     string `gorm:"index;type:varchar(25);not null;default:''"`
+	Keyword     string `gorm:"index;type:varchar(25)"`
+	SMSCID      string `gorm:"index;type:varchar(25)"`
+	Processed   bool   `gorm:"type:tinyint(1);not null;default:0"`
+	CreateTime  time.Time
+	DeletedAt   gorm.DeletedAt
+}
+
+// TableName ...
+func (*QueueBulk) TableName() string {
+	return "bulk_queue"
+}
+
+// Originator, Destination, Message, MessageTimeStamp, MessageDirection, SMSCID, command
