@@ -40,6 +40,8 @@ type B2CAPIClient interface {
 	PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publihses all b2c payments to consumers
 	PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Retrieves a collection of statistics
+	ListDailyStats(ctx context.Context, in *ListDailyStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 }
 
 type b2CAPIClient struct {
@@ -52,7 +54,7 @@ func NewB2CAPIClient(cc grpc.ClientConnInterface) B2CAPIClient {
 
 func (c *b2CAPIClient) InitiateTransaction(ctx context.Context, in *InitiateTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/InitiateTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +63,7 @@ func (c *b2CAPIClient) InitiateTransaction(ctx context.Context, in *InitiateTran
 
 func (c *b2CAPIClient) QueryTransactionStatus(ctx context.Context, in *QueryTransactionStatusRequest, opts ...grpc.CallOption) (*QueryResponse, error) {
 	out := new(QueryResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/QueryTransactionStatus", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/QueryTransactionStatus", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +72,7 @@ func (c *b2CAPIClient) QueryTransactionStatus(ctx context.Context, in *QueryTran
 
 func (c *b2CAPIClient) QueryAccountBalance(ctx context.Context, in *QueryAccountBalanceRequest, opts ...grpc.CallOption) (*QueryAccountBalanceResponse, error) {
 	out := new(QueryAccountBalanceResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/QueryAccountBalance", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/QueryAccountBalance", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +81,7 @@ func (c *b2CAPIClient) QueryAccountBalance(ctx context.Context, in *QueryAccount
 
 func (c *b2CAPIClient) TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/TransferFunds", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/TransferFunds", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +90,7 @@ func (c *b2CAPIClient) TransferFunds(ctx context.Context, in *TransferFundsReque
 
 func (c *b2CAPIClient) ReverseTransaction(ctx context.Context, in *ReverseTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/ReverseTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/ReverseTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +99,7 @@ func (c *b2CAPIClient) ReverseTransaction(ctx context.Context, in *ReverseTransa
 
 func (c *b2CAPIClient) CreateB2CPayment(ctx context.Context, in *CreateB2CPaymentRequest, opts ...grpc.CallOption) (*B2CPayment, error) {
 	out := new(B2CPayment)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/CreateB2CPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/CreateB2CPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -106,7 +108,7 @@ func (c *b2CAPIClient) CreateB2CPayment(ctx context.Context, in *CreateB2CPaymen
 
 func (c *b2CAPIClient) GetB2CPayment(ctx context.Context, in *GetB2CPaymentRequest, opts ...grpc.CallOption) (*B2CPayment, error) {
 	out := new(B2CPayment)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/GetB2CPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/GetB2CPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +117,7 @@ func (c *b2CAPIClient) GetB2CPayment(ctx context.Context, in *GetB2CPaymentReque
 
 func (c *b2CAPIClient) ListB2CPayments(ctx context.Context, in *ListB2CPaymentsRequest, opts ...grpc.CallOption) (*ListB2CPaymentsResponse, error) {
 	out := new(ListB2CPaymentsResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/ListB2CPayments", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -124,7 +126,7 @@ func (c *b2CAPIClient) ListB2CPayments(ctx context.Context, in *ListB2CPaymentsR
 
 func (c *b2CAPIClient) ProcessB2CPayment(ctx context.Context, in *ProcessB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/ProcessB2CPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/ProcessB2CPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func (c *b2CAPIClient) ProcessB2CPayment(ctx context.Context, in *ProcessB2CPaym
 
 func (c *b2CAPIClient) PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishB2CPayment", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/PublishB2CPayment", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,7 +144,16 @@ func (c *b2CAPIClient) PublishB2CPayment(ctx context.Context, in *PublishB2CPaym
 
 func (c *b2CAPIClient) PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *b2CAPIClient) ListDailyStats(ctx context.Context, in *ListDailyStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
+	out := new(StatsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -175,6 +186,8 @@ type B2CAPIServer interface {
 	PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error)
 	// Publihses all b2c payments to consumers
 	PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error)
+	// Retrieves a collection of statistics
+	ListDailyStats(context.Context, *ListDailyStatsRequest) (*StatsResponse, error)
 	mustEmbedUnimplementedB2CAPIServer()
 }
 
@@ -215,6 +228,9 @@ func (UnimplementedB2CAPIServer) PublishB2CPayment(context.Context, *PublishB2CP
 func (UnimplementedB2CAPIServer) PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishAllB2CPayments not implemented")
 }
+func (UnimplementedB2CAPIServer) ListDailyStats(context.Context, *ListDailyStatsRequest) (*StatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListDailyStats not implemented")
+}
 func (UnimplementedB2CAPIServer) mustEmbedUnimplementedB2CAPIServer() {}
 
 // UnsafeB2CAPIServer may be embedded to opt out of forward compatibility for this service.
@@ -238,7 +254,7 @@ func _B2CAPI_InitiateTransaction_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/InitiateTransaction",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).InitiateTransaction(ctx, req.(*InitiateTransactionRequest))
@@ -256,7 +272,7 @@ func _B2CAPI_QueryTransactionStatus_Handler(srv interface{}, ctx context.Context
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/QueryTransactionStatus",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/QueryTransactionStatus",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).QueryTransactionStatus(ctx, req.(*QueryTransactionStatusRequest))
@@ -274,7 +290,7 @@ func _B2CAPI_QueryAccountBalance_Handler(srv interface{}, ctx context.Context, d
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/QueryAccountBalance",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/QueryAccountBalance",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).QueryAccountBalance(ctx, req.(*QueryAccountBalanceRequest))
@@ -292,7 +308,7 @@ func _B2CAPI_TransferFunds_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/TransferFunds",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/TransferFunds",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).TransferFunds(ctx, req.(*TransferFundsRequest))
@@ -310,7 +326,7 @@ func _B2CAPI_ReverseTransaction_Handler(srv interface{}, ctx context.Context, de
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/ReverseTransaction",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/ReverseTransaction",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).ReverseTransaction(ctx, req.(*ReverseTransactionRequest))
@@ -328,7 +344,7 @@ func _B2CAPI_CreateB2CPayment_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/CreateB2CPayment",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/CreateB2CPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).CreateB2CPayment(ctx, req.(*CreateB2CPaymentRequest))
@@ -346,7 +362,7 @@ func _B2CAPI_GetB2CPayment_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/GetB2CPayment",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/GetB2CPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).GetB2CPayment(ctx, req.(*GetB2CPaymentRequest))
@@ -364,7 +380,7 @@ func _B2CAPI_ListB2CPayments_Handler(srv interface{}, ctx context.Context, dec f
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/ListB2CPayments",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).ListB2CPayments(ctx, req.(*ListB2CPaymentsRequest))
@@ -382,7 +398,7 @@ func _B2CAPI_ProcessB2CPayment_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/ProcessB2CPayment",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/ProcessB2CPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).ProcessB2CPayment(ctx, req.(*ProcessB2CPaymentRequest))
@@ -400,7 +416,7 @@ func _B2CAPI_PublishB2CPayment_Handler(srv interface{}, ctx context.Context, dec
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/PublishB2CPayment",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/PublishB2CPayment",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).PublishB2CPayment(ctx, req.(*PublishB2CPaymentRequest))
@@ -418,7 +434,7 @@ func _B2CAPI_PublishAllB2CPayments_Handler(srv interface{}, ctx context.Context,
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).PublishAllB2CPayments(ctx, req.(*PublishAllB2CPaymentsRequest))
@@ -426,8 +442,26 @@ func _B2CAPI_PublishAllB2CPayments_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _B2CAPI_ListDailyStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListDailyStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(B2CAPIServer).ListDailyStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(B2CAPIServer).ListDailyStats(ctx, req.(*ListDailyStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _B2CAPI_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "gidyon.mpesa.B2CAPI",
+	ServiceName: "gidyon.mpesa.b2c.B2CAPI",
 	HandlerType: (*B2CAPIServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
@@ -473,6 +507,10 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishAllB2CPayments",
 			Handler:    _B2CAPI_PublishAllB2CPayments_Handler,
+		},
+		{
+			MethodName: "ListDailyStats",
+			Handler:    _B2CAPI_ListDailyStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

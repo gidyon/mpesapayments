@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package gidyon.mpesa;
+package gidyon.mpesa.b2c;
 
 option go_package="github.com/gidyon/mpesapayments/pkg/api/b2c";
 
@@ -178,8 +178,8 @@ message B2CPayment {
 	float amount = 14;
 	float working_account_funds = 15;
 	float utility_account_funds = 16;
-	float charges_paid_funds = 17;
-	float transaction_charge = 18;
+	float mpesa_charges = 17;
+	float onfon_charges = 18;
 	bool recipient_registered = 19;
 	bool succeeded = 20;
 	bool processed = 21;
@@ -302,6 +302,65 @@ message PublishAllB2CPaymentsRequest {
 	int64 end_timestamp = 3;
 }
 
+message DailyStat {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "DailyStat"
+			description: "Statistics for a day b2c transactions"
+		}
+	};
+
+	string stat_id = 1;
+	string date = 2;
+	string org_short_code = 3;
+	int32 total_transactions = 4;
+	int64 successful_transactions = 5;
+	int64 failed_transactions = 6;
+	float total_amount_transacted = 7;
+	float total_charges = 8;
+	int64 create_time_seconds = 9;
+	int64 update_time_seconds = 10;
+}
+
+message StatsResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "StatsResponse"
+			description: "Response containing multiple statistics"
+		}
+	};
+
+	repeated DailyStat stats = 1;
+	string next_page_token = 2;
+}
+
+message ListStatsFilter {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStatsFilter"
+			description: "Filter criteria for listing statistics"
+		}
+	};
+
+	repeated string organization_short_codes = 1;
+	int64 start_time_seconds = 2;
+	int64 end_time_seconds = 3;
+	repeated string tx_dates = 4;
+}
+
+message ListDailyStatsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListStatsRequest"
+			description: "Request to retrieve statistics"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+	ListStatsFilter filter = 3;
+}
+
 service B2CAPI {
 	// Initiates a b2c transaction
 	rpc InitiateTransaction (InitiateTransactionRequest) returns (google.protobuf.Empty) {
@@ -391,6 +450,17 @@ service B2CAPI {
 			post: "/api/mpestx/b2c:publishAllB2CPayments"
 			body: "*"
 		};
+	};
+
+	// Retrieves a collection of statistics
+	rpc ListDailyStats (ListDailyStatsRequest) returns (StatsResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/b2c/actions/list-stats"
+			additional_bindings {
+				post: "/api/mpestx/b2c:listStats"
+				body: "*"
+			}
+		};	
 	};
 }
 

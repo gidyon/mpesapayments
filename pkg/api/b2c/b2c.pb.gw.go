@@ -459,6 +459,76 @@ func local_request_B2CAPI_PublishAllB2CPayments_0(ctx context.Context, marshaler
 
 }
 
+var (
+	filter_B2CAPI_ListDailyStats_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_B2CAPI_ListDailyStats_0(ctx context.Context, marshaler runtime.Marshaler, client B2CAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListDailyStatsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_B2CAPI_ListDailyStats_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListDailyStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_B2CAPI_ListDailyStats_0(ctx context.Context, marshaler runtime.Marshaler, server B2CAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListDailyStatsRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_B2CAPI_ListDailyStats_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListDailyStats(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_B2CAPI_ListDailyStats_1(ctx context.Context, marshaler runtime.Marshaler, client B2CAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListDailyStatsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListDailyStats(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_B2CAPI_ListDailyStats_1(ctx context.Context, marshaler runtime.Marshaler, server B2CAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListDailyStatsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListDailyStats(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterB2CAPIHandlerServer registers the http handlers for service B2CAPI to "mux".
 // UnaryRPC     :call B2CAPIServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -471,7 +541,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/InitiateTransaction")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -494,7 +564,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/QueryTransactionStatus")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/QueryTransactionStatus")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -517,7 +587,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/QueryAccountBalance")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/QueryAccountBalance")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -540,7 +610,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/TransferFunds")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/TransferFunds")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -563,7 +633,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ReverseTransaction")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ReverseTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -586,7 +656,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/CreateB2CPayment")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/CreateB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -609,7 +679,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/GetB2CPayment")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/GetB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -632,7 +702,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ListB2CPayments")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -655,7 +725,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ListB2CPayments")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -678,7 +748,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ProcessB2CPayment")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ProcessB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -701,7 +771,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/PublishB2CPayment")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/PublishB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -724,7 +794,7 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -738,6 +808,52 @@ func RegisterB2CAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, ser
 		}
 
 		forward_B2CAPI_PublishAllB2CPayments_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_B2CAPI_ListDailyStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_B2CAPI_ListDailyStats_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_B2CAPI_ListDailyStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_B2CAPI_ListDailyStats_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_B2CAPI_ListDailyStats_1(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_B2CAPI_ListDailyStats_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -786,7 +902,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/InitiateTransaction")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -806,7 +922,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/QueryTransactionStatus")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/QueryTransactionStatus")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -826,7 +942,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/QueryAccountBalance")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/QueryAccountBalance")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -846,7 +962,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/TransferFunds")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/TransferFunds")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -866,7 +982,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ReverseTransaction")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ReverseTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -886,7 +1002,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/CreateB2CPayment")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/CreateB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -906,7 +1022,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/GetB2CPayment")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/GetB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -926,7 +1042,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ListB2CPayments")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -946,7 +1062,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ListB2CPayments")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -966,7 +1082,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/ProcessB2CPayment")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ProcessB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -986,7 +1102,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/PublishB2CPayment")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/PublishB2CPayment")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1006,7 +1122,7 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.B2CAPI/PublishAllB2CPayments")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
@@ -1019,6 +1135,46 @@ func RegisterB2CAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, cli
 		}
 
 		forward_B2CAPI_PublishAllB2CPayments_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("GET", pattern_B2CAPI_ListDailyStats_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_B2CAPI_ListDailyStats_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_B2CAPI_ListDailyStats_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_B2CAPI_ListDailyStats_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_B2CAPI_ListDailyStats_1(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_B2CAPI_ListDailyStats_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1049,6 +1205,10 @@ var (
 	pattern_B2CAPI_PublishB2CPayment_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "b2c"}, "publishB2CPayment"))
 
 	pattern_B2CAPI_PublishAllB2CPayments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "b2c"}, "publishAllB2CPayments"))
+
+	pattern_B2CAPI_ListDailyStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "mpestx", "b2c", "actions", "list-stats"}, ""))
+
+	pattern_B2CAPI_ListDailyStats_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "b2c"}, "listStats"))
 )
 
 var (
@@ -1075,4 +1235,8 @@ var (
 	forward_B2CAPI_PublishB2CPayment_0 = runtime.ForwardResponseMessage
 
 	forward_B2CAPI_PublishAllB2CPayments_0 = runtime.ForwardResponseMessage
+
+	forward_B2CAPI_ListDailyStats_0 = runtime.ForwardResponseMessage
+
+	forward_B2CAPI_ListDailyStats_1 = runtime.ForwardResponseMessage
 )

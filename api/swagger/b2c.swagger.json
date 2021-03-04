@@ -33,7 +33,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaListB2CPaymentsResponse"
+              "$ref": "#/definitions/b2cListB2CPaymentsResponse"
             }
           },
           "default": {
@@ -123,7 +123,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaB2CPayment"
+              "$ref": "#/definitions/b2cB2CPayment"
             }
           },
           "default": {
@@ -139,8 +139,80 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaCreateB2CPaymentRequest"
+              "$ref": "#/definitions/b2cCreateB2CPaymentRequest"
             }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c/actions/list-stats": {
+      "get": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "B2CAPI_ListDailyStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesab2cStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "filter.organizationShortCodes",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.startTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.txDates",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
           }
         ],
         "tags": [
@@ -156,7 +228,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaB2CPayment"
+              "$ref": "#/definitions/b2cB2CPayment"
             }
           },
           "default": {
@@ -203,7 +275,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaInitiateTransactionRequest"
+              "$ref": "#/definitions/b2cInitiateTransactionRequest"
             }
           }
         ],
@@ -220,7 +292,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaListB2CPaymentsResponse"
+              "$ref": "#/definitions/b2cListB2CPaymentsResponse"
             }
           },
           "default": {
@@ -236,7 +308,40 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaListB2CPaymentsRequest"
+              "$ref": "#/definitions/b2cListB2CPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:listStats": {
+      "post": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "B2CAPI_ListDailyStats2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesab2cStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cListDailyStatsRequest"
             }
           }
         ],
@@ -269,7 +374,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaProcessB2CPaymentRequest"
+              "$ref": "#/definitions/b2cProcessB2CPaymentRequest"
             }
           }
         ],
@@ -302,7 +407,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaPublishAllB2CPaymentsRequest"
+              "$ref": "#/definitions/b2cPublishAllB2CPaymentsRequest"
             }
           }
         ],
@@ -335,7 +440,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaPublishB2CPaymentRequest"
+              "$ref": "#/definitions/b2cPublishB2CPaymentRequest"
             }
           }
         ],
@@ -352,7 +457,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaQueryAccountBalanceResponse"
+              "$ref": "#/definitions/b2cQueryAccountBalanceResponse"
             }
           },
           "default": {
@@ -368,7 +473,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaQueryAccountBalanceRequest"
+              "$ref": "#/definitions/b2cQueryAccountBalanceRequest"
             }
           }
         ],
@@ -385,7 +490,7 @@
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaQueryResponse"
+              "$ref": "#/definitions/b2cQueryResponse"
             }
           },
           "default": {
@@ -401,7 +506,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaQueryTransactionStatusRequest"
+              "$ref": "#/definitions/b2cQueryTransactionStatusRequest"
             }
           }
         ],
@@ -434,7 +539,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaReverseTransactionRequest"
+              "$ref": "#/definitions/b2cReverseTransactionRequest"
             }
           }
         ],
@@ -467,7 +572,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaTransferFundsRequest"
+              "$ref": "#/definitions/b2cTransferFundsRequest"
             }
           }
         ],
@@ -488,7 +593,7 @@
       ],
       "default": "COMMANDID_UNSPECIFIED"
     },
-    "mpesaB2CPayment": {
+    "b2cB2CPayment": {
       "type": "object",
       "properties": {
         "paymentId": {
@@ -544,11 +649,11 @@
           "type": "number",
           "format": "float"
         },
-        "chargesPaidFunds": {
+        "mpesaCharges": {
           "type": "number",
           "format": "float"
         },
-        "transactionCharge": {
+        "onfonCharges": {
           "type": "number",
           "format": "float"
         },
@@ -565,11 +670,11 @@
       "description": "Mpesa B2C payment",
       "title": "B2CPayment"
     },
-    "mpesaCreateB2CPaymentRequest": {
+    "b2cCreateB2CPaymentRequest": {
       "type": "object",
       "properties": {
         "payment": {
-          "$ref": "#/definitions/mpesaB2CPayment"
+          "$ref": "#/definitions/b2cB2CPayment"
         },
         "publish": {
           "type": "boolean"
@@ -581,11 +686,55 @@
         "payment"
       ]
     },
-    "mpesaInitiateTransactionRequest": {
+    "b2cDailyStat": {
+      "type": "object",
+      "properties": {
+        "statId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "orgShortCode": {
+          "type": "string"
+        },
+        "totalTransactions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "successfulTransactions": {
+          "type": "string",
+          "format": "int64"
+        },
+        "failedTransactions": {
+          "type": "string",
+          "format": "int64"
+        },
+        "totalAmountTransacted": {
+          "type": "number",
+          "format": "float"
+        },
+        "totalCharges": {
+          "type": "number",
+          "format": "float"
+        },
+        "createTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "updateTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Statistics for a day b2c transactions",
+      "title": "DailyStat"
+    },
+    "b2cInitiateTransactionRequest": {
       "type": "object",
       "properties": {
         "initiator": {
-          "$ref": "#/definitions/mpesaInitiatorPayload"
+          "$ref": "#/definitions/b2cInitiatorPayload"
         }
       },
       "description": "Request to start a b2c transaction",
@@ -594,7 +743,7 @@
         "initiator"
       ]
     },
-    "mpesaInitiatorPayload": {
+    "b2cInitiatorPayload": {
       "type": "object",
       "properties": {
         "initiatorId": {
@@ -628,7 +777,7 @@
       "description": "Initiator payload",
       "title": "InitiatorPayload"
     },
-    "mpesaListB2CPaymentFilter": {
+    "b2cListB2CPaymentFilter": {
       "type": "object",
       "properties": {
         "initiatorId": {
@@ -661,7 +810,7 @@
       "description": "Filter payment for querying stk payments",
       "title": "ListB2CPaymentFilter"
     },
-    "mpesaListB2CPaymentsRequest": {
+    "b2cListB2CPaymentsRequest": {
       "type": "object",
       "properties": {
         "pageToken": {
@@ -672,13 +821,13 @@
           "format": "int32"
         },
         "filter": {
-          "$ref": "#/definitions/mpesaListB2CPaymentFilter"
+          "$ref": "#/definitions/b2cListB2CPaymentFilter"
         }
       },
       "description": "Request to retrieve a collection of b2c payments",
       "title": "ListB2CPaymentsRequest"
     },
-    "mpesaListB2CPaymentsResponse": {
+    "b2cListB2CPaymentsResponse": {
       "type": "object",
       "properties": {
         "nextPageToken": {
@@ -687,14 +836,31 @@
         "b2cPayments": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/mpesaB2CPayment"
+            "$ref": "#/definitions/b2cB2CPayment"
           }
         }
       },
       "description": "Reponse containing a collection of b2c payments",
       "title": "ListB2CPaymentsResponse"
     },
-    "mpesaProcessB2CPaymentRequest": {
+    "b2cListDailyStatsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/mpesab2cListStatsFilter"
+        }
+      },
+      "description": "Request to retrieve statistics",
+      "title": "ListStatsRequest"
+    },
+    "b2cProcessB2CPaymentRequest": {
       "type": "object",
       "properties": {
         "paymentId": {
@@ -707,16 +873,7 @@
       "description": "Request to update b2c payment processed state",
       "title": "ProcessB2CPaymentRequest"
     },
-    "mpesaProcessedState": {
-      "type": "string",
-      "enum": [
-        "PROCESS_STATE_UNSPECIFIED",
-        "PROCESSED",
-        "NOT_PROCESSED"
-      ],
-      "default": "PROCESS_STATE_UNSPECIFIED"
-    },
-    "mpesaPublishAllB2CPaymentsRequest": {
+    "b2cPublishAllB2CPaymentsRequest": {
       "type": "object",
       "properties": {
         "processedState": {
@@ -734,7 +891,7 @@
       "description": "Request to publish all b2c payments",
       "title": "PublishAllB2CPaymentsRequest"
     },
-    "mpesaPublishB2CPaymentRequest": {
+    "b2cPublishB2CPaymentRequest": {
       "type": "object",
       "properties": {
         "paymentId": {
@@ -750,11 +907,11 @@
       "description": "Request to publish a b2c payment",
       "title": "PublishB2CPaymentRequest"
     },
-    "mpesaQueryAccountBalanceRequest": {
+    "b2cQueryAccountBalanceRequest": {
       "type": "object",
       "properties": {
         "identifierType": {
-          "$ref": "#/definitions/mpesaQueryAccountBalanceRequestIdentifierType"
+          "$ref": "#/definitions/b2cQueryAccountBalanceRequestIdentifierType"
         },
         "partyA": {
           "type": "string",
@@ -776,7 +933,7 @@
       "description": "Request to query for account balance",
       "title": "QueryAccountBalanceRequest"
     },
-    "mpesaQueryAccountBalanceRequestIdentifierType": {
+    "b2cQueryAccountBalanceRequestIdentifierType": {
       "type": "string",
       "enum": [
         "QUERY_ACCOUNT_UNSPECIFIED",
@@ -786,7 +943,7 @@
       ],
       "default": "QUERY_ACCOUNT_UNSPECIFIED"
     },
-    "mpesaQueryAccountBalanceResponse": {
+    "b2cQueryAccountBalanceResponse": {
       "type": "object",
       "properties": {
         "party": {
@@ -818,7 +975,7 @@
       "description": "Response containing account balance data",
       "title": "QueryAccountBalanceResponse"
     },
-    "mpesaQueryResponse": {
+    "b2cQueryResponse": {
       "type": "object",
       "properties": {
         "originatorConversionId": {
@@ -837,11 +994,11 @@
       "description": "Mpesa Query response",
       "title": "QueryResponse"
     },
-    "mpesaQueryTransactionStatusRequest": {
+    "b2cQueryTransactionStatusRequest": {
       "type": "object",
       "properties": {
         "identifierType": {
-          "$ref": "#/definitions/mpesaQueryTransactionStatusRequestIdentifierType"
+          "$ref": "#/definitions/b2cQueryTransactionStatusRequestIdentifierType"
         },
         "partyA": {
           "type": "string",
@@ -875,7 +1032,7 @@
       "description": "Request to query transaction status",
       "title": "QueryTransactionStatusRequest"
     },
-    "mpesaQueryTransactionStatusRequestIdentifierType": {
+    "b2cQueryTransactionStatusRequestIdentifierType": {
       "type": "string",
       "enum": [
         "QUERY_TRANSACTION_UNSPECIFIED",
@@ -885,7 +1042,7 @@
       ],
       "default": "QUERY_TRANSACTION_UNSPECIFIED"
     },
-    "mpesaReverseTransactionRequest": {
+    "b2cReverseTransactionRequest": {
       "type": "object",
       "properties": {
         "receiverType": {
@@ -918,7 +1075,7 @@
       "description": "Request to reverse an mpesa transaction",
       "title": "ReverseTransactionRequest"
     },
-    "mpesaTransferFundsRequest": {
+    "b2cTransferFundsRequest": {
       "type": "object",
       "properties": {
         "amount": {
@@ -954,6 +1111,58 @@
       },
       "description": "Request to transfer funds b2cs",
       "title": "TransferFundsRequest"
+    },
+    "mpesaProcessedState": {
+      "type": "string",
+      "enum": [
+        "PROCESS_STATE_UNSPECIFIED",
+        "PROCESSED",
+        "NOT_PROCESSED"
+      ],
+      "default": "PROCESS_STATE_UNSPECIFIED"
+    },
+    "mpesab2cListStatsFilter": {
+      "type": "object",
+      "properties": {
+        "organizationShortCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "txDates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Filter criteria for listing statistics",
+      "title": "ListStatsFilter"
+    },
+    "mpesab2cStatsResponse": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/b2cDailyStat"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      },
+      "description": "Response containing multiple statistics",
+      "title": "StatsResponse"
     },
     "protobufAny": {
       "type": "object",
