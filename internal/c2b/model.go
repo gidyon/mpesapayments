@@ -151,15 +151,17 @@ func (*Scopes) TableName() string {
 
 // QueueBulk contains exported data for bulk
 type QueueBulk struct {
-	ID          uint   `gorm:"primaryKey;type:varchar(15)"`
-	Originator  string `gorm:"index;type:varchar(25);not null;default:''"`
-	Destination string `gorm:"index;type:varchar(15);not null;default:''"`
-	Message     string `gorm:"index;type:varchar(25);not null;default:''"`
-	Keyword     string `gorm:"index;type:varchar(25)"`
-	SMSCID      string `gorm:"index;type:varchar(25)"`
-	Processed   bool   `gorm:"type:tinyint(1);not null;default:0"`
-	CreateTime  time.Time
-	DeletedAt   gorm.DeletedAt
+	ID           uint      `gorm:"primaryKey;type:varchar(15)"`
+	Originator   string    `gorm:"index;type:varchar(25);not null;default:''"`
+	OriginatorID string    `gorm:"index;type:varchar(20);not null;default:''"`
+	Destination  string    `gorm:"index;type:varchar(15);not null;default:''"`
+	Message      string    `gorm:"index;type:varchar(25);not null;default:''"`
+	Keyword      string    `gorm:"index;type:varchar(25)"`
+	SMSCID       string    `gorm:"index;type:varchar(25)"`
+	Processed    bool      `gorm:"type:tinyint(1);not null;default:0"`
+	CreateTime   time.Time `gorm:"autoCreateTime"`
+	UpdatedAt    time.Time `gorm:"autoCreateTime"`
+	DeletedAt    gorm.DeletedAt
 }
 
 // TableName ...
