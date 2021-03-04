@@ -119,6 +119,12 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "filter.onlyUnique",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -208,6 +214,100 @@
           },
           {
             "name": "generateStat",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/actions/export": {
+      "get": {
+        "summary": "Export phone numbers to a table",
+        "operationId": "LipaNaMPESA_ExportPhones",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "exportFilter.txDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "exportFilter.msisdns",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "exportFilter.accountsNumber",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "exportFilter.amounts",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "number",
+              "format": "float"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "exportFilter.processState",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PROCESS_STATE_UNSPECIFIED",
+              "PROCESSED",
+              "NOT_PROCESSED"
+            ],
+            "default": "PROCESS_STATE_UNSPECIFIED"
+          },
+          {
+            "name": "exportFilter.startTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "exportFilter.endTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "exportFilter.onlyUnique",
             "in": "query",
             "required": false,
             "type": "boolean"
@@ -568,6 +668,70 @@
         ]
       }
     },
+    "/api/mpestx/c2b/scopes/{userId}": {
+      "get": {
+        "summary": "Retrieves scopes for a user.",
+        "operationId": "LipaNaMPESA_GetScopes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaGetScopesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "userId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/scopes:add": {
+      "post": {
+        "summary": "Saves scopes for a user.",
+        "operationId": "LipaNaMPESA_SaveScopes",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaSaveScopesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/c2b/{paymentId}": {
       "get": {
         "summary": "Retrieves MPESA payment.",
@@ -688,6 +852,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaExistC2BPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b:exportPhones": {
+      "post": {
+        "summary": "Export phone numbers to a table",
+        "operationId": "LipaNaMPESA_ExportPhones2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaExportPhonesRequest"
             }
           }
         ],
@@ -820,6 +1017,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaGetTransactionsCountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b:listC2BPayments": {
+      "post": {
+        "summary": "Retrieves a collection of MPESA payments.",
+        "operationId": "LipaNaMPESA_ListC2BPayments2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListC2BPaymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaListC2BPaymentsRequest"
             }
           }
         ],
@@ -964,70 +1194,6 @@
       "post": {
         "summary": "Saves scopes for a user.",
         "operationId": "LipaNaMPESA_SaveScopes2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/mpesaSaveScopesRequest"
-            }
-          }
-        ],
-        "tags": [
-          "LipaNaMPESA"
-        ]
-      }
-    },
-    "/api/mpestx/scopes/{userId}": {
-      "get": {
-        "summary": "Retrieves scopes for a user.",
-        "operationId": "LipaNaMPESA_GetScopes",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/mpesaGetScopesResponse"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "userId",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "tags": [
-          "LipaNaMPESA"
-        ]
-      }
-    },
-    "/api/mpestx/scopes:add": {
-      "post": {
-        "summary": "Saves scopes for a user.",
-        "operationId": "LipaNaMPESA_SaveScopes",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -1223,6 +1389,16 @@
       "description": "Response indicating whether c2b payment exists",
       "title": "ExistC2BPaymentResponse"
     },
+    "mpesaExportPhonesRequest": {
+      "type": "object",
+      "properties": {
+        "exportFilter": {
+          "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
+        }
+      },
+      "description": "Request to export data",
+      "title": "ExportPhonesRequest"
+    },
     "mpesaGetRandomTransactionRequest": {
       "type": "object",
       "properties": {
@@ -1359,10 +1535,30 @@
         "endTimeSeconds": {
           "type": "string",
           "format": "int64"
+        },
+        "onlyUnique": {
+          "type": "boolean"
         }
       },
       "description": "Filter payload for querying payments",
       "title": "ListC2BPaymentsFilter"
+    },
+    "mpesaListC2BPaymentsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
+        }
+      },
+      "description": "Request to retrieve a collection of mpesa payments",
+      "title": "ListC2BPaymentsRequest"
     },
     "mpesaListC2BPaymentsResponse": {
       "type": "object",

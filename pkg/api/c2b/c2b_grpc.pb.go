@@ -46,6 +46,8 @@ type LipaNaMPESAClient interface {
 	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 	// Retrieves a collection of statistics
 	ListStats(ctx context.Context, in *ListStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
+	// Export phone numbers to a table
+	ExportPhones(ctx context.Context, in *ExportPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type lipaNaMPESAClient struct {
@@ -182,6 +184,15 @@ func (c *lipaNaMPESAClient) ListStats(ctx context.Context, in *ListStatsRequest,
 	return out, nil
 }
 
+func (c *lipaNaMPESAClient) ExportPhones(ctx context.Context, in *ExportPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ExportPhones", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LipaNaMPESAServer is the server API for LipaNaMPESA service.
 // All implementations must embed UnimplementedLipaNaMPESAServer
 // for forward compatibility
@@ -214,6 +225,8 @@ type LipaNaMPESAServer interface {
 	GetStats(context.Context, *GetStatsRequest) (*StatsResponse, error)
 	// Retrieves a collection of statistics
 	ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error)
+	// Export phone numbers to a table
+	ExportPhones(context.Context, *ExportPhonesRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedLipaNaMPESAServer()
 }
 
@@ -262,6 +275,9 @@ func (UnimplementedLipaNaMPESAServer) GetStats(context.Context, *GetStatsRequest
 }
 func (UnimplementedLipaNaMPESAServer) ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStats not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ExportPhones(context.Context, *ExportPhonesRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ExportPhones not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) mustEmbedUnimplementedLipaNaMPESAServer() {}
 
@@ -528,6 +544,24 @@ func _LipaNaMPESA_ListStats_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LipaNaMPESA_ExportPhones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ExportPhonesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ExportPhones(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ExportPhones",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ExportPhones(ctx, req.(*ExportPhonesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.LipaNaMPESA",
 	HandlerType: (*LipaNaMPESAServer)(nil),
@@ -587,6 +621,10 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListStats",
 			Handler:    _LipaNaMPESA_ListStats_Handler,
+		},
+		{
+			MethodName: "ExportPhones",
+			Handler:    _LipaNaMPESA_ExportPhones_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -112,6 +112,7 @@ message ListC2BPaymentsFilter {
 	ProcessedState process_state = 5;
 	int64 start_time_seconds = 6;
 	int64 end_time_seconds = 7;
+	bool only_unique = 8;
 }
 
 message ListC2BPaymentsRequest {
@@ -368,6 +369,17 @@ message ListStatsRequest {
 	ListStatsFilter filter = 3;
 }
 
+message ExportPhonesRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ExportPhonesRequest"
+			description: "Request to export data"
+		}
+	};
+
+	ListC2BPaymentsFilter export_filter = 1;
+}
+
 // Stores and retrieves LIPA NA MPESA payments 
 service LipaNaMPESA {
 	// Creates a record of mpesa payment.
@@ -400,13 +412,17 @@ service LipaNaMPESA {
 	rpc ListC2BPayments (ListC2BPaymentsRequest) returns (ListC2BPaymentsResponse) {
 		option (google.api.http) = {
 			get: "/api/mpestx/c2b"
+			additional_bindings {
+				post: "/api/mpestx/c2b:listC2BPayments"
+				body: "*"
+			}
 		};
 	};
 
 	// Saves scopes for a user.
 	rpc SaveScopes (SaveScopesRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/scopes:add"
+			post: "/api/mpestx/c2b/scopes:add"
 			body: "*"
 			additional_bindings {
 				post: "/api/mpestx/c2b:saveScopes"
@@ -418,7 +434,7 @@ service LipaNaMPESA {
 	// Retrieves scopes for a user.
 	rpc GetScopes (GetScopesRequest) returns (GetScopesResponse) {
 		option (google.api.http) = {
-			get: "/api/mpestx/scopes/{user_id}"
+			get: "/api/mpestx/c2b/scopes/{user_id}"
 			additional_bindings {
 				post: "/api/mpestx/c2b:getScopes"
 				body: "*"
@@ -515,6 +531,17 @@ service LipaNaMPESA {
 				body: "*"
 			}
 		};	
+	};
+
+	// Export phone numbers to a table
+	rpc ExportPhones (ExportPhonesRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/c2b/actions/export"
+			additional_bindings {
+				post: "/api/mpestx/c2b:exportPhones"
+				body: "*"
+			}
+		};
 	};
 }
 

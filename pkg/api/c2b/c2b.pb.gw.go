@@ -239,6 +239,40 @@ func local_request_LipaNaMPESA_ListC2BPayments_0(ctx context.Context, marshaler 
 
 }
 
+func request_LipaNaMPESA_ListC2BPayments_1(ctx context.Context, marshaler runtime.Marshaler, client LipaNaMPESAClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListC2BPaymentsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ListC2BPayments(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_LipaNaMPESA_ListC2BPayments_1(ctx context.Context, marshaler runtime.Marshaler, server LipaNaMPESAServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListC2BPaymentsRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ListC2BPayments(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 func request_LipaNaMPESA_SaveScopes_0(ctx context.Context, marshaler runtime.Marshaler, client LipaNaMPESAClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq SaveScopesRequest
 	var metadata runtime.ServerMetadata
@@ -947,6 +981,76 @@ func local_request_LipaNaMPESA_ListStats_1(ctx context.Context, marshaler runtim
 
 }
 
+var (
+	filter_LipaNaMPESA_ExportPhones_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+)
+
+func request_LipaNaMPESA_ExportPhones_0(ctx context.Context, marshaler runtime.Marshaler, client LipaNaMPESAClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExportPhonesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_LipaNaMPESA_ExportPhones_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ExportPhones(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_LipaNaMPESA_ExportPhones_0(ctx context.Context, marshaler runtime.Marshaler, server LipaNaMPESAServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExportPhonesRequest
+	var metadata runtime.ServerMetadata
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_LipaNaMPESA_ExportPhones_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ExportPhones(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
+func request_LipaNaMPESA_ExportPhones_1(ctx context.Context, marshaler runtime.Marshaler, client LipaNaMPESAClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExportPhonesRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := client.ExportPhones(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	return msg, metadata, err
+
+}
+
+func local_request_LipaNaMPESA_ExportPhones_1(ctx context.Context, marshaler runtime.Marshaler, server LipaNaMPESAServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ExportPhonesRequest
+	var metadata runtime.ServerMetadata
+
+	newReader, berr := utilities.IOReaderFactory(req.Body)
+	if berr != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", berr)
+	}
+	if err := marshaler.NewDecoder(newReader()).Decode(&protoReq); err != nil && err != io.EOF {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+
+	msg, err := server.ExportPhones(ctx, &protoReq)
+	return msg, metadata, err
+
+}
+
 // RegisterLipaNaMPESAHandlerServer registers the http handlers for service LipaNaMPESA to "mux".
 // UnaryRPC     :call LipaNaMPESAServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
@@ -1065,6 +1169,29 @@ func RegisterLipaNaMPESAHandlerServer(ctx context.Context, mux *runtime.ServeMux
 		}
 
 		forward_LipaNaMPESA_ListC2BPayments_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_LipaNaMPESA_ListC2BPayments_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ListC2BPayments")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_LipaNaMPESA_ListC2BPayments_1(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ListC2BPayments_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -1528,6 +1655,52 @@ func RegisterLipaNaMPESAHandlerServer(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("GET", pattern_LipaNaMPESA_ExportPhones_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ExportPhones")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_LipaNaMPESA_ExportPhones_0(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ExportPhones_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_LipaNaMPESA_ExportPhones_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		var stream runtime.ServerTransportStream
+		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ExportPhones")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := local_request_LipaNaMPESA_ExportPhones_1(rctx, inboundMarshaler, server, req, pathParams)
+		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ExportPhones_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -1666,6 +1839,26 @@ func RegisterLipaNaMPESAHandlerClient(ctx context.Context, mux *runtime.ServeMux
 		}
 
 		forward_LipaNaMPESA_ListC2BPayments_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_LipaNaMPESA_ListC2BPayments_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ListC2BPayments")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_LipaNaMPESA_ListC2BPayments_1(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ListC2BPayments_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -2069,6 +2262,46 @@ func RegisterLipaNaMPESAHandlerClient(ctx context.Context, mux *runtime.ServeMux
 
 	})
 
+	mux.Handle("GET", pattern_LipaNaMPESA_ExportPhones_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ExportPhones")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_LipaNaMPESA_ExportPhones_0(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ExportPhones_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
+	mux.Handle("POST", pattern_LipaNaMPESA_ExportPhones_1, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+		ctx, cancel := context.WithCancel(req.Context())
+		defer cancel()
+		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.LipaNaMPESA/ExportPhones")
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+		resp, md, err := request_LipaNaMPESA_ExportPhones_1(rctx, inboundMarshaler, client, req, pathParams)
+		ctx = runtime.NewServerMetadataContext(ctx, md)
+		if err != nil {
+			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
+			return
+		}
+
+		forward_LipaNaMPESA_ExportPhones_1(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+
+	})
+
 	return nil
 }
 
@@ -2083,11 +2316,13 @@ var (
 
 	pattern_LipaNaMPESA_ListC2BPayments_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, ""))
 
-	pattern_LipaNaMPESA_SaveScopes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "scopes"}, "add"))
+	pattern_LipaNaMPESA_ListC2BPayments_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, "listC2BPayments"))
+
+	pattern_LipaNaMPESA_SaveScopes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"api", "mpestx", "c2b", "scopes"}, "add"))
 
 	pattern_LipaNaMPESA_SaveScopes_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, "saveScopes"))
 
-	pattern_LipaNaMPESA_GetScopes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 1, 0, 4, 1, 5, 3}, []string{"api", "mpestx", "scopes", "user_id"}, ""))
+	pattern_LipaNaMPESA_GetScopes_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"api", "mpestx", "c2b", "scopes", "user_id"}, ""))
 
 	pattern_LipaNaMPESA_GetScopes_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, "getScopes"))
 
@@ -2122,6 +2357,10 @@ var (
 	pattern_LipaNaMPESA_ListStats_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "mpestx", "c2b", "actions", "list-stats"}, ""))
 
 	pattern_LipaNaMPESA_ListStats_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, "listStats"))
+
+	pattern_LipaNaMPESA_ExportPhones_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 2, 4}, []string{"api", "mpestx", "c2b", "actions", "export"}, ""))
+
+	pattern_LipaNaMPESA_ExportPhones_1 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"api", "mpestx", "c2b"}, "exportPhones"))
 )
 
 var (
@@ -2134,6 +2373,8 @@ var (
 	forward_LipaNaMPESA_ExistC2BPayment_1 = runtime.ForwardResponseMessage
 
 	forward_LipaNaMPESA_ListC2BPayments_0 = runtime.ForwardResponseMessage
+
+	forward_LipaNaMPESA_ListC2BPayments_1 = runtime.ForwardResponseMessage
 
 	forward_LipaNaMPESA_SaveScopes_0 = runtime.ForwardResponseMessage
 
@@ -2174,4 +2415,8 @@ var (
 	forward_LipaNaMPESA_ListStats_0 = runtime.ForwardResponseMessage
 
 	forward_LipaNaMPESA_ListStats_1 = runtime.ForwardResponseMessage
+
+	forward_LipaNaMPESA_ExportPhones_0 = runtime.ForwardResponseMessage
+
+	forward_LipaNaMPESA_ExportPhones_1 = runtime.ForwardResponseMessage
 )
