@@ -311,6 +311,12 @@
             "in": "query",
             "required": false,
             "type": "boolean"
+          },
+          {
+            "name": "comment",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -1394,6 +1400,9 @@
       "properties": {
         "exportFilter": {
           "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
+        },
+        "comment": {
+          "type": "string"
         }
       },
       "description": "Request to export data",

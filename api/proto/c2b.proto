@@ -378,6 +378,7 @@ message ExportPhonesRequest {
 	};
 
 	ListC2BPaymentsFilter export_filter = 1;
+	string comment = 2;
 }
 
 // Stores and retrieves LIPA NA MPESA payments 
