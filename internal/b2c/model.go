@@ -26,8 +26,8 @@ type Payment struct {
 	ResultCode               string    `gorm:"type:varchar(2)"`
 	ResultDescription        string    `gorm:"type:varchar(100)"`
 	TransactionTime          time.Time `gorm:"autoCreateTime"`
-	CreateAt                 time.Time `gorm:"autoCreateTime"`
-	Amount                   float32   `gorm:"type:float(10)"`
+	CreateAt                 time.Time `gorm:"primaryKey;autoCreateTime;->;<-:create;not null"`
+	Amount                   float32   `gorm:"index;type:float(10)"`
 	WorkingAccountFunds      float32   `gorm:"type:float(10)"`
 	UtilityAccountFunds      float32   `gorm:"type:float(10)"`
 	MpesaCharges             float32   `gorm:"type:float(10)"`
