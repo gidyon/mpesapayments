@@ -39,10 +39,9 @@ type Payment struct {
 
 // TableName is table name for model
 func (*Payment) TableName() string {
-	// Get table prefix
-	prefix := os.Getenv("TABLE_PREFIX")
-	if prefix != "" {
-		return fmt.Sprintf("%s_%s", prefix, B2CTable)
+	table := os.Getenv("B2C_TRANSACTIONS_TABLE")
+	if table != "" {
+		return table
 	}
 	return B2CTable
 }
@@ -121,9 +120,9 @@ type DailyStat struct {
 // TableName ...
 func (*DailyStat) TableName() string {
 	// Get table prefix
-	prefix := os.Getenv("TABLE_PREFIX")
-	if prefix != "" {
-		return fmt.Sprintf("%s_%s", prefix, statsTable)
+	table := os.Getenv("B2C_STATS_TABLE")
+	if table != "" {
+		return table
 	}
 	return statsTable
 }
