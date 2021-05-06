@@ -117,7 +117,10 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Save only if the transaction was successful
 	if !stkPayloadPB.Succeeded {
-		w.Write([]byte("stk transaction not successful"))
+		_, err = w.Write([]byte("stk transaction not successful"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		gw.Logger.Warningf("stk not successful: %s", stkPayloadPB.ResultDesc)
 		return
 	}
@@ -144,5 +147,8 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("mpesa stk processed"))
+	_, err = w.Write([]byte("mpesa stk processed"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

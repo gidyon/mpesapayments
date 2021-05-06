@@ -21,7 +21,6 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
 	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
-	"github.com/gorilla/securecookie"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -34,12 +33,6 @@ import (
 
 func main() {
 	ctx := context.Background()
-
-	apiHashKey, err := encryption.ParseKey([]byte(os.Getenv("API_HASH_KEY")))
-	errs.Panic(err)
-
-	apiBlockKey, err := encryption.ParseKey([]byte(os.Getenv("API_BLOCK_KEY")))
-	errs.Panic(err)
 
 	// config
 	cfg, err := config.New(config.FromFile)
@@ -76,14 +69,14 @@ func main() {
 	errs.Panic(err)
 
 	// Generate jwt token
-	token, err := authAPI.GenToken(context.Background(), &auth.Payload{}, time.Now().Add(time.Hour*24))
+	token, err := authAPI.GenToken(context.Background(), &auth.Payload{Names: "TEST", ID: "0"}, time.Now().Add(time.Hour*24))
 	if err == nil {
 		app.Logger().Infof("test jwt is [%s]", token)
 	}
 
 	// Default jwt
 	app.AddEndpointFunc("/api/mpestx/jwt/default", func(w http.ResponseWriter, r *http.Request) {
-		token, err := authAPI.GenToken(ctx, &auth.Payload{}, time.Now().Add(time.Hour*24*365))
+		token, err := authAPI.GenToken(ctx, &auth.Payload{Names: "TEST", ID: "0"}, time.Now().Add(time.Hour*24*365))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -114,16 +107,6 @@ func main() {
 		Type:    healthcheck.ProbeLiveNess,
 	}))
 
-	sc := securecookie.New(apiHashKey, apiBlockKey)
-
-	// Cookie based authentication
-	app.AddHTTPMiddlewares(httpmiddleware.CookieToJWTMiddleware(&httpmiddleware.CookieJWTOptions{
-		SecureCookie: sc,
-		AuthHeader:   auth.Header(),
-		AuthScheme:   auth.Scheme(),
-		CookieName:   auth.JWTCookie(),
-	}))
-
 	app.AddHTTPMiddlewares(httpmiddleware.SupportCORS)
 
 	app.AddServeMuxOptions(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
@@ -138,15 +121,15 @@ func main() {
 		errs.Panic(err)
 
 		var (
-			disableSTKAPI   = os.Getenv("DISABLE_STK_SERVICE") != ""
-			disableMpesaAPI = os.Getenv("DISABLE_MPESA_SERVICE") != ""
-			disableB2CAPI   = os.Getenv("DISABLE_B2C_SERVICE") != ""
-			mpesaAPI        c2b.LipaNaMPESAServer
-			stkAPI          stk.StkPushAPIServer
-			b2cAPI          b2c.B2CAPIServer
+			disableSTKAPI = os.Getenv("DISABLE_STK_SERVICE") != ""
+			disableC2BAPI = os.Getenv("DISABLE_MPESA_SERVICE") != ""
+			disableB2CAPI = os.Getenv("DISABLE_B2C_SERVICE") != ""
+			mpesaAPI      c2b.LipaNaMPESAServer
+			stkAPI        stk.StkPushAPIServer
+			b2cAPI        b2c.B2CAPIServer
 		)
 
-		if !disableMpesaAPI {
+		if !disableC2BAPI {
 			opt := mpesa.Options{
 				PublishChannel:   os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
@@ -188,7 +171,7 @@ func main() {
 				OptionsSTK:          stkOption,
 				PublishChannel:      os.Getenv("PUBLISH_CHANNEL_STK"),
 				RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
-				DisableMpesaService: disableMpesaAPI,
+				DisableMpesaService: disableC2BAPI,
 			}
 
 			// STK Push API
@@ -230,7 +213,7 @@ func main() {
 			errs.Panic(err)
 
 			b2c.RegisterB2CAPIServer(app.GRPCServer(), b2cAPI)
-			b2c.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn())
+			errs.Panic(b2c.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		b2cTxCost, _ := strconv.ParseFloat(os.Getenv("B2C_TRANSACTION_CHARGES"), 32)
@@ -244,7 +227,7 @@ func main() {
 			MpesaAPI:              mpesaAPI,
 			StkAPI:                stkAPI,
 			B2CAPI:                b2cAPI,
-			DisableMpesaService:   disableMpesaAPI,
+			DisableMpesaService:   disableC2BAPI,
 			DisableSTKService:     disableSTKAPI,
 			DisableB2CService:     disableB2CAPI,
 			RedisKeyPrefix:        os.Getenv("REDIS_KEY_PREFIX"),
@@ -252,7 +235,7 @@ func main() {
 			B2CTransactionCharges: float32(b2cTxCost),
 		}
 
-		if !disableMpesaAPI {
+		if !disableC2BAPI {
 			// MPESA Paybill confirmation gateway
 			paybillGW, err := NewPayBillGateway(ctx, optGateway)
 			errs.Panic(err)
@@ -261,11 +244,24 @@ func main() {
 			validationGw, err := NewValidationAPI(ctx, optGateway)
 			errs.Panic(err)
 
-			validationPath := firstVal(os.Getenv("VALIDATION_URL_PATH"), "/api/mpestx/validation")
-			confirmationPath := firstVal(os.Getenv("CONFIRMATION_URL_PATH"), "/api/mpestx/confirmation")
+			validationPath := firstVal(os.Getenv("VALIDATION_URL_PATH"), "/api/mpestx/c2b/incoming/validation")
+			confirmationPath := firstVal(os.Getenv("CONFIRMATION_URL_PATH"), "/api/mpestx/c2b/incoming/confirmation")
 
 			app.AddEndpoint(validationPath, validationGw)
 			app.AddEndpoint(confirmationPath, paybillGW)
+
+			// Legacy endpoints
+			// /api/mpestx/confirmation/
+			app.AddEndpoint("/api/mpestx/confirmation/", paybillGW)
+
+			// /api/mpestx/validation/
+			app.AddEndpoint("/api/mpestx/validation/", validationGw)
+
+			// /api/mpestx/confirmation/
+			app.AddEndpoint("/api/mpestx/confirmation", paybillGW)
+
+			// /api/mpestx/validation/
+			app.AddEndpoint("/api/mpestx/validation", validationGw)
 
 			app.Logger().Infof("Mpesa validation path: %v", validationPath)
 			app.Logger().Infof("Mpesa confirmation path: %v", confirmationPath)
@@ -276,7 +272,7 @@ func main() {
 			stkGateway, err := NewSTKGateway(ctx, optGateway)
 			errs.Panic(err)
 
-			stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/incoming/stkpush")
+			stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/stkpush/incoming")
 
 			app.AddEndpoint(stkCallback, stkGateway)
 
@@ -288,12 +284,15 @@ func main() {
 			b2cGateway, err := NewB2CGateway(ctx, optGateway)
 			errs.Panic(err)
 
-			b2cCallback := firstVal(os.Getenv("B2C_CALLBACK_URL_PATH"), "/api/mpestx/incoming/b2c")
+			b2cCallback := firstVal(os.Getenv("B2C_CALLBACK_URL_PATH"), "/api/mpestx/b2c/incoming")
 
 			app.AddEndpoint(b2cCallback, b2cGateway)
 
 			app.Logger().Infof("B2C callback path: %v", b2cCallback)
 		}
+
+		// Endpoint for uploading blast file
+		app.AddEndpointFunc("/api/mpestx/uploads/blast", uploadHandler(optGateway))
 
 		return nil
 	})

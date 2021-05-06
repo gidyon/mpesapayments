@@ -195,9 +195,9 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 		Amount:                   float32(transaction.TransactionAmount()),
 		WorkingAccountFunds:      float32(transaction.B2CWorkingAccountAvailableFunds()),
 		UtilityAccountFunds:      float32(transaction.B2CUtilityAccountAvailableFunds()),
-		ChargesPaidFunds:         float32(transaction.B2CChargesPaidAccountAvailableFunds()),
+		MpesaCharges:             float32(transaction.B2CChargesPaidAccountAvailableFunds()),
 		RecipientRegistered:      transaction.B2CRecipientIsRegisteredCustomer(),
-		TransactionCharge:        gw.B2CTransactionCharges,
+		OnfonCharges:             gw.B2CTransactionCharges,
 		Succeeded:                transaction.Succeeded(),
 	}
 
@@ -227,7 +227,7 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if initiator.DropTransaction == false {
+	if !initiator.DropTransaction {
 		// We save the transaction
 		_, err = gw.b2cAPI.CreateB2CPayment(gw.ctxExt, &b2c.CreateB2CPaymentRequest{
 			Payment: transactionPB,
@@ -246,7 +246,10 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Write([]byte("mpesa b2c transaction processed"))
+	_, err = w.Write([]byte("mpesa b2c transaction processed"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
@@ -343,7 +346,7 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 		Amount:                   float32(transaction.Amount()),
 		WorkingAccountFunds:      float32(transaction.B2CUtilityAccountAvailableFundsV2()),
 		RecipientRegistered:      transaction.B2CRecipientIsRegisteredCustomerV2(),
-		TransactionCharge:        gw.B2CTransactionCharges,
+		OnfonCharges:             gw.B2CTransactionCharges,
 		Succeeded:                transaction.Succeeded(),
 	}
 
@@ -373,7 +376,7 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if initiator.DropTransaction == false {
+	if !initiator.DropTransaction {
 		// We save the transaction
 		_, err = gw.b2cAPI.CreateB2CPayment(gw.ctxExt, &b2c.CreateB2CPaymentRequest{
 			Payment: transactionPB,
@@ -392,5 +395,8 @@ func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	w.Write([]byte("mpesa b2c transaction processed"))
+	_, err = w.Write([]byte("mpesa b2c transaction processed"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }

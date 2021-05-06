@@ -55,15 +55,6 @@ func NewPayBillGateway(ctx context.Context, opt *Options) (http.Handler, error) 
 	return gw, nil
 }
 
-func (gw *gateway) printToken() {
-	token, err := gw.AuthAPI.GenToken(context.Background(), &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(time.Hour*24))
-	if err != nil {
-		gw.Logger.Errorf("failed to generate auth token: %v", err)
-		return
-	}
-	gw.Logger.Infof("jwt is %s", token)
-}
-
 func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if gw.DisableMpesaService {
 		http.Error(w, "receiving LNM transactions disabled", http.StatusServiceUnavailable)
@@ -176,7 +167,10 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte("mpesa transaction processed"))
+	_, err = w.Write([]byte("mpesa transaction processed"))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
 
 func getTransactionTime(transactionTimeStr string) (time.Time, error) {
