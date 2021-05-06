@@ -42,7 +42,7 @@ func (b2cAPI *b2cAPIServer) updateAccessToken() error {
 		return fmt.Errorf("request failed: %v", err)
 	}
 
-	resTo := make(map[string]interface{}, 0)
+	resTo := make(map[string]interface{})
 	err = json.NewDecoder(res.Body).Decode(&resTo)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to json decode response: %v", err)

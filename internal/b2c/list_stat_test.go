@@ -27,7 +27,7 @@ var _ = Describe("Listing transaction stats @liststat", func() {
 	Describe("Listing for stats for mpesa transactions with malformed request", func() {
 		It("should fail when the request", func() {
 			listReq = nil
-			listRes, err := B2CAPI.ListDailyStats(ctx, *&listReq)
+			listRes, err := B2CAPI.ListDailyStats(ctx, listReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(listRes).Should(BeNil())

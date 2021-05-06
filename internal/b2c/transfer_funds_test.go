@@ -6,9 +6,9 @@ import (
 
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/golang/protobuf/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 var _ = Describe("Transfering funds @transferfunds", func() {

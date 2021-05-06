@@ -9,8 +9,6 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
 )
 
-const maxCap = 10000
-
 func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 	ticker := time.NewTicker(b2cAPI.insertTimeOut)
 	defer ticker.Stop()

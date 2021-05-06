@@ -43,7 +43,7 @@ const (
 func startDB() (*gorm.DB, error) {
 	return conn.OpenGormConn(&conn.DBOptions{
 		Dialect:  "mysql",
-		Address:  "localhost:3306",
+		Address:  dbAddress,
 		User:     "root",
 		Password: "hakty11",
 		Schema:   schema,
@@ -116,9 +116,6 @@ var _ = BeforeSuite(func() {
 	var ok bool
 	B2CAPIServer, ok = B2CAPI.(*b2cAPIServer)
 	Expect(ok).Should(BeTrue())
-
-	_, err = NewB2CAPI(nil, opt)
-	Expect(err).Should(HaveOccurred())
 
 	_, err = NewB2CAPI(ctx, nil)
 	Expect(err).Should(HaveOccurred())

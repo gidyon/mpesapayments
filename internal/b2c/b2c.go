@@ -19,25 +19,20 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/go-redis/redis/v8"
-	"github.com/golang/protobuf/proto"
 	"github.com/google/uuid"
 	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
 const (
 	// FailedTxList is redis list for failed mpesa transactions
-	FailedTxList            = "mpesa:b2c:failedtx:list"
-	failedTxListv2          = "mpesa:b2c:failedtx:list"
-	unprocessedTxList       = "mpesa:b2c:failedtx:list:failed"
-	pendingConfirmationSet  = "mpesa:b2c:pendingtx:set"
-	pendingConfirmationList = "mpesa:b2c:pendingtx:list"
-	publishChannel          = "mpesa:b2c:pubsub"
-	bulkInsertSize          = 1000
+	FailedTxList   = "mpesa:b2c:failedtx:list"
+	bulkInsertSize = 1000
 
 	// InitiatorID ...
 	InitiatorID = "initiator_id"
@@ -479,7 +474,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		return nil, errs.WrapError(err)
 	}
 
-	if apiRes.Succeeded() == false {
+	if !apiRes.Succeeded() {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
@@ -614,7 +609,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		return nil, errs.WrapError(err)
 	}
 
-	if apiRes.Succeeded() == false {
+	if !apiRes.Succeeded() {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
@@ -716,7 +711,7 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.WrapError(err)
 	}
 
-	if apiRes.Succeeded() == false {
+	if !apiRes.Succeeded() {
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
@@ -855,7 +850,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 
 	pageSize := listReq.GetPageSize()
 	if pageSize > defaultPageSize {
-		if b2cAPI.AuthAPI.IsAdmin(payload.Group) == false {
+		if !b2cAPI.AuthAPI.IsAdmin(payload.Group) {
 			pageSize = defaultPageSize
 		}
 	} else if pageSize == 0 {
@@ -890,13 +885,13 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		endTimestamp := listReq.Filter.GetEndTimestamp()
 
 		if endTimestamp > startTimestamp {
-			db = db.Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp)
+			db = db.Where("transaction_time BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
 		} else if listReq.Filter.TxDate != "" {
 			t, err := getTime(listReq.Filter.TxDate)
 			if err != nil {
 				return nil, err
 			}
-			db = db.Where("transaction_time BETWEEN ? AND ?", t.Unix(), t.Add(time.Hour*24).Unix())
+			db = db.Where("transaction_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
 		}
 
 		if listReq.Filter.InitiatorId != "" {
