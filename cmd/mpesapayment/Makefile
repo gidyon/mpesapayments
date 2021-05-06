@@ -2,8 +2,6 @@ PROJECT_ROOT := /Users/jessegitaka/go/src/bitbucket.org/gideonkamau/ussd-gateway
 SERVICE := mpesapayment
 
 JWT_KEY := hDI0eBv11TbuboZ01qpnOuYRYLh6gQUOQhC9Mfagzv9l3gJso7CalTt7wGzJCVwbeDIfOX6fwS79pnisW7udhQ
-API_BLOCK_KEY := 9AI8o4ta02gdqWsVhYe0r276z7my6yDwY78rCsrcofT7pCNq4WwnRoW93hn8WFJM0HheZHDYPc4tD+tUXVNEGw
-API_HASH_KEY := 73H/I3+27Qp3ZETqMzbYa/EGT826Zxx2821cmHUl7fTX/DmkIWPJatczkxN3p8RHbdOGWT/HDRAf7gqhZcZOow
 
 image := gidyon/$(SERVICE)
 context := .
@@ -28,8 +26,6 @@ run:
 	DISABLE_STK_SERVICE=true
 	DISABLE_MPESA_SERVICE=true
 	JWT_SIGNING_KEY=$(JWT_KEY) \
-	API_BLOCK_KEY=$(API_BLOCK_KEY) \
-	API_HASH_KEY=$(API_HASH_KEY) \
 	QUEUE_TIMEOUT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
 	RESULT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
 	QUERY_BALANCE_URL=https://api.safaricom.co.ke/mpesa/accountbalance/v1/query \
@@ -60,7 +56,7 @@ gotest:
 	@cd $(PROJECT_ROOT)/internal/mpesapayment && ginkgo -cover
 	
 compile:
-	@GOOS=linux CGO_ENABLED=0 go build -a -installsuffix cgo -v -o service .
+	@GOOS=linux CGO_ENABLED=0 go build -tags netgo -installsuffix netgo -v -o service .
 
 docker_build:
 	@docker build -t $(image) .
