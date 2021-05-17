@@ -84,6 +84,16 @@
             "collectionFormat": "multi"
           },
           {
+            "name": "filter.shortCodes",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
             "name": "filter.amounts",
             "in": "query",
             "required": false,
@@ -163,7 +173,7 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/archive-transactions": {
+    "/api/mpestx/c2b/actions/archiveTransactions": {
       "get": {
         "summary": "Archives transactions in a separate table`",
         "operationId": "LipaNaMPESA_ArchiveTransactions",
@@ -224,10 +234,10 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/export": {
+    "/api/mpestx/c2b/actions/blastPhones": {
       "get": {
-        "summary": "Export phone numbers to a table",
-        "operationId": "LipaNaMPESA_ExportPhones",
+        "summary": "Sends SMS to filtered msisdn",
+        "operationId": "LipaNaMPESA_BlastPhones",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -261,6 +271,16 @@
           },
           {
             "name": "exportFilter.accountsNumber",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "exportFilter.shortCodes",
             "in": "query",
             "required": false,
             "type": "array",
@@ -317,6 +337,18 @@
             "in": "query",
             "required": false,
             "type": "string"
+          },
+          {
+            "name": "originator",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "originatorId",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -324,7 +356,70 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/get-random-transaction": {
+    "/api/mpestx/c2b/actions/blastPhonesFromFile": {
+      "get": {
+        "summary": "Sends SMS using contents of file",
+        "operationId": "LipaNaMPESA_BlastPhonesFromFile",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "comment",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "originator",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "originatorId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "fileId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "startIndex",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "endIndex",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/actions/getRandomTransactionn": {
       "get": {
         "summary": "Retrives a random transaction using RM=NG algorithm",
         "operationId": "LipaNaMPESA_GetRandomTransaction",
@@ -380,7 +475,7 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/get-stats": {
+    "/api/mpestx/c2b/actions/getStats": {
       "get": {
         "summary": "Get statistics for transactions",
         "operationId": "LipaNaMPESA_GetStats",
@@ -427,7 +522,7 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/get-transactions-count": {
+    "/api/mpestx/c2b/actions/getTransactionsCount": {
       "get": {
         "summary": "Get transactions count summary",
         "operationId": "LipaNaMPESA_GetTransactionsCount",
@@ -448,6 +543,16 @@
         "parameters": [
           {
             "name": "accountsNumber",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "shortCodes",
             "in": "query",
             "required": false,
             "type": "array",
@@ -497,7 +602,83 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/list-stats": {
+    "/api/mpestx/c2b/actions/listBlastFiles": {
+      "get": {
+        "summary": "Retrieves list of blas",
+        "operationId": "LipaNaMPESA_ListBlastFiles",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/actions/listBlastReports": {
+      "get": {
+        "summary": "Fetches a collection of export reports",
+        "operationId": "LipaNaMPESA_ListBlastReports",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastReportsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/actions/listStats": {
       "get": {
         "summary": "Retrieves a collection of statistics",
         "operationId": "LipaNaMPESA_ListStats",
@@ -575,7 +756,7 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/process": {
+    "/api/mpestx/c2b/actions/processC2BPayment": {
       "post": {
         "summary": "Updates Mpesa transaction processed state to either true or false.",
         "operationId": "LipaNaMPESA_ProcessC2BPayment",
@@ -608,40 +789,7 @@
         ]
       }
     },
-    "/api/mpestx/c2b/actions/publish": {
-      "post": {
-        "summary": "Publishes Mpesa statement for listeners to process. Safe to be called many times.",
-        "operationId": "LipaNaMPESA_PublishC2BPayment",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/mpesaPublishC2BPaymentRequest"
-            }
-          }
-        ],
-        "tags": [
-          "LipaNaMPESA"
-        ]
-      }
-    },
-    "/api/mpestx/c2b/actions/publishall": {
+    "/api/mpestx/c2b/actions/publishAllC2BPayments": {
       "post": {
         "summary": "Publish all failed Mpesa transaction for listeners to process.",
         "operationId": "LipaNaMPESA_PublishAllC2BPayments",
@@ -666,6 +814,39 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaPublishAllC2BPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b/actions/publishC2BPayment": {
+      "post": {
+        "summary": "Publishes Mpesa statement for listeners to process. Safe to be called many times.",
+        "operationId": "LipaNaMPESA_PublishC2BPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaPublishC2BPaymentRequest"
             }
           }
         ],
@@ -833,6 +1014,72 @@
         ]
       }
     },
+    "/api/mpestx/c2b:blastPhones": {
+      "post": {
+        "summary": "Sends SMS to filtered msisdn",
+        "operationId": "LipaNaMPESA_BlastPhones2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaBlastPhonesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b:blastPhonesFromFile": {
+      "post": {
+        "summary": "Sends SMS using contents of file",
+        "operationId": "LipaNaMPESA_BlastPhonesFromFile2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaBlastPhonesFromFileRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
     "/api/mpestx/c2b:existC2BPayment": {
       "post": {
         "summary": "Checks whether c2b payment exists",
@@ -858,39 +1105,6 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaExistC2BPaymentRequest"
-            }
-          }
-        ],
-        "tags": [
-          "LipaNaMPESA"
-        ]
-      }
-    },
-    "/api/mpestx/c2b:exportPhones": {
-      "post": {
-        "summary": "Export phone numbers to a table",
-        "operationId": "LipaNaMPESA_ExportPhones2",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/mpesaExportPhonesRequest"
             }
           }
         ],
@@ -1023,6 +1237,72 @@
             "required": true,
             "schema": {
               "$ref": "#/definitions/mpesaGetTransactionsCountRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b:listBlastFiles": {
+      "post": {
+        "summary": "Retrieves list of blas",
+        "operationId": "LipaNaMPESA_ListBlastFiles2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastFilesResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastFilesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "LipaNaMPESA"
+        ]
+      }
+    },
+    "/api/mpestx/c2b:listBlastReports": {
+      "post": {
+        "summary": "Fetches a collection of export reports",
+        "operationId": "LipaNaMPESA_ListBlastReports2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastReportsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/mpesaListBlastReportsRequest"
             }
           }
         ],
@@ -1294,6 +1574,118 @@
       "description": "Request to archive all transactions in active table to a separate table",
       "title": "ArchiveTransactionsRequest"
     },
+    "mpesaBlastFile": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string"
+        },
+        "referenceName": {
+          "type": "string"
+        },
+        "fileName": {
+          "type": "string"
+        },
+        "uploaderNames": {
+          "type": "string"
+        },
+        "uploadTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "totalMsisdn": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "File metadata for file uploaded containing phone numbers",
+      "title": "BlastFile"
+    },
+    "mpesaBlastPhonesFromFileRequest": {
+      "type": "object",
+      "properties": {
+        "comment": {
+          "type": "string"
+        },
+        "originator": {
+          "type": "string"
+        },
+        "originatorId": {
+          "type": "string"
+        },
+        "fileId": {
+          "type": "string"
+        },
+        "startIndex": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "endIndex": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Request to blast using uploaded file",
+      "title": "BlastPhonesFromFileRequest"
+    },
+    "mpesaBlastPhonesRequest": {
+      "type": "object",
+      "properties": {
+        "exportFilter": {
+          "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "originator": {
+          "type": "string"
+        },
+        "originatorId": {
+          "type": "string"
+        }
+      },
+      "description": "Request to send out blast SMS message",
+      "title": "BlastPhonesRequest"
+    },
+    "mpesaBlastReport": {
+      "type": "object",
+      "properties": {
+        "reportId": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "initiator": {
+          "type": "string"
+        },
+        "originator": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "blastFile": {
+          "type": "string"
+        },
+        "blastFileId": {
+          "type": "string"
+        },
+        "totalExported": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "createDateSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "exportFilter": {
+          "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
+        }
+      },
+      "description": "Blast statistic",
+      "title": "BlastReport"
+    },
     "mpesaC2BPayment": {
       "type": "object",
       "properties": {
@@ -1395,19 +1787,6 @@
       "description": "Response indicating whether c2b payment exists",
       "title": "ExistC2BPaymentResponse"
     },
-    "mpesaExportPhonesRequest": {
-      "type": "object",
-      "properties": {
-        "exportFilter": {
-          "$ref": "#/definitions/mpesaListC2BPaymentsFilter"
-        },
-        "comment": {
-          "type": "string"
-        }
-      },
-      "description": "Request to export data",
-      "title": "ExportPhonesRequest"
-    },
     "mpesaGetRandomTransactionRequest": {
       "type": "object",
       "properties": {
@@ -1484,6 +1863,12 @@
             "type": "string"
           }
         },
+        "shortCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "msisdns": {
           "type": "array",
           "items": {
@@ -1509,6 +1894,62 @@
       "description": "Request to retrieve transactions information",
       "title": "GetTransactionsCountRequest"
     },
+    "mpesaListBlastFilesRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        }
+      }
+    },
+    "mpesaListBlastFilesResponse": {
+      "type": "object",
+      "properties": {
+        "blastFiles": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mpesaBlastFile"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      }
+    },
+    "mpesaListBlastReportsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        }
+      },
+      "description": "Request to get export report",
+      "title": "ListBlastReportsRequest"
+    },
+    "mpesaListBlastReportsResponse": {
+      "type": "object",
+      "properties": {
+        "blastReports": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/mpesaBlastReport"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      },
+      "description": "Response containing export data",
+      "title": "ListBlastReportsResponse"
+    },
     "mpesaListC2BPaymentsFilter": {
       "type": "object",
       "properties": {
@@ -1522,6 +1963,12 @@
           }
         },
         "accountsNumber": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "shortCodes": {
           "type": "array",
           "items": {
             "type": "string"

@@ -108,11 +108,12 @@ message ListC2BPaymentsFilter {
 	string tx_date = 1;
 	repeated string msisdns = 2;
 	repeated string accounts_number = 3;
-	repeated float amounts = 4;
-	ProcessedState process_state = 5;
-	int64 start_time_seconds = 6;
-	int64 end_time_seconds = 7;
-	bool only_unique = 8;
+	repeated string short_codes = 4;
+	repeated float amounts = 5;
+	ProcessedState process_state = 6;
+	int64 start_time_seconds = 7;
+	int64 end_time_seconds = 8;
+	bool only_unique = 9;
 }
 
 message ListC2BPaymentsRequest {
@@ -250,10 +251,11 @@ message GetTransactionsCountRequest {
 	};
 
 	repeated string accounts_number = 1;
-	repeated string msisdns = 2;
-	repeated float amounts = 3 [(google.api.field_behavior) = REQUIRED];
-	int64 start_time_seconds = 4;
-	int64 end_time_seconds = 5;
+	repeated string short_codes = 2;
+	repeated string msisdns = 3;
+	repeated float amounts = 4 [(google.api.field_behavior) = REQUIRED];
+	int64 start_time_seconds = 5;
+	int64 end_time_seconds = 6;
 }
 
 message TransactionsSummary {
@@ -369,16 +371,105 @@ message ListStatsRequest {
 	ListStatsFilter filter = 3;
 }
 
-message ExportPhonesRequest {
+message BlastPhonesRequest {
 	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
 		json_schema: {
-			title: "ExportPhonesRequest"
-			description: "Request to export data"
+			title: "BlastPhonesRequest"
+			description: "Request to send out blast SMS message"
 		}
 	};
 
 	ListC2BPaymentsFilter export_filter = 1;
 	string comment = 2;
+	string originator = 3;
+	string originator_id = 4;
+}
+
+message BlastPhonesFromFileRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "BlastPhonesFromFileRequest"
+			description: "Request to blast using uploaded file"
+		}
+	};
+
+	string comment = 2;
+	string originator = 3;
+	string originator_id = 4;
+	string file_id = 5;
+	int32 start_index = 6;
+	int32 end_index = 7;
+}
+
+message BlastReport {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "BlastReport"
+			description: "Blast statistic"
+		}
+	};
+
+	string report_id = 1;
+	string comment = 2;
+	string initiator = 3;
+	string originator = 4;
+	string source = 5;
+	string blast_file = 6;
+	string blast_file_id = 7;
+	int32 total_exported = 9;
+	int64 create_date_seconds = 10;
+	ListC2BPaymentsFilter export_filter = 11;
+}
+
+message BlastFile {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "BlastFile"
+			description: "File metadata for file uploaded containing phone numbers"
+		}
+	};
+
+	string file_id = 1;
+	string reference_name = 2;
+	string file_name = 3;
+	string uploader_names = 4;
+	int64 upload_time_seconds = 5;
+	int32 total_msisdn = 6;
+}
+
+message ListBlastReportsRequest {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListBlastReportsRequest"
+			description: "Request to get export report"
+		}
+	};
+
+	string page_token = 1;
+	int32 page_size = 2;
+}
+
+
+message ListBlastReportsResponse {
+	option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+		json_schema: {
+			title: "ListBlastReportsResponse"
+			description: "Response containing export data"
+		}
+	};
+
+	repeated BlastReport blast_reports = 1;
+	string next_page_token = 2;
+}
+
+message ListBlastFilesRequest {
+	string page_token = 1;
+	int32 page_size = 2;
+}
+
+message ListBlastFilesResponse {
+	repeated BlastFile blast_files = 1;
+	string next_page_token = 2;
 }
 
 // Stores and retrieves LIPA NA MPESA payments 
@@ -446,7 +537,7 @@ service LipaNaMPESA {
 	// Updates Mpesa transaction processed state to either true or false.
 	rpc ProcessC2BPayment (ProcessC2BPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/c2b/actions/process"
+			post: "/api/mpestx/c2b/actions/processC2BPayment"
 			body: "*"
 			additional_bindings {
 				post: "/api/mpestx/c2b:processC2B"
@@ -458,7 +549,7 @@ service LipaNaMPESA {
 	// Publishes Mpesa statement for listeners to process. Safe to be called many times.
 	rpc PublishC2BPayment (PublishC2BPaymentRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/c2b/actions/publish"
+			post: "/api/mpestx/c2b/actions/publishC2BPayment"
 			body: "*"
 			additional_bindings {
 				post: "/api/mpestx/c2b:publishC2B"
@@ -470,7 +561,7 @@ service LipaNaMPESA {
 	// Publish all failed Mpesa transaction for listeners to process.
 	rpc PublishAllC2BPayments (PublishAllC2BPaymentsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			post: "/api/mpestx/c2b/actions/publishall"
+			post: "/api/mpestx/c2b/actions/publishAllC2BPayments"
 			body: "*"
 			additional_bindings {
 				post: "/api/mpestx/c2b:publishAllC2Bs"
@@ -482,7 +573,7 @@ service LipaNaMPESA {
 	// Get transactions count summary
 	rpc GetTransactionsCount (GetTransactionsCountRequest) returns (TransactionsSummary) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/get-transactions-count"
+			get: "/api/mpestx/c2b/actions/getTransactionsCount"
 			additional_bindings {
 				post: "/api/mpestx/c2b:getTransactionsCount"
 				body: "*"
@@ -493,7 +584,7 @@ service LipaNaMPESA {
 	// Retrives a random transaction using RM=NG algorithm
 	rpc GetRandomTransaction (GetRandomTransactionRequest) returns (C2BPayment) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/get-random-transaction"
+			get: "/api/mpestx/c2b/actions/getRandomTransactionn"
 			additional_bindings {
 				post: "/api/mpestx/c2b:getRandomTransaction"
 				body: "*"
@@ -504,7 +595,7 @@ service LipaNaMPESA {
 	// Archives transactions in a separate table`
 	rpc ArchiveTransactions (ArchiveTransactionsRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/archive-transactions"
+			get: "/api/mpestx/c2b/actions/archiveTransactions"
 			additional_bindings {
 				post: "/api/mpestx/c2b:archiveTransactions"
 				body: "*"
@@ -515,7 +606,7 @@ service LipaNaMPESA {
 	// Get statistics for transactions
 	rpc GetStats (GetStatsRequest) returns (StatsResponse) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/get-stats"
+			get: "/api/mpestx/c2b/actions/getStats"
 			additional_bindings {
 				post: "/api/mpestx/c2b:getStats"
 				body: "*"
@@ -526,7 +617,7 @@ service LipaNaMPESA {
 	// Retrieves a collection of statistics
 	rpc ListStats (ListStatsRequest) returns (StatsResponse) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/list-stats"
+			get: "/api/mpestx/c2b/actions/listStats"
 			additional_bindings {
 				post: "/api/mpestx/c2b:listStats"
 				body: "*"
@@ -534,12 +625,45 @@ service LipaNaMPESA {
 		};	
 	};
 
-	// Export phone numbers to a table
-	rpc ExportPhones (ExportPhonesRequest) returns (google.protobuf.Empty) {
+	// Sends SMS to filtered msisdn
+	rpc BlastPhones (BlastPhonesRequest) returns (google.protobuf.Empty) {
 		option (google.api.http) = {
-			get: "/api/mpestx/c2b/actions/export"
+			get: "/api/mpestx/c2b/actions/blastPhones"
 			additional_bindings {
-				post: "/api/mpestx/c2b:exportPhones"
+				post: "/api/mpestx/c2b:blastPhones"
+				body: "*"
+			}
+		};
+	};
+	
+	// Sends SMS using contents of file
+	rpc BlastPhonesFromFile (BlastPhonesFromFileRequest) returns (google.protobuf.Empty) {
+		option (google.api.http) = {
+			get: "/api/mpestx/c2b/actions/blastPhonesFromFile"
+			additional_bindings {
+				post: "/api/mpestx/c2b:blastPhonesFromFile"
+				body: "*"
+			}
+		};
+	};
+	
+	// Fetches a collection of export reports
+	rpc ListBlastReports (ListBlastReportsRequest) returns (ListBlastReportsResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/c2b/actions/listBlastReports"
+			additional_bindings {
+				post: "/api/mpestx/c2b:listBlastReports"
+				body: "*"
+			}
+		};
+	};
+
+	// Retrieves list of blas
+	rpc ListBlastFiles (ListBlastFilesRequest) returns (ListBlastFilesResponse) {
+		option (google.api.http) = {
+			get: "/api/mpestx/c2b/actions/listBlastFiles"
+			additional_bindings {
+				post: "/api/mpestx/c2b:listBlastFiles"
 				body: "*"
 			}
 		};

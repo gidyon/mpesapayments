@@ -46,8 +46,14 @@ type LipaNaMPESAClient interface {
 	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 	// Retrieves a collection of statistics
 	ListStats(ctx context.Context, in *ListStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
-	// Export phone numbers to a table
-	ExportPhones(ctx context.Context, in *ExportPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Sends SMS to filtered msisdn
+	BlastPhones(ctx context.Context, in *BlastPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Sends SMS using contents of file
+	BlastPhonesFromFile(ctx context.Context, in *BlastPhonesFromFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Fetches a collection of export reports
+	ListBlastReports(ctx context.Context, in *ListBlastReportsRequest, opts ...grpc.CallOption) (*ListBlastReportsResponse, error)
+	// Retrieves list of blas
+	ListBlastFiles(ctx context.Context, in *ListBlastFilesRequest, opts ...grpc.CallOption) (*ListBlastFilesResponse, error)
 }
 
 type lipaNaMPESAClient struct {
@@ -184,9 +190,36 @@ func (c *lipaNaMPESAClient) ListStats(ctx context.Context, in *ListStatsRequest,
 	return out, nil
 }
 
-func (c *lipaNaMPESAClient) ExportPhones(ctx context.Context, in *ExportPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *lipaNaMPESAClient) BlastPhones(ctx context.Context, in *BlastPhonesRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ExportPhones", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/BlastPhones", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lipaNaMPESAClient) BlastPhonesFromFile(ctx context.Context, in *BlastPhonesFromFileRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/BlastPhonesFromFile", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lipaNaMPESAClient) ListBlastReports(ctx context.Context, in *ListBlastReportsRequest, opts ...grpc.CallOption) (*ListBlastReportsResponse, error) {
+	out := new(ListBlastReportsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ListBlastReports", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *lipaNaMPESAClient) ListBlastFiles(ctx context.Context, in *ListBlastFilesRequest, opts ...grpc.CallOption) (*ListBlastFilesResponse, error) {
+	out := new(ListBlastFilesResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.LipaNaMPESA/ListBlastFiles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -225,8 +258,14 @@ type LipaNaMPESAServer interface {
 	GetStats(context.Context, *GetStatsRequest) (*StatsResponse, error)
 	// Retrieves a collection of statistics
 	ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error)
-	// Export phone numbers to a table
-	ExportPhones(context.Context, *ExportPhonesRequest) (*emptypb.Empty, error)
+	// Sends SMS to filtered msisdn
+	BlastPhones(context.Context, *BlastPhonesRequest) (*emptypb.Empty, error)
+	// Sends SMS using contents of file
+	BlastPhonesFromFile(context.Context, *BlastPhonesFromFileRequest) (*emptypb.Empty, error)
+	// Fetches a collection of export reports
+	ListBlastReports(context.Context, *ListBlastReportsRequest) (*ListBlastReportsResponse, error)
+	// Retrieves list of blas
+	ListBlastFiles(context.Context, *ListBlastFilesRequest) (*ListBlastFilesResponse, error)
 	mustEmbedUnimplementedLipaNaMPESAServer()
 }
 
@@ -276,8 +315,17 @@ func (UnimplementedLipaNaMPESAServer) GetStats(context.Context, *GetStatsRequest
 func (UnimplementedLipaNaMPESAServer) ListStats(context.Context, *ListStatsRequest) (*StatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStats not implemented")
 }
-func (UnimplementedLipaNaMPESAServer) ExportPhones(context.Context, *ExportPhonesRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ExportPhones not implemented")
+func (UnimplementedLipaNaMPESAServer) BlastPhones(context.Context, *BlastPhonesRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BlastPhones not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) BlastPhonesFromFile(context.Context, *BlastPhonesFromFileRequest) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method BlastPhonesFromFile not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ListBlastReports(context.Context, *ListBlastReportsRequest) (*ListBlastReportsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBlastReports not implemented")
+}
+func (UnimplementedLipaNaMPESAServer) ListBlastFiles(context.Context, *ListBlastFilesRequest) (*ListBlastFilesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListBlastFiles not implemented")
 }
 func (UnimplementedLipaNaMPESAServer) mustEmbedUnimplementedLipaNaMPESAServer() {}
 
@@ -544,20 +592,74 @@ func _LipaNaMPESA_ListStats_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _LipaNaMPESA_ExportPhones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ExportPhonesRequest)
+func _LipaNaMPESA_BlastPhones_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlastPhonesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(LipaNaMPESAServer).ExportPhones(ctx, in)
+		return srv.(LipaNaMPESAServer).BlastPhones(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ExportPhones",
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/BlastPhones",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(LipaNaMPESAServer).ExportPhones(ctx, req.(*ExportPhonesRequest))
+		return srv.(LipaNaMPESAServer).BlastPhones(ctx, req.(*BlastPhonesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LipaNaMPESA_BlastPhonesFromFile_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(BlastPhonesFromFileRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).BlastPhonesFromFile(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/BlastPhonesFromFile",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).BlastPhonesFromFile(ctx, req.(*BlastPhonesFromFileRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LipaNaMPESA_ListBlastReports_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBlastReportsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ListBlastReports(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ListBlastReports",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ListBlastReports(ctx, req.(*ListBlastReportsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LipaNaMPESA_ListBlastFiles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListBlastFilesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LipaNaMPESAServer).ListBlastFiles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/gidyon.mpesa.LipaNaMPESA/ListBlastFiles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LipaNaMPESAServer).ListBlastFiles(ctx, req.(*ListBlastFilesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -623,8 +725,20 @@ var _LipaNaMPESA_serviceDesc = grpc.ServiceDesc{
 			Handler:    _LipaNaMPESA_ListStats_Handler,
 		},
 		{
-			MethodName: "ExportPhones",
-			Handler:    _LipaNaMPESA_ExportPhones_Handler,
+			MethodName: "BlastPhones",
+			Handler:    _LipaNaMPESA_BlastPhones_Handler,
+		},
+		{
+			MethodName: "BlastPhonesFromFile",
+			Handler:    _LipaNaMPESA_BlastPhonesFromFile_Handler,
+		},
+		{
+			MethodName: "ListBlastReports",
+			Handler:    _LipaNaMPESA_ListBlastReports_Handler,
+		},
+		{
+			MethodName: "ListBlastFiles",
+			Handler:    _LipaNaMPESA_ListBlastFiles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
