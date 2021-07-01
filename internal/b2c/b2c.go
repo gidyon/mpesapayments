@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strconv"
 	"sync"
 	"time"
@@ -18,6 +19,7 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
 	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/payload"
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/speps/go-hashids"
@@ -301,33 +303,39 @@ func (b2cAPI *b2cAPIServer) QueryTransactionStatus(
 	return &b2c.QueryResponse{}, nil
 }
 
-func addQueryParams(opt *queryOptions, url string) string {
-	url = url + "?oops=oops"
+func addQueryParams(opt *queryOptions, urlStr string) (string, error) {
+	u, err := url.Parse(urlStr)
+	if err != nil {
+		return "", err
+	}
+	q := u.Query()
+	q.Set("oops", "golang")
 	if opt.initiatorID != "" {
-		url += fmt.Sprintf("&%s=%s", InitiatorID, opt.initiatorID)
+		q.Set(InitiatorID, opt.initiatorID)
 	}
 	if opt.requestID != "" {
-		url += fmt.Sprintf("&%s=%s", RequestIDQuery, opt.requestID)
+		q.Set(RequestIDQuery, opt.requestID)
 	}
 	if opt.msisdn != "" {
-		url += fmt.Sprintf("&%s=%s", MSISDNQuery, opt.msisdn)
+		q.Set(MSISDNQuery, opt.msisdn)
 	}
 	if opt.shortCode != "" {
-		url += fmt.Sprintf("&%s=%s", ShortCodeQuery, opt.shortCode)
+		q.Set(ShortCodeQuery, opt.shortCode)
 	}
 	if opt.publishGlobalChannel != "" {
-		url += fmt.Sprintf("&%s=%s", PublishGlobalQuery, opt.publishGlobalChannel)
+		q.Set(PublishGlobalQuery, opt.publishGlobalChannel)
 	}
 	if opt.publishLocalChannel != "" {
-		url += fmt.Sprintf("&%s=%s", PublishLocalQuery, opt.publishLocalChannel)
+		q.Set(PublishLocalQuery, opt.publishLocalChannel)
 	}
 	if opt.txType != "" {
-		url += fmt.Sprintf("&%s=%s", TxTypeQuery, opt.txType)
+		q.Set(TxTypeQuery, opt.txType)
 	}
 	if opt.dropTransaction {
-		url += fmt.Sprintf("&%s=%s", DropQuery, "true")
+		q.Set(DropQuery, "true")
 	}
-	return url
+	u.RawQuery = q.Encode()
+	return u.String(), nil
 }
 
 func firstVal(vals ...string) string {
@@ -441,8 +449,15 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		Remarks:            queryReq.Remarks,
 		Initiator:          b2cAPI.OptionsB2C.InitiatorUsername,
 		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
-		QueueTimeOutURL:    addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL),
-		ResultURL:          addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL),
+	}
+
+	queryBalPayload.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
+	}
+	queryBalPayload.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
 	}
 
 	// Json Marshal
@@ -461,11 +476,15 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
 	req.Header.Set("Content-Type", "application/json")
 
+	httputils.DumpRequest(req, "QueryAccountBalance Request")
+
 	// Post to MPESA API
 	res, err := b2cAPI.HTTPClient.Do(req)
 	if err != nil {
 		return nil, errs.WrapError(err)
 	}
+
+	httputils.DumpResponse(res, "QueryAccountBalance Response")
 
 	apiRes := &payload.GenericAPIResponse{}
 
@@ -575,9 +594,16 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		PartyA:             fmt.Sprint(transferReq.ShortCode),
 		PartyB:             transferReq.Msisdn,
 		Remarks:            transferReq.Remarks,
-		QueueTimeOutURL:    addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL),
-		ResultURL:          addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL),
 		Occassion:          transferReq.Occassion,
+	}
+
+	queryBalPayload.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
+	}
+	queryBalPayload.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
 	}
 
 	// Json Marshal
@@ -596,11 +622,15 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
 	req.Header.Set("Content-Type", "application/json")
 
+	httputils.DumpRequest(req, "TransferFunds Request")
+
 	// Post to MPESA API
 	res, err := b2cAPI.HTTPClient.Do(req)
 	if err != nil {
 		return nil, errs.WrapError(err)
 	}
+
+	httputils.DumpResponse(res, "TransferFunds Response")
 
 	apiRes := &payload.GenericAPIResponse{}
 
@@ -676,10 +706,17 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		Remarks:                reverseReq.Remarks,
 		Initiator:              b2cAPI.Options.OptionsB2C.InitiatorUsername,
 		SecurityCredential:     b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
-		QueueTimeOutURL:        addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL),
-		ResultURL:              addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL),
 		TransactionID:          reverseReq.TransactionId,
 		Occassion:              reverseReq.Occassion,
+	}
+
+	reverseRequest.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
+	}
+	reverseRequest.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
+	if err != nil {
+		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
 	}
 
 	// Json Marshal
@@ -698,11 +735,15 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
 	req.Header.Set("Content-Type", "application/json")
 
+	httputils.DumpRequest(req, "ReverseTransaction Request")
+
 	// Post to MPESA API
 	res, err := b2cAPI.HTTPClient.Do(req)
 	if err != nil {
 		return nil, errs.WrapError(err)
 	}
+
+	httputils.DumpResponse(res, "ReverseTransaction Response")
 
 	apiRes := &payload.GenericAPIResponse{}
 

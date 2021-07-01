@@ -30,7 +30,7 @@ func TestC2B(t *testing.T) {
 }
 
 var (
-	C2BAPIServer *mpesaAPIServer
+	C2BAPIServer *c2bAPIServer
 	C2BAPI       c2b.LipaNaMPESAServer
 	workerChan   chan struct{}
 	ctx          context.Context
@@ -99,7 +99,7 @@ var _ = BeforeSuite(func() {
 	Expect(err).ShouldNot(HaveOccurred())
 
 	var ok bool
-	C2BAPIServer, ok = C2BAPI.(*mpesaAPIServer)
+	C2BAPIServer, ok = C2BAPI.(*c2bAPIServer)
 	Expect(ok).Should(BeTrue())
 
 	_, err = NewAPIServerMPESA(nil, opt)

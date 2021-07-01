@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	"gorm.io/gorm/clause"
 )
 
 func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
@@ -28,7 +29,12 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 			if v.publish {
 				// By value because the slice will be reset
 				go func(incomingPayment incomingPayment) {
-					paymentID := firstVal(fmt.Sprint(incomingPayment.payment.PaymentID), incomingPayment.payment.TransactionID)
+					var pID string
+					if incomingPayment.payment.PaymentID != 0 {
+						pID = fmt.Sprint(incomingPayment.payment.PaymentID)
+					}
+					paymentID := firstVal(pID, incomingPayment.payment.TransactionID)
+
 					// Publish the transaction
 					_, err := b2cAPI.PublishB2CPayment(
 						b2cAPI.ctxAdmin, &b2c.PublishB2CPaymentRequest{
@@ -36,7 +42,7 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 							InitiatorId: incomingPayment.payment.InitiatorID,
 						})
 					if err != nil {
-						b2cAPI.Logger.Errorf("failed to publish b2c transaction with id: %%v", err)
+						b2cAPI.Logger.Errorf("failed to publish b2c transaction with id %s: %v", paymentID, err)
 						return
 					}
 				}(*v)
@@ -59,7 +65,7 @@ func (b2cAPI *b2cAPIServer) insertWorker(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if len(incomingPayments) > 0 {
-				err := b2cAPI.SQLDB.CreateInBatches(transactionsFn(), bulkInsertSize).Error
+				err := b2cAPI.SQLDB.Clauses(clause.OnConflict{DoNothing: true}).CreateInBatches(transactionsFn(), bulkInsertSize).Error
 				switch {
 				case err == nil:
 					b2cAPI.Logger.Infof("bulk inserted %d b2c transactions (from ticker)", len(incomingPayments))

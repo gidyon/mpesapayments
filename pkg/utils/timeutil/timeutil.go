@@ -2,14 +2,36 @@ package timeutil
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/gidyon/micro/v2/utils/errs"
+	"github.com/gidyon/micro/utils/errs"
 	"google.golang.org/grpc/codes"
 )
 
+// GetDateFromString converts the dateStr in format 2020-01-12 to time.Time
+func GetDateFromString(dateStr string) (*time.Time, error) {
+	seps := strings.Split(dateStr, "-")
+	if len(seps) != 3 {
+		seps = strings.Split(dateStr, "/")
+		if len(seps) != 3 {
+			return nil, fmt.Errorf("expected date in format 2020-00-00")
+		}
+	}
+	sepsInt := make([]int32, 0, len(seps))
+	for _, p := range seps {
+		pint, err := strconv.Atoi(strings.TrimSpace(p))
+		if err != nil {
+			return nil, fmt.Errorf("incorrect date string")
+		}
+		sepsInt = append(sepsInt, int32(pint))
+	}
+	return ParseDayStartTime(sepsInt[0], sepsInt[1], sepsInt[2])
+}
+
 // ParseDayStartTime parses the provided year, month and day into the earliest time of the day.
-func ParseDayStartTime(year, month, day int32) (time.Time, error) {
+func ParseDayStartTime(year, month, day int32) (*time.Time, error) {
 	// 20200816204116
 	// 2020y 08m 16d 20h 41m 16s
 	// "2006-01-02T15:04:05Z07:00"
@@ -30,10 +52,10 @@ func ParseDayStartTime(year, month, day int32) (time.Time, error) {
 
 	t, err := time.Parse(time.RFC3339, timeRFC3339Str)
 	if err != nil {
-		return time.Time{}, fmt.Errorf("failed to parse day time: %v", err)
+		return nil, fmt.Errorf("failed to parse day time: %v", err)
 	}
 
-	return t, nil
+	return &t, nil
 }
 
 // ParseDayEndTime parses the provided year, month and day into latest time of the day

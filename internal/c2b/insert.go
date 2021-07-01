@@ -16,8 +16,8 @@ func valFunc(v1, v2 string) string {
 	return v1
 }
 
-func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
-	ticker := time.NewTicker(mpesaAPI.insertTimeOut)
+func (c2bAPI *c2bAPIServer) insertWorker(ctx context.Context) {
+	ticker := time.NewTicker(c2bAPI.insertTimeOut)
 	defer ticker.Stop()
 
 	incomingPayments := make([]*incomingPayment, 0, bulkInsertSize)
@@ -37,28 +37,28 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 				go func(paymentDB PaymentMpesa) {
 					paymentID := valFunc(fmt.Sprint(paymentDB.PaymentID), paymentDB.TransactionID)
 					// Publish the transaction
-					_, err := mpesaAPI.PublishC2BPayment(
-						mpesaAPI.ctxAdmin, &c2b.PublishC2BPaymentRequest{
+					_, err := c2bAPI.PublishC2BPayment(
+						c2bAPI.ctxAdmin, &c2b.PublishC2BPaymentRequest{
 							PaymentId:   paymentID,
 							InitiatorId: paymentDB.MSISDN,
 						})
 					if err != nil {
-						mpesaAPI.Logger.Errorf("failed to publish lnm payment with id: %%v", err)
+						c2bAPI.Logger.Errorf("failed to publish lnm payment with id: %%v", err)
 						return
 					}
 				}(*incomingPayment.payment)
 			}
 		}
 
-		ticker.Reset(mpesaAPI.insertTimeOut)
+		ticker.Reset(c2bAPI.insertTimeOut)
 		incomingPayments = incomingPayments[0:0]
 	}
 
-	chanSize := cap(mpesaAPI.insertChan)
+	chanSize := cap(c2bAPI.insertChan)
 
 	if chanSize <= 2 {
-		mpesaAPI.insertChan = make(chan *incomingPayment, 100)
-		chanSize = cap(mpesaAPI.insertChan)
+		c2bAPI.insertChan = make(chan *incomingPayment, 100)
+		chanSize = cap(c2bAPI.insertChan)
 	}
 
 	for {
@@ -67,32 +67,32 @@ func (mpesaAPI *mpesaAPIServer) insertWorker(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if len(incomingPayments) > 0 {
-				err := mpesaAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
+				err := c2bAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
 				switch {
 				case err == nil:
-					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from ticker)", len(incomingPayments))
+					c2bAPI.Logger.Infof("bulk inserted %d mpesa payments (from ticker)", len(incomingPayments))
 					updateFn()
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
-					mpesaAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from ticker)")
+					c2bAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from ticker)")
 					updateFn()
 				default:
-					mpesaAPI.Logger.Errorf("failed to save stk paylods (from ticker): %v", err)
+					c2bAPI.Logger.Errorf("failed to save stk paylods (from ticker): %v", err)
 				}
 			}
 
-		case paymentDB := <-mpesaAPI.insertChan:
+		case paymentDB := <-c2bAPI.insertChan:
 			incomingPayments = append(incomingPayments, paymentDB)
 			if len(incomingPayments) >= (chanSize - 2) {
-				err := mpesaAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
+				err := c2bAPI.SQLDB.CreateInBatches(createFn(), bulkInsertSize).Error
 				switch {
 				case err == nil:
-					mpesaAPI.Logger.Infof("bulk inserted %d mpesa payments (from channel)", len(incomingPayments))
+					c2bAPI.Logger.Infof("bulk inserted %d mpesa payments (from channel)", len(incomingPayments))
 					updateFn()
 				case strings.Contains(strings.ToLower(err.Error()), "duplicate"):
-					mpesaAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from channel)")
+					c2bAPI.Logger.Infoln("insert of duplicate mpesa payments skipped (from channel)")
 					updateFn()
 				default:
-					mpesaAPI.Logger.Errorf("failed to save stk paylods (from channel): %v", err)
+					c2bAPI.Logger.Errorf("failed to save stk paylods (from channel): %v", err)
 				}
 			}
 		}

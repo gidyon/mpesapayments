@@ -96,8 +96,8 @@ github.com/gidyon/micro v1.4.4/go.mod h1:dVq+Mk697EJtHD5CcCtN5UpGK4z10c97+d9RLWI
 github.com/gidyon/micro v1.7.0/go.mod h1:ymFeVrH8LBDsA3KnsjAgeRzHTLjhwCyNXPoUv+qFL24=
 github.com/gidyon/micro v1.12.0 h1:mkVfRjrDUsqah1Q3eHBDE2ZQ/HRAJ078T/VnToRd66U=
 github.com/gidyon/micro v1.12.0/go.mod h1:97VgiDsvudk3d/Pd040jFbS23qs5nFm+WybQnDRjVL4=
-github.com/gidyon/micro/v2 v2.2.3 h1:p1H+55JgWlf4YQ5WIPw6uhl0eRVhn/xDIyDlJAbmx3w=
-github.com/gidyon/micro/v2 v2.2.3/go.mod h1:j4usKiW9bQ4It8/h5GB1f5Sel3LEzZkzltB45Qt9zQo=
+github.com/gidyon/micro/v2 v2.4.1 h1:YLpfqP/y9f1vZzTV7JXqxKlLAYazwlxUYUAjeF1j2M4=
+github.com/gidyon/micro/v2 v2.4.1/go.mod h1:+amJgkv03gSzHB83xOfwTWmOPDkjpfoTcSnZvii4vvY=
 github.com/gidyon/services v0.6.0/go.mod h1:45tm9DOkIOayRdBW+DqfujWuRj+f2tWNZqcdtSwka3g=
 github.com/gidyon/services v0.8.0 h1:Um46YswUGswft2cW6owklnTKIZX6KRG21Xvk0+pvuN4=
 github.com/gidyon/services v0.8.0/go.mod h1:bMPyANZm0zg2uUfVlooS0PVTvE0HIAEdgEPT2LflEPY=

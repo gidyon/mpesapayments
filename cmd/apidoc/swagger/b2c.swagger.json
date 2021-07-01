@@ -1,0 +1,1214 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "B2C Mpesa Service",
+    "description": "API for interacting with B2C Mpesa API",
+    "version": "0.1",
+    "contact": {
+      "name": "Github \u003cGideon Kamau\u003e",
+      "url": "https://github.com/gidyon/mpesapayments/blob/master/api/proto/b2c.proto",
+      "email": "gideonhacer@gmail.com"
+    },
+    "license": {
+      "name": "GNU GENERAL PUBLIC LICENSE",
+      "url": "https://github.com/gidyon/mpesapayments/src/master/LICENSE"
+    }
+  },
+  "schemes": [
+    "http",
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/api/mpestx/b2c": {
+      "get": {
+        "summary": "Retrieves a collection of b2c payments",
+        "operationId": "B2CAPI_ListB2CPayments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cListB2CPaymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "filter.initiatorId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.txDate",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "filter.msisdns",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.processState",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PROCESS_STATE_UNSPECIFIED",
+              "PROCESSED",
+              "NOT_PROCESSED"
+            ],
+            "default": "PROCESS_STATE_UNSPECIFIED"
+          },
+          {
+            "name": "filter.startTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimestamp",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.useLikeInitiator",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      },
+      "post": {
+        "summary": "Creates a record of b2c payment",
+        "operationId": "B2CAPI_CreateB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cB2CPayment"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cCreateB2CPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c/actions/list-stats": {
+      "get": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "B2CAPI_ListDailyStats",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesab2cStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "type": "integer",
+            "format": "int32"
+          },
+          {
+            "name": "filter.organizationShortCodes",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          },
+          {
+            "name": "filter.startTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.endTimeSeconds",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "format": "int64"
+          },
+          {
+            "name": "filter.txDates",
+            "in": "query",
+            "required": false,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "collectionFormat": "multi"
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c/{paymentId}": {
+      "get": {
+        "summary": "Retrieves a single b2c payment",
+        "operationId": "B2CAPI_GetB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cB2CPayment"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "paymentId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:initiateTransaction": {
+      "post": {
+        "summary": "Initiates a b2c transaction",
+        "operationId": "B2CAPI_InitiateTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cInitiateTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:listB2CPayments": {
+      "post": {
+        "summary": "Retrieves a collection of b2c payments",
+        "operationId": "B2CAPI_ListB2CPayments2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cListB2CPaymentsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cListB2CPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:listStats": {
+      "post": {
+        "summary": "Retrieves a collection of statistics",
+        "operationId": "B2CAPI_ListDailyStats2",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesab2cStatsResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cListDailyStatsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:processB2CPayment": {
+      "post": {
+        "summary": "Processes b2c payment updating its status",
+        "operationId": "B2CAPI_ProcessB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cProcessB2CPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:publishAllB2CPayments": {
+      "post": {
+        "summary": "Publihses all b2c payments to consumers",
+        "operationId": "B2CAPI_PublishAllB2CPayments",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cPublishAllB2CPaymentsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:publishB2CPayment": {
+      "post": {
+        "summary": "Publishes b2c payment to consumers",
+        "operationId": "B2CAPI_PublishB2CPayment",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cPublishB2CPaymentRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:queryAccountBalance": {
+      "post": {
+        "summary": "Queries for account balance",
+        "operationId": "B2CAPI_QueryAccountBalance",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cQueryAccountBalanceResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cQueryAccountBalanceRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:queryTransactionStatus": {
+      "post": {
+        "summary": "Queries for query transaction",
+        "operationId": "B2CAPI_QueryTransactionStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/b2cQueryResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cQueryTransactionStatusRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:reverseTransaction": {
+      "post": {
+        "summary": "Reverses an mpesa transaction",
+        "operationId": "B2CAPI_ReverseTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cReverseTransactionRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    },
+    "/api/mpestx/b2c:transferFunds": {
+      "post": {
+        "summary": "Transfer funds from business to customer or another business",
+        "operationId": "B2CAPI_TransferFunds",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "properties": {}
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/b2cTransferFundsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "B2CAPI"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "TransferFundsRequestCommandId": {
+      "type": "string",
+      "enum": [
+        "COMMANDID_UNSPECIFIED",
+        "SALARY_PAYMENT",
+        "BUSINESS_PAYMENT",
+        "PROMOTION_PAYMENT"
+      ],
+      "default": "COMMANDID_UNSPECIFIED"
+    },
+    "b2cB2CPayment": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "orgShortCode": {
+          "type": "string"
+        },
+        "msisdn": {
+          "type": "string"
+        },
+        "receiverPartyPublicName": {
+          "type": "string"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "conversationId": {
+          "type": "string"
+        },
+        "originatorConversationId": {
+          "type": "string"
+        },
+        "resultCode": {
+          "type": "string"
+        },
+        "resultDescription": {
+          "type": "string"
+        },
+        "transactionTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "createTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "amount": {
+          "type": "number",
+          "format": "float"
+        },
+        "workingAccountFunds": {
+          "type": "number",
+          "format": "float"
+        },
+        "utilityAccountFunds": {
+          "type": "number",
+          "format": "float"
+        },
+        "mpesaCharges": {
+          "type": "number",
+          "format": "float"
+        },
+        "onfonCharges": {
+          "type": "number",
+          "format": "float"
+        },
+        "recipientRegistered": {
+          "type": "boolean"
+        },
+        "succeeded": {
+          "type": "boolean"
+        },
+        "processed": {
+          "type": "boolean"
+        }
+      },
+      "description": "Mpesa B2C payment",
+      "title": "B2CPayment"
+    },
+    "b2cCreateB2CPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "payment": {
+          "$ref": "#/definitions/b2cB2CPayment"
+        },
+        "publish": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to create b2c payment",
+      "title": "CreateB2CPaymentRequest",
+      "required": [
+        "payment"
+      ]
+    },
+    "b2cDailyStat": {
+      "type": "object",
+      "properties": {
+        "statId": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "orgShortCode": {
+          "type": "string"
+        },
+        "totalTransactions": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "successfulTransactions": {
+          "type": "string",
+          "format": "int64"
+        },
+        "failedTransactions": {
+          "type": "string",
+          "format": "int64"
+        },
+        "totalAmountTransacted": {
+          "type": "number",
+          "format": "float"
+        },
+        "totalCharges": {
+          "type": "number",
+          "format": "float"
+        },
+        "createTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "updateTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Statistics for a day b2c transactions",
+      "title": "DailyStat"
+    },
+    "b2cInitiateTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "initiator": {
+          "$ref": "#/definitions/b2cInitiatorPayload"
+        }
+      },
+      "description": "Request to start a b2c transaction",
+      "title": "InitiateTransactionRequest",
+      "required": [
+        "initiator"
+      ]
+    },
+    "b2cInitiatorPayload": {
+      "type": "object",
+      "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "msisdn": {
+          "type": "string"
+        },
+        "shortCode": {
+          "type": "string"
+        },
+        "transactionType": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "publishLocal": {
+          "type": "boolean"
+        },
+        "publishOnCreate": {
+          "type": "boolean"
+        },
+        "dropTransaction": {
+          "type": "boolean"
+        }
+      },
+      "description": "Initiator payload",
+      "title": "InitiatorPayload"
+    },
+    "b2cListB2CPaymentFilter": {
+      "type": "object",
+      "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
+        "txDate": {
+          "type": "string"
+        },
+        "msisdns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "processState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "useLikeInitiator": {
+          "type": "boolean"
+        }
+      },
+      "description": "Filter payment for querying stk payments",
+      "title": "ListB2CPaymentFilter"
+    },
+    "b2cListB2CPaymentsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/b2cListB2CPaymentFilter"
+        }
+      },
+      "description": "Request to retrieve a collection of b2c payments",
+      "title": "ListB2CPaymentsRequest"
+    },
+    "b2cListB2CPaymentsResponse": {
+      "type": "object",
+      "properties": {
+        "nextPageToken": {
+          "type": "string"
+        },
+        "b2cPayments": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/b2cB2CPayment"
+          }
+        }
+      },
+      "description": "Reponse containing a collection of b2c payments",
+      "title": "ListB2CPaymentsResponse"
+    },
+    "b2cListDailyStatsRequest": {
+      "type": "object",
+      "properties": {
+        "pageToken": {
+          "type": "string"
+        },
+        "pageSize": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "filter": {
+          "$ref": "#/definitions/mpesab2cListStatsFilter"
+        }
+      },
+      "description": "Request to retrieve statistics",
+      "title": "ListStatsRequest"
+    },
+    "b2cProcessB2CPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "processed": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to update b2c payment processed state",
+      "title": "ProcessB2CPaymentRequest"
+    },
+    "b2cPublishAllB2CPaymentsRequest": {
+      "type": "object",
+      "properties": {
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        },
+        "startTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimestamp": {
+          "type": "string",
+          "format": "int64"
+        }
+      },
+      "description": "Request to publish all b2c payments",
+      "title": "PublishAllB2CPaymentsRequest"
+    },
+    "b2cPublishB2CPaymentRequest": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "processedState": {
+          "$ref": "#/definitions/mpesaProcessedState"
+        }
+      },
+      "description": "Request to publish a b2c payment",
+      "title": "PublishB2CPaymentRequest"
+    },
+    "b2cQueryAccountBalanceRequest": {
+      "type": "object",
+      "properties": {
+        "identifierType": {
+          "$ref": "#/definitions/b2cQueryAccountBalanceRequestIdentifierType"
+        },
+        "partyA": {
+          "type": "string",
+          "format": "int64"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to query for account balance",
+      "title": "QueryAccountBalanceRequest"
+    },
+    "b2cQueryAccountBalanceRequestIdentifierType": {
+      "type": "string",
+      "enum": [
+        "QUERY_ACCOUNT_UNSPECIFIED",
+        "MSISDN",
+        "TILL_NUMBER",
+        "ORGANIZATION_SHORT_CODE"
+      ],
+      "default": "QUERY_ACCOUNT_UNSPECIFIED"
+    },
+    "b2cQueryAccountBalanceResponse": {
+      "type": "object",
+      "properties": {
+        "party": {
+          "type": "string",
+          "format": "int64"
+        },
+        "workingAccountFunds": {
+          "type": "number",
+          "format": "float"
+        },
+        "utilityAccountFunds": {
+          "type": "number",
+          "format": "float"
+        },
+        "chargesPaidFunds": {
+          "type": "number",
+          "format": "float"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "completed": {
+          "type": "boolean"
+        }
+      },
+      "description": "Response containing account balance data",
+      "title": "QueryAccountBalanceResponse"
+    },
+    "b2cQueryResponse": {
+      "type": "object",
+      "properties": {
+        "originatorConversionId": {
+          "type": "string"
+        },
+        "conversionId": {
+          "type": "string"
+        },
+        "responseDescription": {
+          "type": "string"
+        },
+        "success": {
+          "type": "boolean"
+        }
+      },
+      "description": "Mpesa Query response",
+      "title": "QueryResponse"
+    },
+    "b2cQueryTransactionStatusRequest": {
+      "type": "object",
+      "properties": {
+        "identifierType": {
+          "$ref": "#/definitions/b2cQueryTransactionStatusRequestIdentifierType"
+        },
+        "partyA": {
+          "type": "string",
+          "format": "int64"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "initiator": {
+          "type": "string"
+        },
+        "securityCredential": {
+          "type": "string"
+        },
+        "queueTimeoutUrl": {
+          "type": "string"
+        },
+        "resultUrl": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to query transaction status",
+      "title": "QueryTransactionStatusRequest"
+    },
+    "b2cQueryTransactionStatusRequestIdentifierType": {
+      "type": "string",
+      "enum": [
+        "QUERY_TRANSACTION_UNSPECIFIED",
+        "MSISDN",
+        "TILL_NUMBER",
+        "ORGANIZATION_SHORT_CODE"
+      ],
+      "default": "QUERY_TRANSACTION_UNSPECIFIED"
+    },
+    "b2cReverseTransactionRequest": {
+      "type": "object",
+      "properties": {
+        "receiverType": {
+          "type": "string",
+          "format": "int64"
+        },
+        "shortCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to reverse an mpesa transaction",
+      "title": "ReverseTransactionRequest"
+    },
+    "b2cTransferFundsRequest": {
+      "type": "object",
+      "properties": {
+        "amount": {
+          "type": "number",
+          "format": "float"
+        },
+        "msisdn": {
+          "type": "string",
+          "format": "int64"
+        },
+        "shortCode": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "remarks": {
+          "type": "string"
+        },
+        "occassion": {
+          "type": "string"
+        },
+        "commandId": {
+          "$ref": "#/definitions/TransferFundsRequestCommandId"
+        },
+        "requestId": {
+          "type": "string"
+        },
+        "initiatorId": {
+          "type": "string"
+        },
+        "synchronous": {
+          "type": "boolean"
+        }
+      },
+      "description": "Request to transfer funds b2cs",
+      "title": "TransferFundsRequest"
+    },
+    "mpesaProcessedState": {
+      "type": "string",
+      "enum": [
+        "PROCESS_STATE_UNSPECIFIED",
+        "PROCESSED",
+        "NOT_PROCESSED"
+      ],
+      "default": "PROCESS_STATE_UNSPECIFIED"
+    },
+    "mpesab2cListStatsFilter": {
+      "type": "object",
+      "properties": {
+        "organizationShortCodes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "startTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "endTimeSeconds": {
+          "type": "string",
+          "format": "int64"
+        },
+        "txDates": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "Filter criteria for listing statistics",
+      "title": "ListStatsFilter"
+    },
+    "mpesab2cStatsResponse": {
+      "type": "object",
+      "properties": {
+        "stats": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/b2cDailyStat"
+          }
+        },
+        "nextPageToken": {
+          "type": "string"
+        }
+      },
+      "description": "Response containing multiple statistics",
+      "title": "StatsResponse"
+    },
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "typeUrl": {
+          "type": "string",
+          "description": "A URL/resource name that uniquely identifies the type of the serialized\nprotocol buffer message. The last segment of the URL's path must represent\nthe fully qualified name of the type (as in\n`path/google.protobuf.Duration`). The name should be in a canonical form\n(e.g., leading \".\" is not accepted).\n\nIn practice, teams usually precompile into the binary all types that they\nexpect it to use in the context of Any. However, for URLs which use the\nscheme `http`, `https`, or no scheme, one can optionally set up a type\nserver that maps type URLs to message definitions as follows:\n\n* If no scheme is provided, `https` is assumed.\n* An HTTP GET on the URL must yield a [google.protobuf.Type][]\n  value in binary format, or produce an error.\n* Applications are allowed to cache lookup results based on the\n  URL, or have them precompiled into a binary to avoid any\n  lookup. Therefore, binary compatibility needs to be preserved\n  on changes to types. (Use versioned type names to manage\n  breaking changes.)\n\nNote: this functionality is not currently available in the official\nprotobuf release, and it is not used for type URLs beginning with\ntype.googleapis.com.\n\nSchemes other than `http`, `https` (or the empty scheme) might be\nused with implementation specific semantics."
+        },
+        "value": {
+          "type": "string",
+          "format": "byte",
+          "description": "Must be a valid serialized protocol buffer of the above specified type."
+        }
+      },
+      "description": "`Any` contains an arbitrary serialized protocol buffer message along with a\nURL that describes the type of the serialized message.\n\nProtobuf library provides support to pack/unpack Any values in the form\nof utility functions or additional generated methods of the Any type.\n\nExample 1: Pack and unpack a message in C++.\n\n    Foo foo = ...;\n    Any any;\n    any.PackFrom(foo);\n    ...\n    if (any.UnpackTo(\u0026foo)) {\n      ...\n    }\n\nExample 2: Pack and unpack a message in Java.\n\n    Foo foo = ...;\n    Any any = Any.pack(foo);\n    ...\n    if (any.is(Foo.class)) {\n      foo = any.unpack(Foo.class);\n    }\n\n Example 3: Pack and unpack a message in Python.\n\n    foo = Foo(...)\n    any = Any()\n    any.Pack(foo)\n    ...\n    if any.Is(Foo.DESCRIPTOR):\n      any.Unpack(foo)\n      ...\n\n Example 4: Pack and unpack a message in Go\n\n     foo := \u0026pb.Foo{...}\n     any, err := ptypes.MarshalAny(foo)\n     ...\n     foo := \u0026pb.Foo{}\n     if err := ptypes.UnmarshalAny(any, foo); err != nil {\n       ...\n     }\n\nThe pack methods provided by protobuf library will by default use\n'type.googleapis.com/full.type.name' as the type URL and the unpack\nmethods only use the fully qualified type name after the last '/'\nin the type URL, for example \"foo.bar.com/x/y.z\" will yield type\nname \"y.z\".\n\n\nJSON\n====\nThe JSON representation of an `Any` value uses the regular\nrepresentation of the deserialized, embedded message, with an\nadditional field `@type` which contains the type URL. Example:\n\n    package google.profile;\n    message Person {\n      string first_name = 1;\n      string last_name = 2;\n    }\n\n    {\n      \"@type\": \"type.googleapis.com/google.profile.Person\",\n      \"firstName\": \u003cstring\u003e,\n      \"lastName\": \u003cstring\u003e\n    }\n\nIf the embedded message type is well-known and has a custom JSON\nrepresentation, that representation will be embedded adding a field\n`value` which holds the custom JSON in addition to the `@type`\nfield. Example (for message [google.protobuf.Duration][]):\n\n    {\n      \"@type\": \"type.googleapis.com/google.protobuf.Duration\",\n      \"value\": \"1.212s\"\n    }"
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    }
+  },
+  "securityDefinitions": {
+    "bearer": {
+      "type": "apiKey",
+      "description": "Authentication token, prefixed by Bearer: Bearer \u003ctoken\u003e",
+      "name": "Authorization",
+      "in": "header"
+    }
+  },
+  "security": [
+    {
+      "bearer": []
+    }
+  ]
+}

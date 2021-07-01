@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/util/timeutil"
+	"github.com/gidyon/mpesapayments/pkg/utils/timeutil"
 	"gorm.io/gorm"
 )
 
@@ -51,7 +51,7 @@ loop:
 				}
 				endTime := startTime.Add(time.Hour * 24)
 
-				b2cAPI.generateDailyStatistics(ctx, startTime, endTime)
+				b2cAPI.generateDailyStatistics(ctx, startTime, &endTime)
 			} else {
 				endTime, err := timeutil.ParseDayEndTime(int32(currTime2.Year()), int32(currTime2.Month()), int32(currTime2.Day()))
 				if err != nil {
@@ -61,7 +61,7 @@ loop:
 
 				startTime := time.Unix(endTime.Unix()-int64(24*60*60), 0)
 
-				b2cAPI.generateDailyStatistics(ctx, startTime, endTime)
+				b2cAPI.generateDailyStatistics(ctx, &startTime, &endTime)
 			}
 		}
 	}
@@ -71,7 +71,7 @@ type shortCode struct {
 	OrgShortCode string
 }
 
-func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTime, endTime time.Time) {
+func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTime, endTime *time.Time) {
 
 	// Get all unique org_short_code
 	shortCodes := make([]*shortCode, 0)

@@ -7,11 +7,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/util/timeutil"
+	"github.com/gidyon/mpesapayments/pkg/utils/timeutil"
 	"gorm.io/gorm"
 )
 
-func (mpesaAPI *mpesaAPIServer) dailyStatWorker(ctx context.Context) {
+func (c2bAPI *c2bAPIServer) dailyStatWorker(ctx context.Context) {
 	ticker := time.NewTicker(2 * time.Hour)
 	defer ticker.Stop()
 
@@ -24,17 +24,17 @@ loop:
 			currTime2 := time.Now()
 
 			lockKey := fmt.Sprintf("workerlock:%s", currTime2.UTC().String()[:15])
-			existRes, err := mpesaAPI.RedisDB.Exists(ctx, lockKey).Result()
+			existRes, err := c2bAPI.RedisDB.Exists(ctx, lockKey).Result()
 			if err != nil {
-				mpesaAPI.Logger.Errorf("faile to check if key exists: %v", err)
+				c2bAPI.Logger.Errorf("faile to check if key exists: %v", err)
 				continue
 			}
 
 			if existRes == 0 {
 				// Key does not exist so we set it
-				err = mpesaAPI.RedisDB.Set(ctx, lockKey, "yes", 3*time.Hour).Err()
+				err = c2bAPI.RedisDB.Set(ctx, lockKey, "yes", 3*time.Hour).Err()
 				if err != nil {
-					mpesaAPI.Logger.Errorf("faile to set lock key: %v", err)
+					c2bAPI.Logger.Errorf("faile to set lock key: %v", err)
 					continue
 				}
 			} else if existRes == 1 {
@@ -46,20 +46,20 @@ loop:
 				// we're in the next day; lets update current statistics for yesterday first
 				startTime, err := timeutil.ParseDayStartTime(int32(currTime.Year()), int32(currTime.Month()), int32(currTime.Day()))
 				if err != nil {
-					mpesaAPI.Logger.Errorf("WORKER: failed to create start timestamp: %v", err)
+					c2bAPI.Logger.Errorf("WORKER: failed to create start timestamp: %v", err)
 					goto loop
 				}
 				endTime := startTime.Add(time.Hour * 24)
 
-				mpesaAPI.generateStatistics(ctx, startTime.Unix(), endTime.Unix())
+				c2bAPI.generateStatistics(ctx, startTime.Unix(), endTime.Unix())
 			} else {
 				endTime, err := timeutil.ParseDayEndTime(int32(currTime2.Year()), int32(currTime2.Month()), int32(currTime2.Day()))
 				if err != nil {
-					mpesaAPI.Logger.Errorf("WORKER: failed to create end timestamp: %v", err)
+					c2bAPI.Logger.Errorf("WORKER: failed to create end timestamp: %v", err)
 					goto loop
 				}
 
-				mpesaAPI.generateStatistics(ctx, endTime.Unix()-int64(24*60*60), endTime.Unix())
+				c2bAPI.generateStatistics(ctx, endTime.Unix()-int64(24*60*60), endTime.Unix())
 			}
 		}
 	}
@@ -72,16 +72,16 @@ type referenceNumber struct {
 	ReferenceNumber string
 }
 
-func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTimestamp, endTimestamp int64) {
+func (c2bAPI *c2bAPIServer) generateStatistics(ctx context.Context, startTimestamp, endTimestamp int64) {
 	// Get all unique short_code
 	shortCodes := make([]*shortCode, 0)
-	err := mpesaAPI.SQLDB.Table((&PaymentMpesa{}).TableName()).
+	err := c2bAPI.SQLDB.Table((&PaymentMpesa{}).TableName()).
 		Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 		Distinct("business_short_code").
 		Select("business_short_code").
 		Scan(&shortCodes).Error
 	if err != nil {
-		mpesaAPI.Logger.Errorf("WORKER: failed to scan business_short_code to slice: %v", err)
+		c2bAPI.Logger.Errorf("WORKER: failed to scan business_short_code to slice: %v", err)
 		return
 	}
 
@@ -89,21 +89,21 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 	for _, shortCode := range shortCodes {
 		// Get all unique account_numbers for short_code
 		accountNumbers := make([]*referenceNumber, 0)
-		err = mpesaAPI.SQLDB.Model(&PaymentMpesa{}).
+		err = c2bAPI.SQLDB.Model(&PaymentMpesa{}).
 			Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 			Where("business_short_code = ?", shortCode.BusinessShortCode).
 			Distinct("reference_number").
 			Select("reference_number").
 			Scan(&accountNumbers).Error
 		if err != nil {
-			mpesaAPI.Logger.Errorf("WORKER: failed to scan reference_number to slice: %v", err)
+			c2bAPI.Logger.Errorf("WORKER: failed to scan reference_number to slice: %v", err)
 			continue
 		}
 
 		// Get statictics for each account number but first merged
 		for _, accountNumber := range accountNumbers {
 
-			db := mpesaAPI.SQLDB.Model(&PaymentMpesa{}).
+			db := c2bAPI.SQLDB.Model(&PaymentMpesa{}).
 				Where("transaction_time BETWEEN ? AND ?", startTimestamp, endTimestamp).
 				Where("business_short_code = ?", shortCode.BusinessShortCode).
 				Where("reference_number = ?", accountNumber.ReferenceNumber)
@@ -113,7 +113,7 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 			// Count of transactions
 			err = db.Count(&transactions).Error
 			if err != nil {
-				mpesaAPI.Logger.Errorf(
+				c2bAPI.Logger.Errorf(
 					"WORKER: failed to count transactions count for day_seconds %v short_code %s account %s : %v",
 					startTimestamp, shortCode.BusinessShortCode, accountNumber, err,
 				)
@@ -125,7 +125,7 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 			// Get total amount
 			err = db.Model(&PaymentMpesa{}).Select("sum(amount) as total").Row().Scan(&totalAmount)
 			if err != nil {
-				mpesaAPI.Logger.Errorf(
+				c2bAPI.Logger.Errorf(
 					"WORKER: failed to get sum of transactions for day_seconds %v short_code %s account %s : %v",
 					startTimestamp, shortCode.BusinessShortCode, accountNumber.ReferenceNumber, err,
 				)
@@ -151,16 +151,16 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 			statDB2 := &Stat{}
 
 			// Save statistics
-			err = mpesaAPI.SQLDB.First(
+			err = c2bAPI.SQLDB.First(
 				statDB2, "short_code = ? AND account_name = ? AND date = ?",
 				shortCode.BusinessShortCode, accountNumber.ReferenceNumber, date,
 			).Error
 			switch {
 			case err == nil:
 				// Update
-				err = mpesaAPI.SQLDB.Where("stat_id = ?", statDB2.StatID).Updates(statDB).Error
+				err = c2bAPI.SQLDB.Where("stat_id = ?", statDB2.StatID).Updates(statDB).Error
 				if err != nil {
-					mpesaAPI.Logger.Errorf(
+					c2bAPI.Logger.Errorf(
 						"WORKER: failed to update stats for day_seconds %v short_code %s account %s : %v",
 						startTimestamp, shortCode.BusinessShortCode, accountNumber.ReferenceNumber, err,
 					)
@@ -168,16 +168,16 @@ func (mpesaAPI *mpesaAPIServer) generateStatistics(ctx context.Context, startTim
 				}
 			case errors.Is(err, gorm.ErrRecordNotFound):
 				// Create
-				err = mpesaAPI.SQLDB.Create(statDB).Error
+				err = c2bAPI.SQLDB.Create(statDB).Error
 				if err != nil {
-					mpesaAPI.Logger.Errorf(
+					c2bAPI.Logger.Errorf(
 						"WORKER: failed to create stats for day_seconds %v short_code %s account %s : %v",
 						startTimestamp, shortCode.BusinessShortCode, accountNumber.ReferenceNumber, err,
 					)
 					return
 				}
 			default:
-				mpesaAPI.Logger.Errorf("WORKER: failed to find stat %v", err)
+				c2bAPI.Logger.Errorf("WORKER: failed to find stat %v", err)
 				return
 			}
 		}

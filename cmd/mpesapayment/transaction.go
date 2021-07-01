@@ -12,6 +12,7 @@ import (
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	b2capp "github.com/gidyon/mpesapayments/internal/b2c"
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"google.golang.org/grpc/metadata"
 
 	"github.com/gidyon/mpesapayments/pkg/payload"
@@ -82,6 +83,8 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 
 	gw.Logger.Infoln("received b2c transaction from mpesa")
+
+	httputils.DumpRequest(r, "Safaricom B2C Payload")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
@@ -255,6 +258,8 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 func (gw *b2cGateway) fromOnfon(w http.ResponseWriter, r *http.Request) {
 
 	gw.Logger.Infoln("received b2c transaction from onfon")
+
+	httputils.DumpRequest(r, "Safaricom B2C Payload")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
