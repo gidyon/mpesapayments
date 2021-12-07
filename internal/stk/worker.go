@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/proto"
 )
@@ -40,12 +41,20 @@ func (stkAPI *stkAPIServer) updateAccessToken() error {
 
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", stkAPI.OptionsSTK.basicToken))
 
+	httputils.DumpRequest(req, "STK ACCESS TOKEN REQUEST")
+
 	res, err := stkAPI.HTTPClient.Do(req)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("request failed: %v", err)
 	}
 
-	resTo := make(map[string]interface{}, 0)
+	httputils.DumpResponse(res, "STK ACCESS TOKEN RESPONSE")
+
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected status code OK got: %v", res.Status)
+	}
+
+	resTo := make(map[string]interface{})
 	err = json.NewDecoder(res.Body).Decode(&resTo)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("failed to json decode response: %v", err)
