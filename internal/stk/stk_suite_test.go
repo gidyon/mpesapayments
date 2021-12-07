@@ -13,7 +13,6 @@ import (
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/mocks"
-	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	redis "github.com/go-redis/redis/v8"
@@ -45,7 +44,7 @@ const (
 func startDB() (*gorm.DB, error) {
 	return conn.OpenGormConn(&conn.DBOptions{
 		Dialect:  "mysql",
-		Address:  "localhost:3306",
+		Address:  dbAddress,
 		User:     "root",
 		Password: "hakty11",
 		Schema:   schema,
@@ -80,9 +79,6 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("C2B_app", zerolog.TraceLevel)
 
-	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
-	Expect(err).ShouldNot(HaveOccurred())
-
 	stkOptions := &OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
 		accessToken:       randomdata.RandStringRunes(32),
@@ -105,7 +101,6 @@ var _ = BeforeSuite(func() {
 		RedisDB:                   redisDB,
 		Logger:                    logger,
 		AuthAPI:                   mocks.AuthAPI,
-		PaginationHasher:          paginationHasher,
 		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Second * 5,
@@ -122,9 +117,6 @@ var _ = BeforeSuite(func() {
 	var ok bool
 	StkAPIServer, ok = StkAPI.(*stkAPIServer)
 	Expect(ok).Should(BeTrue())
-
-	_, err = NewStkAPI(nil, opt, mpesaAPI)
-	Expect(err).Should(HaveOccurred())
 
 	_, err = NewStkAPI(ctx, nil, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
@@ -154,11 +146,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.AuthAPI = mocks.AuthAPI
-	opt.PaginationHasher = nil
-	_, err = NewStkAPI(ctx, opt, mpesaAPI)
-	Expect(err).Should(HaveOccurred())
-
-	opt.PaginationHasher = paginationHasher
 	opt.HTTPClient = nil
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
