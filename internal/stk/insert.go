@@ -12,8 +12,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const maxCap = 10000
-
 func valFunc(v1, v2 string) string {
 	if v1 == "" || v1 == "0" {
 		return v2
@@ -57,7 +55,6 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 				initiatorID, err := stkAPI.RedisDB.Get(ctx, key).Result()
 				switch {
 				case err == nil:
-					publish = true
 				case errors.Is(err, redis.Nil):
 					return
 				default:
