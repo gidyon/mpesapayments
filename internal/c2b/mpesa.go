@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -26,13 +27,9 @@ import (
 
 // FailedTxList is redis list for failed mpesa transactions
 const (
-	FailedTxList            = "mpesa:payments:failedtx:list"
-	failedTxListv2          = "mpesa:payments:failedtx:list"
-	unprocessedTxList       = "mpesa:payments:failedtx:list:failed"
-	pendingConfirmationSet  = "mpesa:payments:pendingtx:set"
-	pendingConfirmationList = "mpesa:payments:pendingtx:list"
-	publishChannel          = "mpesa:payments:pubsub"
-	bulkInsertSize          = 1000
+	FailedTxList   = "mpesa:payments:failedtx:list"
+	publishChannel = "mpesa:payments:pubsub"
+	bulkInsertSize = 1000
 )
 
 type incomingPayment struct {
@@ -42,7 +39,6 @@ type incomingPayment struct {
 
 type c2bAPIServer struct {
 	c2b.UnimplementedLipaNaMPESAServer
-	lastProcessedTxTime time.Time
 	*Options
 	insertChan    chan *incomingPayment
 	insertTimeOut time.Duration
@@ -127,11 +123,16 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (c2b.LipaNaMPESAServer
 
 	c2bAPI.Logger.Infof("Publishing to mpesa consumers on channel: %v", c2bAPI.AddPrefix(opt.PublishChannel))
 
+	tablePrefix = os.Getenv("C2B_TABLE_PREFIX")
+
 	// Auto migrations
 	if !c2bAPI.SQLDB.Migrator().HasTable(&PaymentMpesa{}) {
 		err = c2bAPI.SQLDB.Migrator().AutoMigrate(&PaymentMpesa{})
 		if err != nil {
 			err = c2bAPI.SQLDB.Migrator().AutoMigrate(&PaymentMpesa{})
+			if err != nil {
+				return nil, fmt.Errorf("failed to automigrate %s table: %v", (&PaymentMpesa{}).TableName(), err)
+			}
 		}
 	}
 
@@ -246,7 +247,7 @@ func (c2bAPI *c2bAPIServer) CreateC2BPayment(
 		}
 	}
 
-	mpesaDB, err := GetMpesaDB(createReq.MpesaPayment)
+	mpesaDB, err := C2BPaymentDB(createReq.MpesaPayment)
 	if err != nil {
 		return nil, err
 	}
@@ -294,7 +295,7 @@ func (c2bAPI *c2bAPIServer) GetC2BPayment(
 		return nil, errs.FailedToFind("mpesa payment", err)
 	}
 
-	return GetMpesaPB(mpesaDB)
+	return C2BPayment(mpesaDB)
 }
 
 func (c2bAPI *c2bAPIServer) ExistC2BPayment(
@@ -339,25 +340,6 @@ const defaultPageSize = 50
 
 func userScopesKey(userID string) string {
 	return fmt.Sprintf("user:%s:scopes", userID)
-}
-func userAllowedShortCodes(userID string) string {
-	return fmt.Sprintf("user:%s:allowedshortcodes", userID)
-}
-
-func userAllowedAccSet(userID string) string {
-	return fmt.Sprintf("user:%s:allowedaccounts", userID)
-}
-
-func userAllowedPhonesSet(userID string) string {
-	return fmt.Sprintf("user:%s:allowedphones", userID)
-}
-
-func userAllowedAmounts(userID string) string {
-	return fmt.Sprintf("user:%s:allowedamounts", userID)
-}
-
-func userAllowedPercent(userID string) string {
-	return fmt.Sprintf("user:%s:percent", userID)
 }
 
 func (c2bAPI *c2bAPIServer) ListC2BPayments(
@@ -455,9 +437,9 @@ func (c2bAPI *c2bAPIServer) ListC2BPayments(
 			db = db.Where("processed=true")
 		}
 	}
-	if listReq.GetFilter().GetOnlyUnique() {
-		// db = db.Group("msisdn")
-	}
+	// if listReq.GetFilter().GetOnlyUnique() {
+	// db = db.Group("msisdn")
+	// }
 
 	err = db.Find(&C2Bs).Error
 	switch {
@@ -469,7 +451,7 @@ func (c2bAPI *c2bAPIServer) ListC2BPayments(
 	paymentsPB := make([]*c2b.C2BPayment, 0, len(C2Bs))
 
 	for i, paymentDB := range C2Bs {
-		paymentPaymenPB, err := GetMpesaPB(paymentDB)
+		paymentPaymenPB, err := C2BPayment(paymentDB)
 		if err != nil {
 			return nil, err
 		}
@@ -523,33 +505,6 @@ func getTime(dateStr string) (*time.Time, error) {
 	}
 
 	return &t, nil
-}
-
-func stringArrayToFloat(arr []float32) []string {
-	arr1 := make([]string, 0, len(arr))
-	for _, v := range arr {
-		arr1 = append(arr1, fmt.Sprint(v))
-	}
-	return arr1
-}
-
-func float32ArrToString(arr []float32) []string {
-	arr1 := make([]string, 0, len(arr))
-	for _, v := range arr {
-		arr1 = append(arr1, fmt.Sprint(v))
-	}
-	return arr1
-}
-
-func stringArrToFloat32(arr []string) []float32 {
-	arr1 := make([]float32, 0, len(arr))
-	for _, v := range arr {
-		v2, err := strconv.ParseFloat(v, 32)
-		if err == nil {
-			arr1 = append(arr1, float32(v2))
-		}
-	}
-	return arr1
 }
 
 func (c2bAPI *c2bAPIServer) SaveScopes(
@@ -676,17 +631,19 @@ func (c2bAPI *c2bAPIServer) ProcessC2BPayment(
 	// Check if not already processed process
 	if _, err := strconv.Atoi(processReq.PaymentId); err == nil {
 		db := c2bAPI.SQLDB.Model(&PaymentMpesa{}).Unscoped().Where("payment_id=?", processReq.PaymentId).Update("processed", processReq.State)
-		err = db.Error
+		if db.Error != nil {
+			c2bAPI.Logger.Errorln(err)
+			return nil, errs.WrapMessage(codes.Internal, "failed to process c2b payment")
+		}
 		count = db.RowsAffected
 	} else {
 		db := c2bAPI.SQLDB.Model(&PaymentMpesa{}).Unscoped().Where("transaction_id=?", processReq.PaymentId).Update("processed", processReq.State)
-		err = db.Error
+		if db.Error != nil {
+			c2bAPI.Logger.Errorln(err)
+			return nil, errs.WrapMessage(codes.Internal, "failed to process c2b payment")
+		}
 		count = db.RowsAffected
 	}
-	if err != nil {
-		return nil, errs.FailedToUpdate("mpesa payment", err)
-	}
-
 	// Update if not processed
 	if count == 0 {
 		if processReq.Retry {
@@ -868,9 +825,6 @@ func (c2bAPI *c2bAPIServer) PublishAllC2BPayments(
 	return &emptypb.Empty{}, nil
 }
 
-type transactionsSummary struct {
-}
-
 func inStringArray(element string, array []string) bool {
 	for _, v := range array {
 		if v == element {
@@ -1025,10 +979,6 @@ func (c2bAPI *c2bAPIServer) GetTransactionsCount(
 		TotalAmount:       totalAmount2,
 		TransactionsCount: totalTransactions,
 	}, nil
-}
-
-type total struct {
-	total float32
 }
 
 func (c2bAPI *c2bAPIServer) GetRandomTransaction(
@@ -1202,7 +1152,7 @@ func (c2bAPI *c2bAPIServer) GetStats(
 				// generate stat
 				c2bAPI.generateStatistics(ctx, startTime.Unix(), startTime.Unix()+(24*3600))
 				err = c2bAPI.SQLDB.First(statDB, "date = ? AND short_code = ? AND account_name = ?", date, getStat.ShortCode, getStat.AccountName).Error
-				if err != nil && errors.Is(err, gorm.ErrRecordNotFound) == false {
+				if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 					errChan <- err
 					return
 				}

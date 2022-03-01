@@ -75,7 +75,7 @@ var _ = Describe("Getting stats @getstat", func() {
 				)
 				payments := make([]*PaymentMpesa, 0, 5)
 				for i := 0; i < count; i++ {
-					paymentDB, err := GetMpesaDB(fakeC2BPayment())
+					paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
 					paymentDB.ReferenceNumber = accountName()

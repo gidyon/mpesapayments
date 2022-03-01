@@ -27,7 +27,7 @@ var _ = Describe("Listing transaction stats @liststat", func() {
 	Describe("Listing for stats for mpesa transactions with malformed request", func() {
 		It("should fail when the request", func() {
 			listReq = nil
-			listRes, err := C2BAPI.ListStats(ctx, *&listReq)
+			listRes, err := C2BAPI.ListStats(ctx, listReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(listRes).Should(BeNil())
@@ -40,7 +40,7 @@ var _ = Describe("Listing transaction stats @liststat", func() {
 				var err error
 				payments := make([]*PaymentMpesa, 0, 50)
 				for i := 0; i < 100; i++ {
-					paymentDB, err := GetMpesaDB(fakeC2BPayment())
+					paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
 					paymentDB.ReferenceNumber = accountName()

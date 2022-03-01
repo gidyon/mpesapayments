@@ -42,7 +42,7 @@ var _ = Describe("Getting random transaction @random", func() {
 				var err error
 				payments := make([]*PaymentMpesa, 0, 50)
 				for i := 0; i < 50; i++ {
-					paymentDB, err := GetMpesaDB(fakeC2BPayment())
+					paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
 					paymentDB.ReferenceNumber = accountsNum[randomdata.Number(0, len(accountsNum))]

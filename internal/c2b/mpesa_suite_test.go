@@ -3,8 +3,6 @@ package c2b
 import (
 	"context"
 	"math/rand"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 	"time"
@@ -44,21 +42,15 @@ const (
 func startDB() (*gorm.DB, error) {
 	return conn.OpenGormConn(&conn.DBOptions{
 		Dialect:  "mysql",
-		Address:  "localhost:3306",
+		Address:  dbAddress,
 		User:     "root",
 		Password: "hakty11",
 		Schema:   schema,
 	})
 }
 
-type client int
-
-func (client) Do(*http.Request) (*http.Response, error) {
-	return &http.Response{Body: httptest.NewRecorder().Result().Body}, nil
-}
-
 var _ = BeforeSuite(func() {
-	os.Setenv("TABLE_PREFIX", "test")
+	os.Setenv("C2B_TABLE_PREFIX", "test")
 
 	workerChan = make(chan struct{})
 	ctx = context.Background()
@@ -101,9 +93,6 @@ var _ = BeforeSuite(func() {
 	var ok bool
 	C2BAPIServer, ok = C2BAPI.(*c2bAPIServer)
 	Expect(ok).Should(BeTrue())
-
-	_, err = NewAPIServerMPESA(nil, opt)
-	Expect(err).Should(HaveOccurred())
 
 	_, err = NewAPIServerMPESA(ctx, nil)
 	Expect(err).Should(HaveOccurred())

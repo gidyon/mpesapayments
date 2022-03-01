@@ -45,7 +45,7 @@ var _ = Describe("Processing MPESA payment @process", func() {
 		var paymentID string
 		Context("Lets create mpesa payment first", func() {
 			It("should succeed", func() {
-				paymentDB, err := GetMpesaDB(fakeC2BPayment())
+				paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = C2BAPIServer.SQLDB.Create(paymentDB).Error

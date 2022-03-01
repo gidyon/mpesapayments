@@ -50,7 +50,7 @@ var _ = Describe("Getting mpesa payment @gety", func() {
 	Describe("Getting mpesa payment with well formed request", func() {
 		var paymentID string
 		Specify("Creating payment first", func() {
-			paymentDB, err := GetMpesaDB(fakeC2BPayment())
+			paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 			Expect(err).ShouldNot(HaveOccurred())
 
 			err = C2BAPIServer.SQLDB.Create(paymentDB).Error

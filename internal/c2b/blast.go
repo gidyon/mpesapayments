@@ -39,11 +39,11 @@ func (c2bAPI *c2bAPIServer) BlastPhones(
 	// Get unique mpesa payments
 	var (
 		next               = true
-		ok                 = false
 		pageToken          = ""
 		pageSize     int32 = 1000
-		uniquePhones       = make(map[string]struct{}, 100)
-		bulksQueues        = make([]*QueueBulk, 0, pageSize)
+		ok           bool
+		uniquePhones = make(map[string]struct{}, 100)
+		bulksQueues  = make([]*QueueBulk, 0, pageSize)
 	)
 
 	blastReq.ExportFilter.OnlyUnique = true
@@ -169,11 +169,11 @@ func (c2bAPI *c2bAPIServer) BlastPhonesFromFile(
 		count        = 0
 		bulkSize     = 1000
 		next         = true
-		ok           = false
 		dataID       = fileDataFirst.ID
 		fileDatas    = make([]*UploadedFileData, 0, bulkSize+1)
 		bulksQueues  = make([]*QueueBulk, 0, bulkSize)
 		uniquePhones = make(map[string]struct{}, bulkSize)
+		ok           bool
 	)
 
 	for next {

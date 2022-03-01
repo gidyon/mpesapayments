@@ -62,7 +62,7 @@ var _ = Describe("Publishing an Mpesa Payment @publish", func() {
 			It("should succeed", func() {
 				go listenFn()
 
-				paymentDB, err := GetMpesaDB(fakeC2BPayment())
+				paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = C2BAPIServer.SQLDB.Create(paymentDB).Error

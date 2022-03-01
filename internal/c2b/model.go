@@ -15,6 +15,8 @@ import (
 // C2Bs is table for mpesa payments
 const C2Bs = "c2b_transactions"
 
+var tablePrefix = ""
+
 // PaymentMpesa contains mpesa transaction details
 type PaymentMpesa struct {
 	PaymentID         uint      `gorm:"primaryKey;autoIncrement"`
@@ -33,16 +35,14 @@ type PaymentMpesa struct {
 
 // TableName returns the name of the table
 func (*PaymentMpesa) TableName() string {
-	// Get table prefix
-	prefix := os.Getenv("TABLE_PREFIX")
-	if prefix != "" {
-		return fmt.Sprintf("%s_%s", prefix, C2Bs)
+	if tablePrefix != "" {
+		return fmt.Sprintf("%s_%s", tablePrefix, C2Bs)
 	}
 	return C2Bs
 }
 
-// GetMpesaDB converts protobuf mpesa message to C2BMpesa
-func GetMpesaDB(MpesaPB *c2b.C2BPayment) (*PaymentMpesa, error) {
+// C2BPaymentDB converts protobuf mpesa message to C2BMpesa
+func C2BPaymentDB(MpesaPB *c2b.C2BPayment) (*PaymentMpesa, error) {
 	if MpesaPB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}
@@ -63,8 +63,8 @@ func GetMpesaDB(MpesaPB *c2b.C2BPayment) (*PaymentMpesa, error) {
 	return mpesaDB, nil
 }
 
-// GetMpesaPB returns the protobuf message of mpesa payment model
-func GetMpesaPB(MpesaDB *PaymentMpesa) (*c2b.C2BPayment, error) {
+// C2BPayment returns the protobuf message of mpesa payment model
+func C2BPayment(MpesaDB *PaymentMpesa) (*c2b.C2BPayment, error) {
 	if MpesaDB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}
@@ -105,9 +105,8 @@ type Stat struct {
 // TableName ...
 func (*Stat) TableName() string {
 	// Get table prefix
-	prefix := os.Getenv("TABLE_PREFIX")
-	if prefix != "" {
-		return fmt.Sprintf("%s_%s", prefix, statsTable)
+	if tablePrefix != "" {
+		return fmt.Sprintf("%s_%s", tablePrefix, statsTable)
 	}
 	return statsTable
 }

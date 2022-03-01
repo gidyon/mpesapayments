@@ -47,12 +47,12 @@ var _ = Describe("Getting summary of mpesa transactions @gettx", func() {
 				var err error
 				payments := make([]*PaymentMpesa, 0, 50)
 				for i := 0; i < 50; i++ {
-					paymentDB, err := GetMpesaDB(fakeC2BPayment())
+					paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 					payments = append(payments, paymentDB)
 				}
 				for i := 0; i < 50; i++ {
-					paymentDB, err := GetMpesaDB(fakeC2BPayment())
+					paymentDB, err := C2BPaymentDB(fakeC2BPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 					paymentDB.Amount = 100
 					paymentDB.ReferenceNumber = "a"
