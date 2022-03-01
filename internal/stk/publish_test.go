@@ -61,7 +61,7 @@ var _ = Describe("Publishing stk payload @publish", func() {
 			It("should succeed", func() {
 				go listenFn()
 
-				payloadDB, err := GetStkPayloadDB(mockStkPayload())
+				payloadDB, err := StkPayloadDB(mockStkPayload())
 				Expect(err).ShouldNot(HaveOccurred())
 				err = StkAPIServer.SQLDB.Create(payloadDB).Error
 				Expect(err).ShouldNot(HaveOccurred())

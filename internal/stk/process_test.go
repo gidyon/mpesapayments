@@ -45,7 +45,7 @@ var _ = Describe("Processing stk payload @process", func() {
 		var payloadID string
 		Context("Lets create stk payload first", func() {
 			It("should succeed", func() {
-				payloadDB, err := GetStkPayloadDB(mockStkPayload())
+				payloadDB, err := StkPayloadDB(mockStkPayload())
 				Expect(err).ShouldNot(HaveOccurred())
 				err = StkAPIServer.SQLDB.Create(payloadDB).Error
 				Expect(err).ShouldNot(HaveOccurred())

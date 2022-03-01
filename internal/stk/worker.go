@@ -134,7 +134,7 @@ loop:
 				goto loop
 			}
 
-			stkPayloadDB, err := GetStkPayloadDB(stkPayload)
+			stkPayloadDB, err := StkPayloadDB(stkPayload)
 			if err != nil {
 				stkAPI.Logger.Errorf("failed to get mpesa database model: %v", err)
 				goto loop

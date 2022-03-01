@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -217,6 +218,8 @@ func NewStkAPI(
 		insertTimeOut: time.Duration(5 * time.Second),
 		ctxAdmin:      ctxAdmin,
 	}
+
+	tablePrefix = os.Getenv("STK_TABLE_PREFIX")
 
 	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.addPrefix(stkAPI.PublishChannel))
 
@@ -447,7 +450,7 @@ func (stkAPI *stkAPIServer) CreateStkPayload(
 		}
 	}
 
-	stkPayloadDB, err := GetStkPayloadDB(req.Payload)
+	stkPayloadDB, err := StkPayloadDB(req.Payload)
 	if err != nil {
 		return nil, err
 	}
@@ -511,7 +514,7 @@ func (stkAPI *stkAPIServer) GetStkPayload(
 		return nil, errs.DoesNotExist("mpesa payload", req.PayloadId)
 	}
 
-	return GetStkPayloadPB(stkPayloadDB)
+	return StkPayloadPB(stkPayloadDB)
 }
 
 const defaultPageSize = 20
@@ -625,7 +628,7 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 	payloadPayloadsPB := make([]*stk.StkPayload, 0, len(mpesapayloads))
 
 	for i, payloadPayloadDB := range mpesapayloads {
-		payloadPaymenPB, err := GetStkPayloadPB(payloadPayloadDB)
+		payloadPaymenPB, err := StkPayloadPB(payloadPayloadDB)
 		if err != nil {
 			return nil, err
 		}

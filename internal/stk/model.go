@@ -2,7 +2,6 @@ package stk
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/gidyon/micro/v2/utils/errs"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
@@ -10,6 +9,8 @@ import (
 
 // StkTable is table for mpesa payments
 const StkTable = "stks_mpesa"
+
+var tablePrefix = ""
 
 // PayloadStk contains mpesa transaction details
 type PayloadStk struct {
@@ -31,15 +32,14 @@ type PayloadStk struct {
 // TableName returns the name of the table
 func (*PayloadStk) TableName() string {
 	// Get table prefix
-	prefix := os.Getenv("TABLE_PREFIX")
-	if prefix != "" {
-		return fmt.Sprintf("%s_%s", prefix, StkTable)
+	if tablePrefix != "" {
+		return fmt.Sprintf("%s_%s", tablePrefix, StkTable)
 	}
 	return StkTable
 }
 
-// GetStkPayloadDB converts protobuf mpesa message to MPESAPayloadStk
-func GetStkPayloadDB(stkPayloadPB *stk.StkPayload) (*PayloadStk, error) {
+// StkPayloadDB converts protobuf mpesa message to MPESAPayloadStk
+func StkPayloadDB(stkPayloadPB *stk.StkPayload) (*PayloadStk, error) {
 	if stkPayloadPB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}
@@ -61,8 +61,8 @@ func GetStkPayloadDB(stkPayloadPB *stk.StkPayload) (*PayloadStk, error) {
 	return stkPayloadDB, nil
 }
 
-// GetStkPayloadPB returns the protobuf message of mpesa payment model
-func GetStkPayloadPB(stkPayloadDB *PayloadStk) (*stk.StkPayload, error) {
+// StkPayloadPB returns the protobuf message of mpesa payment model
+func StkPayloadPB(stkPayloadDB *PayloadStk) (*stk.StkPayload, error) {
 	if stkPayloadDB == nil {
 		return nil, errs.NilObject("mpesa payment")
 	}
