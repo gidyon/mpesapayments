@@ -199,7 +199,7 @@ func ValidateOptionsB2C(opt *OptionsB2C) error {
 	case opt.InitiatorPassword == "" && opt.InitiatorEncryptedPassword == "":
 		err = errs.MissingField("initiator password")
 	case opt.QueueTimeOutURL == "":
-		err = errs.MissingField("queue timeuout url")
+		err = errs.MissingField("queue timeout url")
 	case opt.ResultURL == "":
 		err = errs.MissingField("result url")
 	}
