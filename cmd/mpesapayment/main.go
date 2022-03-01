@@ -131,7 +131,7 @@ func main() {
 
 		if !disableC2BAPI {
 			opt := mpesa.Options{
-				PublishChannel:   os.Getenv("PUBLISH_CHANNEL_PAYBILL"),
+				PublishChannel:   os.Getenv("C2B_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
 				SQLDB:            app.GormDBByName("sqlWrites"),
 				RedisDB:          app.RedisClientByName("redisWrites"),
@@ -152,13 +152,13 @@ func main() {
 				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
 				ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
 				ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
-				BusinessShortCode: os.Getenv("BUSINESS_SHORT_CODE"),
-				AccountReference:  os.Getenv("MPESA_ACCOUNT_REFERENCE"),
-				Timestamp:         os.Getenv("MPESA_ACCESS_TIMESTAMP"),
-				PassKey:           os.Getenv("LNM_PASSKEY"),
-				CallBackURL:       os.Getenv("MPESA_CALLBACK_URL"),
-				PostURL:           os.Getenv("MPESA_POST_URL"),
-				QueryURL:          os.Getenv("MPESA_QUERY_URL"),
+				BusinessShortCode: os.Getenv("STK_BUSINESS_SHORT_CODE"),
+				AccountReference:  os.Getenv("STK_MPESA_ACCOUNT_REFERENCE"),
+				Timestamp:         os.Getenv("STK_MPESA_ACCESS_TIMESTAMP"),
+				PassKey:           os.Getenv("STK_LNM_PASSKEY"),
+				CallBackURL:       os.Getenv("STK_MPESA_CALLBACK_URL"),
+				PostURL:           os.Getenv("STK_MPESA_POST_URL"),
+				QueryURL:          os.Getenv("STK_MPESA_QUERY_URL"),
 			}
 
 			opt := stkapp.Options{
@@ -166,10 +166,9 @@ func main() {
 				RedisDB:             app.RedisClientByName("redisWrites"),
 				Logger:              app.Logger(),
 				AuthAPI:             authAPI,
-				PaginationHasher:    paginationHasher,
 				HTTPClient:          http.DefaultClient,
 				OptionsSTK:          stkOption,
-				PublishChannel:      os.Getenv("PUBLISH_CHANNEL_STK"),
+				PublishChannel:      os.Getenv("STK_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
 				DisableMpesaService: disableC2BAPI,
 			}
@@ -187,20 +186,20 @@ func main() {
 				AccessTokenURL:             os.Getenv("MPESA_ACCESS_TOKEN_URL"),
 				ConsumerKey:                os.Getenv("SAF_CONSUMER_KEY"),
 				ConsumerSecret:             os.Getenv("SAF_CONSUMER_SECRET"),
-				QueueTimeOutURL:            os.Getenv("QUEUE_TIMEOUT_URL"),
-				ResultURL:                  os.Getenv("RESULT_URL"),
-				InitiatorUsername:          os.Getenv("INITIATOR_USERNAME"),
-				InitiatorPassword:          os.Getenv("INITIATOR_PASSWORD"),
-				InitiatorEncryptedPassword: os.Getenv("INITIATOR_ENCRYPTED_PASSWORD"),
+				QueueTimeOutURL:            os.Getenv("B2C_QUEUE_TIMEOUT_URL"),
+				ResultURL:                  os.Getenv("B2C_RESULT_URL"),
+				InitiatorUsername:          os.Getenv("B2C_INITIATOR_USERNAME"),
+				InitiatorPassword:          os.Getenv("B2C_INITIATOR_PASSWORD"),
+				InitiatorEncryptedPassword: os.Getenv("B2C_INITIATOR_ENCRYPTED_PASSWORD"),
 			}
 
 			opt := &b2capp.Options{
-				PublishChannel:   os.Getenv("PUBLISH_CHANNEL_B2C"),
+				PublishChannel:   os.Getenv("B2C_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
-				B2CLocalTopic:    os.Getenv("PUBLISH_CHANNEL_LOCAL"),
-				QueryBalanceURL:  os.Getenv("QUERY_BALANCE_URL"),
+				B2CLocalTopic:    os.Getenv("B2C_PUBLISH_CHANNEL_LOCAL"),
+				QueryBalanceURL:  os.Getenv("B2C_QUERY_BALANCE_URL"),
 				B2CURL:           os.Getenv("B2C_URL"),
-				ReversalURL:      os.Getenv("REVERSAL_URL"),
+				ReversalURL:      os.Getenv("B2C_REVERSAL_URL"),
 				SQLDB:            app.GormDBByName("sqlWrites"),
 				RedisDB:          app.RedisClientByName("redisWrites"),
 				Logger:           app.Logger(),
@@ -231,7 +230,7 @@ func main() {
 			DisableSTKService:     disableSTKAPI,
 			DisableB2CService:     disableB2CAPI,
 			RedisKeyPrefix:        os.Getenv("REDIS_KEY_PREFIX"),
-			B2CLocalTopic:         os.Getenv("PUBLISH_CHANNEL_LOCAL"),
+			B2CLocalTopic:         os.Getenv("B2C_PUBLISH_CHANNEL_LOCAL"),
 			B2CTransactionCharges: float32(b2cTxCost),
 		}
 
