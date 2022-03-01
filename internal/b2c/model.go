@@ -2,7 +2,6 @@ package b2c
 
 import (
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/gidyon/mpesapayments/pkg/api/b2c"
@@ -11,6 +10,8 @@ import (
 
 // B2CTable is table name for b2c transactions
 const B2CTable = "b2c_transactions"
+
+var b2cTable = ""
 
 // Payment is B2C payment model
 type Payment struct {
@@ -26,7 +27,6 @@ type Payment struct {
 	ResultCode               string    `gorm:"type:varchar(2)"`
 	ResultDescription        string    `gorm:"type:varchar(100)"`
 	TransactionTime          time.Time `gorm:"autoCreateTime"`
-	CreateAt                 time.Time `gorm:"primaryKey;autoCreateTime;->;<-:create;not null"`
 	Amount                   float32   `gorm:"index;type:float(10)"`
 	WorkingAccountFunds      float32   `gorm:"type:float(10)"`
 	UtilityAccountFunds      float32   `gorm:"type:float(10)"`
@@ -35,72 +35,74 @@ type Payment struct {
 	RecipientRegistered      bool      `gorm:"type:tinyint(1)"`
 	Succeeded                bool      `gorm:"type:tinyint(1)"`
 	Processed                bool      `gorm:"type:tinyint(1)"`
+	CreatedAt                time.Time `gorm:"primaryKey;autoCreateTime;->;<-:create;not null"`
 }
 
 // TableName is table name for model
 func (*Payment) TableName() string {
-	table := os.Getenv("B2C_TRANSACTIONS_TABLE")
-	if table != "" {
-		return table
+	if b2cTable != "" {
+		return b2cTable
 	}
 	return B2CTable
 }
 
-// GetB2CPaymentDB is wrapper to converts database model to protobuf b2c payment
-func GetB2CPaymentDB(paymentPB *b2c.B2CPayment) (*Payment, error) {
-	paymentDB := &Payment{
-		InitiatorID:              paymentPB.InitiatorId,
-		Msisdn:                   paymentPB.Msisdn,
-		OrgShortCode:             paymentPB.OrgShortCode,
-		ReceiverPublicName:       paymentPB.ReceiverPartyPublicName,
-		TransactionType:          paymentPB.TransactionType,
-		TransactionID:            paymentPB.TransactionId,
-		ConversationID:           paymentPB.ConversationId,
-		OriginatorConversationID: paymentPB.OriginatorConversationId,
-		ResultCode:               paymentPB.ResultCode,
-		ResultDescription:        paymentPB.ResultDescription,
-		CreateAt:                 time.Unix(paymentPB.TransactionTimestamp, 0),
-		Amount:                   paymentPB.Amount,
-		WorkingAccountFunds:      paymentPB.WorkingAccountFunds,
-		UtilityAccountFunds:      paymentPB.UtilityAccountFunds,
-		MpesaCharges:             paymentPB.MpesaCharges,
-		OnfonCharges:             paymentPB.OnfonCharges,
-		RecipientRegistered:      paymentPB.RecipientRegistered,
-		Succeeded:                paymentPB.Succeeded,
-		Processed:                paymentPB.Processed,
+// B2CPaymentDB is wrapper to converts database model to protobuf b2c payment
+func B2CPaymentDB(pb *b2c.B2CPayment) (*Payment, error) {
+	db := &Payment{
+		InitiatorID:              pb.InitiatorId,
+		Msisdn:                   pb.Msisdn,
+		OrgShortCode:             pb.OrgShortCode,
+		ReceiverPublicName:       pb.ReceiverPartyPublicName,
+		TransactionType:          pb.TransactionType,
+		TransactionID:            pb.TransactionId,
+		ConversationID:           pb.ConversationId,
+		OriginatorConversationID: pb.OriginatorConversationId,
+		ResultCode:               pb.ResultCode,
+		ResultDescription:        pb.ResultDescription,
+		CreatedAt:                time.Unix(pb.TransactionTimestamp, 0),
+		Amount:                   pb.Amount,
+		WorkingAccountFunds:      pb.WorkingAccountFunds,
+		UtilityAccountFunds:      pb.UtilityAccountFunds,
+		MpesaCharges:             pb.MpesaCharges,
+		OnfonCharges:             pb.OnfonCharges,
+		RecipientRegistered:      pb.RecipientRegistered,
+		Succeeded:                pb.Succeeded,
+		Processed:                pb.Processed,
 	}
-	return paymentDB, nil
+	return db, nil
 }
 
-// GetB2CPaymentPB is wrapper to converts protobuf b2c payment to database model
-func GetB2CPaymentPB(paymentDB *Payment) (*b2c.B2CPayment, error) {
-	paymentPB := &b2c.B2CPayment{
-		PaymentId:                fmt.Sprint(paymentDB.PaymentID),
-		InitiatorId:              paymentDB.InitiatorID,
-		Msisdn:                   paymentDB.Msisdn,
-		OrgShortCode:             paymentDB.OrgShortCode,
-		ReceiverPartyPublicName:  paymentDB.ReceiverPublicName,
-		TransactionType:          paymentDB.TransactionType,
-		TransactionId:            paymentDB.TransactionID,
-		ConversationId:           paymentDB.ConversationID,
-		OriginatorConversationId: paymentDB.OriginatorConversationID,
-		ResultCode:               paymentDB.ResultCode,
-		ResultDescription:        paymentDB.ResultDescription,
-		TransactionTimestamp:     paymentDB.TransactionTime.Unix(),
-		CreateTimestamp:          paymentDB.CreateAt.Unix(),
-		Amount:                   paymentDB.Amount,
-		WorkingAccountFunds:      paymentDB.WorkingAccountFunds,
-		UtilityAccountFunds:      paymentDB.UtilityAccountFunds,
-		MpesaCharges:             paymentDB.MpesaCharges,
-		OnfonCharges:             paymentDB.OnfonCharges,
-		RecipientRegistered:      paymentDB.RecipientRegistered,
-		Succeeded:                paymentDB.Succeeded,
-		Processed:                paymentDB.Processed,
+// B2CPaymentPB is wrapper to converts protobuf b2c payment to database model
+func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
+	pb := &b2c.B2CPayment{
+		PaymentId:                fmt.Sprint(db.PaymentID),
+		InitiatorId:              db.InitiatorID,
+		Msisdn:                   db.Msisdn,
+		OrgShortCode:             db.OrgShortCode,
+		ReceiverPartyPublicName:  db.ReceiverPublicName,
+		TransactionType:          db.TransactionType,
+		TransactionId:            db.TransactionID,
+		ConversationId:           db.ConversationID,
+		OriginatorConversationId: db.OriginatorConversationID,
+		ResultCode:               db.ResultCode,
+		ResultDescription:        db.ResultDescription,
+		TransactionTimestamp:     db.TransactionTime.Unix(),
+		CreateTimestamp:          db.CreatedAt.Unix(),
+		Amount:                   db.Amount,
+		WorkingAccountFunds:      db.WorkingAccountFunds,
+		UtilityAccountFunds:      db.UtilityAccountFunds,
+		MpesaCharges:             db.MpesaCharges,
+		OnfonCharges:             db.OnfonCharges,
+		RecipientRegistered:      db.RecipientRegistered,
+		Succeeded:                db.Succeeded,
+		Processed:                db.Processed,
 	}
-	return paymentPB, nil
+	return pb, nil
 }
 
 const statsTable = "b2c_daily_stats"
+
+var btcStatsTable = ""
 
 // DailyStat contains statistics for a day
 type DailyStat struct {
@@ -119,10 +121,8 @@ type DailyStat struct {
 
 // TableName ...
 func (*DailyStat) TableName() string {
-	// Get table prefix
-	table := os.Getenv("B2C_STATS_TABLE")
-	if table != "" {
-		return table
+	if btcStatsTable != "" {
+		return btcStatsTable
 	}
 	return statsTable
 }

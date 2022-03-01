@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"sync"
 	"time"
@@ -255,6 +256,10 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 	}
 
 	b2cAPI.Logger.Infof("Publishing to b2c consumers on channel: %v", AddPrefix(b2cAPI.PublishChannel, b2cAPI.RedisKeyPrefix))
+
+	b2cTable = os.Getenv("B2C_TRANSACTIONS_TABLE")
+
+	btcStatsTable = os.Getenv("B2C_STATS_TABLE")
 
 	// Auto migration
 	if !b2cAPI.SQLDB.Migrator().HasTable(&Payment{}) {
@@ -807,7 +812,7 @@ func (b2cAPI *b2cAPIServer) CreateB2CPayment(
 		}
 	}
 
-	paymentDB, err := GetB2CPaymentDB(createReq.Payment)
+	paymentDB, err := B2CPaymentDB(createReq.Payment)
 	if err != nil {
 		return nil, err
 	}
@@ -853,7 +858,7 @@ func (b2cAPI *b2cAPIServer) GetB2CPayment(
 		return nil, errs.DoesNotExist("mpesa transaction", getReq.PaymentId)
 	}
 
-	return GetB2CPaymentPB(paymentDB)
+	return B2CPaymentPB(paymentDB)
 }
 
 const defaultPageSize = 20
@@ -968,7 +973,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 	transactionsPB := make([]*b2c.B2CPayment, 0, len(transactions))
 
 	for i, paymentDB := range transactions {
-		paymentPaymenPB, err := GetB2CPaymentPB(paymentDB)
+		paymentPaymenPB, err := B2CPaymentPB(paymentDB)
 		if err != nil {
 			return nil, err
 		}

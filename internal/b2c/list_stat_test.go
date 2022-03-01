@@ -40,7 +40,7 @@ var _ = Describe("Listing transaction stats @liststat", func() {
 				var err error
 				payments := make([]*Payment, 0, 50)
 				for i := 0; i < 100; i++ {
-					paymentDB, err := GetB2CPaymentDB(fakeB2CPayment())
+					paymentDB, err := B2CPaymentDB(fakeB2CPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
 					payments = append(payments, paymentDB)

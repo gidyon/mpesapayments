@@ -44,7 +44,7 @@ var _ = Describe("Listing b2c transactions @list", func() {
 		Context("Lets create random b2c transactions", func() {
 			It("should succeed", func() {
 				for i := 0; i < 100; i++ {
-					paymentDB, err := GetB2CPaymentDB(fakeB2CPayment())
+					paymentDB, err := B2CPaymentDB(fakeB2CPayment())
 					Expect(err).ShouldNot(HaveOccurred())
 
 					err = B2CAPIServer.SQLDB.Create(paymentDB).Error

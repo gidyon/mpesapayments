@@ -45,7 +45,7 @@ var _ = Describe("Processing b2c transaction @process", func() {
 		var paymentID string
 		Context("Lets create b2c transaction first", func() {
 			It("should succeed", func() {
-				paymentDB, err := GetB2CPaymentDB(fakeB2CPayment())
+				paymentDB, err := B2CPaymentDB(fakeB2CPayment())
 				Expect(err).ShouldNot(HaveOccurred())
 
 				err = B2CAPIServer.SQLDB.Create(paymentDB).Error
