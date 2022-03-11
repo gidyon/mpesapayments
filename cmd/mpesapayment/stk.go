@@ -11,6 +11,7 @@ import (
 	stkapp "github.com/gidyon/mpesapayments/internal/stk"
 	"github.com/gidyon/mpesapayments/pkg/api/stk"
 	"github.com/gidyon/mpesapayments/pkg/payload"
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -62,6 +63,8 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var err error
 
 	gw.Logger.Infoln("received stk request from mpesa")
+
+	httputils.DumpRequest(r, "Mpesa STK Payload")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {

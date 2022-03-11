@@ -13,6 +13,7 @@ import (
 	mpesa "github.com/gidyon/mpesapayments/internal/c2b"
 	"github.com/gidyon/mpesapayments/pkg/api/c2b"
 	"github.com/gidyon/mpesapayments/pkg/payload"
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 )
@@ -63,14 +64,17 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	gw.Logger.Infoln("received mpesa transaction transaction")
 
-	var err error
+	httputils.DumpRequest(r, "Mpesa C2B Payload")
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "bad method; only POST allowed", http.StatusBadRequest)
 		return
 	}
 
-	mpesaPayload := &payload.MpesaPayload{}
+	var (
+		err          error
+		mpesaPayload = &payload.MpesaPayload{}
+	)
 
 	// Marshaling
 	switch ctype := r.Header.Get("content-type"); ctype {
