@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
@@ -32,7 +31,6 @@ import (
 const (
 	// FailedTxList is redis list for failed mpesa transactions
 	FailedTxList   = "mpesa:stk:failedtx:list"
-	failedTxListv2 = "mpesa:stk:failedtx:list"
 	publishChannel = "mpesa:stk:pubsub"
 	bulkInsertSize = 1000
 )
@@ -270,6 +268,11 @@ func GetMpesaSTKPushKey(msisdn, keyPrefix string) string {
 	return fmt.Sprintf("%s:mpesa:stkpush:%s", keyPrefix, msisdn)
 }
 
+// GetMpesaRequestKey is key that initiates data
+func GetMpesaRequestKey(requestId string) string {
+	return fmt.Sprintf("stk:%s", requestId)
+}
+
 // GetMpesaSTKPayloadKey retrives key storing payload of stk initiator
 func GetMpesaSTKPayloadKey(initiatorID, keyPrefix string) string {
 	return fmt.Sprintf("%s:mpesa:stkpayload:%s", keyPrefix, initiatorID)
@@ -291,27 +294,16 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	switch {
 	case req == nil:
 		return nil, errs.NilObject("request")
-	case req.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
 	case req.Phone == "":
 		return nil, errs.MissingField("phone")
 	case req.Amount <= 0:
 		return nil, errs.MissingField("amount")
-	case req.Payload == nil:
-		return nil, errs.MissingField("stk payload")
 	}
 
-	txKey := GetMpesaSTKPushKey(req.Phone, stkAPI.RedisKeyPrefix)
-
-	// Marshal req
-	bs, err := proto.Marshal(req)
-	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
-		return nil, errs.FromProtoMarshal(err, "init request")
-	}
+	cacheKey := GetMpesaSTKPushKey(req.Phone, stkAPI.RedisKeyPrefix)
 
 	// Check whether another transaction is under way
-	exists, err := stkAPI.RedisDB.Exists(ctx, txKey).Result()
+	exists, err := stkAPI.RedisDB.Exists(ctx, cacheKey).Result()
 	if err != nil {
 		return nil, errs.RedisCmdFailed(err, "exists")
 	}
@@ -323,30 +315,11 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		}, nil
 	}
 
-	pipeliner := stkAPI.RedisDB.TxPipeline()
-
-	// Save initiator key in cache for 100 seconds
-	err = pipeliner.Set(ctx, txKey, req.InitiatorId, 100*time.Second).Err()
+	// Save key in cache for 100 seconds
+	err = stkAPI.RedisDB.Set(ctx, cacheKey, "active", 100*time.Second).Err()
 	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
+		stkAPI.RedisDB.Del(ctx, cacheKey)
 		return nil, errs.RedisCmdFailed(err, "set")
-	}
-
-	// Key to payload
-	txKey2 := GetMpesaSTKPayloadKey(req.GetInitiatorId(), stkAPI.RedisKeyPrefix)
-
-	// Save initiator payload in cache
-	err = pipeliner.Set(ctx, txKey2, bs, stkAPI.InitiatorExpireDuration).Err()
-	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
-		return nil, errs.RedisCmdFailed(err, "set")
-	}
-
-	// Execute transaction
-	_, err = pipeliner.Exec(ctx)
-	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
-		return nil, errs.RedisCmdFailed(err, "exec")
 	}
 
 	// Correct phone number
@@ -373,16 +346,16 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	}
 
 	// Json Marshal
-	bs, err = json.Marshal(stkPayload)
+	bs, err := json.Marshal(stkPayload)
 	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
+		stkAPI.RedisDB.Del(ctx, cacheKey)
 		return nil, errs.FromJSONMarshal(err, "stkPayload")
 	}
 
 	// Create request
 	reqHtpp, err := http.NewRequest(http.MethodPost, stkAPI.OptionsSTK.PostURL, bytes.NewReader(bs))
 	if err != nil {
-		stkAPI.RedisDB.Del(ctx, txKey)
+		stkAPI.RedisDB.Del(ctx, cacheKey)
 		return nil, errs.WrapMessage(codes.Internal, "failed to create new request")
 	}
 
@@ -399,7 +372,6 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		// Post to MPESA API
 		res, err := stkAPI.HTTPClient.Do(reqHtpp)
 		if err != nil {
-			stkAPI.RedisDB.Del(ctx, txKey)
 			stkAPI.Logger.Errorf("failed to post stk payload to mpesa API: %v", err)
 			return
 		}
@@ -410,7 +382,6 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 
 		err = json.NewDecoder(res.Body).Decode(&resData)
 		if err != nil && err != io.EOF {
-			stkAPI.RedisDB.Del(ctx, txKey)
 			stkAPI.Logger.Errorf("failed to decode mpesa response: %v", err)
 			return
 		}
@@ -418,8 +389,23 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		// Check for error
 		errMsg, ok := resData["errorMessage"]
 		if ok {
-			stkAPI.RedisDB.Del(ctx, txKey)
 			stkAPI.Logger.Errorf("error happened while sending stk push: %v", errMsg)
+			return
+		}
+
+		// Marshal req
+		bs, err := proto.Marshal(req)
+		if err != nil {
+			stkAPI.Logger.Errorln(err)
+			return
+		}
+
+		requestId := GetMpesaRequestKey(fmt.Sprint(resData["MerchantRequestID"]))
+
+		// Save payload to cache
+		err = stkAPI.RedisDB.Set(ctx, requestId, bs, time.Minute*30).Err()
+		if err != nil {
+			stkAPI.Logger.Errorln(err)
 			return
 		}
 	}()
@@ -496,7 +482,7 @@ func (stkAPI *stkAPIServer) GetStkPayload(
 	case req == nil:
 		return nil, errs.NilObject("GetStkPayloadRequest")
 	case req.PayloadId == "":
-		return nil, errs.MissingField("payload id")
+		return nil, errs.MissingField("transaction id")
 	default:
 		ID, _ = strconv.Atoi(req.PayloadId)
 	}
@@ -579,7 +565,7 @@ func (stkAPI *stkAPIServer) ListStkPayloads(
 		db = db.Where("phone_number IN(?)", allowedPhones)
 	}
 
-	// Apply payload id filter
+	// Apply transaction id filter
 	if ID != 0 {
 		db = db.Where("payload_id<=?", ID)
 	}
@@ -682,7 +668,7 @@ func (stkAPI *stkAPIServer) ProcessStkPayload(
 	case req == nil:
 		return nil, errs.NilObject("process request")
 	case req.PayloadId == "":
-		return nil, errs.MissingField("payload id")
+		return nil, errs.MissingField("transaction id")
 	default:
 		ID, _ = strconv.Atoi(req.PayloadId)
 	}
@@ -716,52 +702,29 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 	switch {
 	case req == nil:
 		return nil, errs.NilObject("publish request")
-	case req.PayloadId == "":
-		return nil, errs.MissingField("payload id")
-	case req.Payload == nil && !req.FromCache:
-		return nil, errs.MissingField("stk payload")
+	case req.PublishMessage == nil:
+		return nil, errs.MissingField("publish message")
 	}
 
-	// Get mpesa payload
-	mpesaPayload, err := stkAPI.GetStkPayload(ctx, &stk.GetStkPayloadRequest{
-		PayloadId: req.PayloadId,
-	})
-	if err != nil {
-		return nil, err
-	}
+	stkPayload := req.PublishMessage.GetTransactionInfo()
 
-	// Payload to be published
-	publishPayload := &stk.PublishMessage{
-		PayloadId: req.PayloadId,
-		Payload:   req.Payload,
-	}
-
-	// Get payload from cache
-	if req.FromCache {
-		// Get key
-		txKey := GetMpesaSTKPayloadKey(mpesaPayload.PhoneNumber, stkAPI.RedisKeyPrefix)
-		val, err := stkAPI.RedisDB.Get(ctx, txKey).Result()
-		switch {
-		case err == nil:
-		case errors.Is(err, redis.Nil):
-			return nil, errs.WrapMessage(codes.NotFound, "publish payload not found in cache")
-		default:
-			return nil, errs.RedisCmdFailed(err, "get")
-		}
-
-		// Unmarshal
-		if val != "" {
-			payload := &stk.InitiateSTKPushRequest{}
-			err = proto.Unmarshal([]byte(val), payload)
-			if err != nil {
-				return nil, errs.FromProtoUnMarshal(err, "initiate stk payload")
-			}
-			publishPayload.Payload = payload.Payload
+	if req.PublishMessage.TransactionId != "" {
+		// Get mpesa payload
+		v, err := stkAPI.GetStkPayload(ctx, &stk.GetStkPayloadRequest{
+			PayloadId: req.PublishMessage.TransactionId,
+		})
+		if err == nil {
+			stkPayload = v
+		} else {
+			stkAPI.Logger.Errorln(err)
 		}
 	}
+
+	// Update the value
+	req.PublishMessage.TransactionInfo = stkPayload
 
 	// Marshal data
-	bs, err := proto.Marshal(publishPayload)
+	bs, err := proto.Marshal(req.PublishMessage)
 	if err != nil {
 		return nil, errs.FromProtoMarshal(err, "publish message")
 	}
@@ -777,7 +740,7 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 		}
 	case c2b.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
-		if mpesaPayload.Processed {
+		if stkPayload.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -785,99 +748,12 @@ func (stkAPI *stkAPIServer) PublishStkPayload(
 		}
 	case c2b.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !mpesaPayload.Processed {
+		if !stkPayload.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (stkAPI *stkAPIServer) PublishAllStkPayload(
-	ctx context.Context, req *stk.PublishAllStkPayloadRequest,
-) (*emptypb.Empty, error) {
-	// Authorization
-	_, err := stkAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validation
-	switch {
-	case req == nil:
-		return nil, errs.NilObject("publish all request")
-	case req.StartTimestamp > time.Now().Unix() || req.EndTimestamp > time.Now().Unix():
-		return nil, errs.WrapMessage(codes.InvalidArgument, "cannot work with future times")
-	default:
-		if req.EndTimestamp != 0 || req.StartTimestamp != 0 {
-			if req.EndTimestamp < req.StartTimestamp {
-				return nil, errs.WrapMessage(
-					codes.InvalidArgument, "start timestamp cannot be greater than end timestamp",
-				)
-			}
-		}
-	}
-
-	if req.StartTimestamp == 0 {
-		if req.EndTimestamp == 0 {
-			req.EndTimestamp = time.Now().Unix()
-		}
-		req.StartTimestamp = req.EndTimestamp - int64(7*24*60*60)
-		if req.StartTimestamp < 0 {
-			req.StartTimestamp = 0
-		}
-	}
-
-	var (
-		pageToken string
-		pageSize  int32 = 1000
-		next            = true
-	)
-
-	for next {
-		// List transactions
-		listRes, err := stkAPI.ListStkPayloads(ctx, &stk.ListStkPayloadsRequest{
-			PageToken: pageToken,
-			PageSize:  pageSize,
-			Filter: &stk.ListStkPayloadFilter{
-				ProcessState:   req.ProcessedState,
-				StartTimestamp: req.StartTimestamp,
-				EndTimestamp:   req.StartTimestamp,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-		if listRes.NextPageToken == "" {
-			next = false
-		}
-		pageToken = listRes.NextPageToken
-
-		wg := &sync.WaitGroup{}
-
-		// Publish the mpesa transactions to listeners
-		for _, mpesaPB := range listRes.StkPayloads {
-			wg.Add(1)
-
-			go func(mpesaPB *stk.StkPayload) {
-				defer wg.Done()
-
-				// Publish to consumers
-				_, err = stkAPI.PublishStkPayload(stkAPI.ctxAdmin, &stk.PublishStkPayloadRequest{
-					PayloadId: mpesaPB.PayloadId,
-					FromCache: req.FromCache,
-				})
-				if err != nil {
-					stkAPI.Logger.Errorln(err)
-				}
-
-			}(mpesaPB)
-		}
-
-		wg.Wait()
 	}
 
 	return &emptypb.Empty{}, nil

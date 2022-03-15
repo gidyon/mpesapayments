@@ -125,13 +125,6 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		gw.Logger.Warningf("stk not successful: %s", stkPayloadPB.ResultDesc)
-		return
-	}
-
-	// Update initiator id
-	stkPayloadPB.InitiatorId, err = gw.RedisDB.Get(r.Context(), stkapp.GetMpesaSTKPushKey(stkPayloadPB.PhoneNumber, gw.RedisKeyPrefix)).Result()
-	if err != nil {
-		gw.Logger.Warningf("failed to get initiator id for stk: %v", err)
 	}
 
 	// Save to database
@@ -140,14 +133,39 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		gw.Logger.Errorf("failed to create stk payload: %v", err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 
-		bs, err := proto.Marshal(stkPayloadPB)
-		if err == nil {
-			gw.RedisDB.LPush(r.Context(), stkapp.FailedTxList, bs)
+	// Get initiator payload
+	bs, err := gw.RedisDB.Get(r.Context(), stkapp.GetMpesaRequestKey(stkPayload.Body.STKCallback.MerchantRequestID)).Result()
+	if err != nil {
+		gw.Logger.Warningf("failed to get initiator id for stk: %v", err)
+	}
+
+	initReq := stk.InitiateSTKPushRequest{}
+	err = proto.Unmarshal([]byte(bs), &initReq)
+	if err != nil {
+		gw.Logger.Warningf("failed to unmarshal init request: %v", err)
+	}
+
+	if initReq.Publish {
+		publish := func() {
+			_, err = gw.stkAPI.PublishStkPayload(gw.ctxExt, &stk.PublishStkPayloadRequest{
+				PublishMessage: &stk.PublishMessage{
+					TransactionInfo: stkPayloadPB,
+					PublishInfo:     initReq.PublishMessage,
+				},
+			})
+			if err != nil {
+				gw.Logger.Warningf("failed to publish message: %v", err)
+			}
 		}
-
-		return
+		if initReq.GetPublishMessage().GetOnlyOnSuccess() {
+			if stkPayloadPB.Succeeded {
+				publish()
+			}
+		} else {
+			publish()
+		}
 	}
 
 	_, err = w.Write([]byte("mpesa stk processed"))

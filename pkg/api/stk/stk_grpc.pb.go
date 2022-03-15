@@ -30,8 +30,6 @@ type StkPushAPIClient interface {
 	ProcessStkPayload(ctx context.Context, in *ProcessStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publishes stk push payload for consumers
 	PublishStkPayload(ctx context.Context, in *PublishStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Publihses all stk push payloads to consumers
-	PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type stkPushAPIClient struct {
@@ -96,15 +94,6 @@ func (c *stkPushAPIClient) PublishStkPayload(ctx context.Context, in *PublishStk
 	return out, nil
 }
 
-func (c *stkPushAPIClient) PublishAllStkPayload(ctx context.Context, in *PublishAllStkPayloadRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/PublishAllStkPayload", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // StkPushAPIServer is the server API for StkPushAPI service.
 // All implementations must embed UnimplementedStkPushAPIServer
 // for forward compatibility
@@ -121,8 +110,6 @@ type StkPushAPIServer interface {
 	ProcessStkPayload(context.Context, *ProcessStkPayloadRequest) (*emptypb.Empty, error)
 	// Publishes stk push payload for consumers
 	PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*emptypb.Empty, error)
-	// Publihses all stk push payloads to consumers
-	PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*emptypb.Empty, error)
 	mustEmbedUnimplementedStkPushAPIServer()
 }
 
@@ -147,9 +134,6 @@ func (UnimplementedStkPushAPIServer) ProcessStkPayload(context.Context, *Process
 }
 func (UnimplementedStkPushAPIServer) PublishStkPayload(context.Context, *PublishStkPayloadRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishStkPayload not implemented")
-}
-func (UnimplementedStkPushAPIServer) PublishAllStkPayload(context.Context, *PublishAllStkPayloadRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishAllStkPayload not implemented")
 }
 func (UnimplementedStkPushAPIServer) mustEmbedUnimplementedStkPushAPIServer() {}
 
@@ -272,24 +256,6 @@ func _StkPushAPI_PublishStkPayload_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StkPushAPI_PublishAllStkPayload_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishAllStkPayloadRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StkPushAPIServer).PublishAllStkPayload(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/PublishAllStkPayload",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).PublishAllStkPayload(ctx, req.(*PublishAllStkPayloadRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 var _StkPushAPI_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "gidyon.mpesa.StkPushAPI",
 	HandlerType: (*StkPushAPIServer)(nil),
@@ -317,10 +283,6 @@ var _StkPushAPI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishStkPayload",
 			Handler:    _StkPushAPI_PublishStkPayload_Handler,
-		},
-		{
-			MethodName: "PublishAllStkPayload",
-			Handler:    _StkPushAPI_PublishAllStkPayload_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

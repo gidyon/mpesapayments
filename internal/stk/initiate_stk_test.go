@@ -19,10 +19,6 @@ var _ = Describe("Initiating stk request @initiate", func() {
 		initReq = &stk.InitiateSTKPushRequest{
 			Phone:  randomdata.PhoneNumber()[:10],
 			Amount: randomdata.Decimal(5, 10),
-			Payload: map[string]string{
-				"client_id": randomdata.RandStringRunes(32),
-			},
-			InitiatorId: randomdata.RandStringRunes(32),
 		}
 		ctx = context.Background()
 	})
@@ -30,13 +26,6 @@ var _ = Describe("Initiating stk request @initiate", func() {
 	Describe("Initiating stk push with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			initReq = nil
-			initRes, err := StkAPI.InitiateSTKPush(ctx, initReq)
-			Expect(err).Should(HaveOccurred())
-			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
-			Expect(initRes).Should(BeNil())
-		})
-		It("should fail when stk payload", func() {
-			initReq.Payload = nil
 			initRes, err := StkAPI.InitiateSTKPush(ctx, initReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))

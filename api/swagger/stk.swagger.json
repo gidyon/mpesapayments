@@ -235,39 +235,6 @@
         ]
       }
     },
-    "/api/mpestx/stkpush/action/publishall": {
-      "post": {
-        "summary": "Publihses all stk push payloads to consumers",
-        "operationId": "StkPushAPI_PublishAllStkPayload",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "properties": {}
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "body",
-            "in": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/mpesaPublishAllStkPayloadRequest"
-            }
-          }
-        ],
-        "tags": [
-          "StkPushAPI"
-        ]
-      }
-    },
     "/api/mpestx/stkpush/{payloadId}": {
       "get": {
         "summary": "Retrieves a single stk payload",
@@ -320,9 +287,6 @@
     "mpesaInitiateSTKPushRequest": {
       "type": "object",
       "properties": {
-        "initiatorId": {
-          "type": "string"
-        },
         "phone": {
           "type": "string"
         },
@@ -330,19 +294,18 @@
           "type": "number",
           "format": "double"
         },
-        "payload": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
+        "publish": {
+          "type": "boolean"
+        },
+        "publishMessage": {
+          "$ref": "#/definitions/mpesaPublishInfo"
         }
       },
       "description": "Initiates a STK push payment to the specified phone number",
       "title": "InitiateSTKPushRequest",
       "required": [
         "phone",
-        "amount",
-        "payload"
+        "amount"
       ]
     },
     "mpesaInitiateSTKPushResponse": {
@@ -423,31 +386,13 @@
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
-    "mpesaPublishAllStkPayloadRequest": {
+    "mpesaPublishInfo": {
       "type": "object",
       "properties": {
-        "processedState": {
-          "$ref": "#/definitions/mpesaProcessedState"
-        },
-        "fromCache": {
+        "onlyOnSuccess": {
           "type": "boolean"
         },
-        "startTimestamp": {
-          "type": "string",
-          "format": "int64"
-        },
-        "endTimestamp": {
-          "type": "string",
-          "format": "int64"
-        }
-      },
-      "description": "Request to publish all stk push payloads",
-      "title": "PublishAllStkPayloadRequest"
-    },
-    "mpesaPublishStkPayloadRequest": {
-      "type": "object",
-      "properties": {
-        "payloadId": {
+        "channelName": {
           "type": "string"
         },
         "payload": {
@@ -455,12 +400,36 @@
           "additionalProperties": {
             "type": "string"
           }
+        }
+      }
+    },
+    "mpesaPublishMessage": {
+      "type": "object",
+      "properties": {
+        "transactionId": {
+          "type": "string"
+        },
+        "phoneNumber": {
+          "type": "string"
+        },
+        "publishInfo": {
+          "$ref": "#/definitions/mpesaPublishInfo"
+        },
+        "transactionInfo": {
+          "$ref": "#/definitions/mpesaStkPayload"
+        }
+      },
+      "description": "Published stk message to consumers",
+      "title": "PublishMessage"
+    },
+    "mpesaPublishStkPayloadRequest": {
+      "type": "object",
+      "properties": {
+        "publishMessage": {
+          "$ref": "#/definitions/mpesaPublishMessage"
         },
         "processedState": {
           "$ref": "#/definitions/mpesaProcessedState"
-        },
-        "fromCache": {
-          "type": "boolean"
         }
       },
       "description": "Request to publish a stk push payload",
