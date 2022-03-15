@@ -5,36 +5,36 @@ import (
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("Processing stk payload @process", func() {
 	var (
-		processReq *stk.ProcessStkPayloadRequest
-		ctx        context.Context
+		req *stk.ProcessStkTransactionRequest
+		ctx context.Context
 	)
 
 	BeforeEach(func() {
-		processReq = &stk.ProcessStkPayloadRequest{
-			PayloadId: fmt.Sprint(randomdata.Number(99, 999)),
-			Processed: true,
+		req = &stk.ProcessStkTransactionRequest{
+			TransactionId: fmt.Sprint(randomdata.Number(99, 999)),
+			Processed:     true,
 		}
 		ctx = context.Background()
 	})
 
 	Describe("Processing stk payload with malformed request", func() {
 		It("should fail when the request is nil", func() {
-			processReq = nil
-			processRes, err := StkAPI.ProcessStkPayload(ctx, processReq)
+			req = nil
+			processRes, err := StkAPI.ProcessStkTransaction(ctx, req)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(processRes).Should(BeNil())
 		})
-		It("should fail when payload id is missing", func() {
-			processReq.PayloadId = ""
-			processRes, err := StkAPI.ProcessStkPayload(ctx, processReq)
+		It("should fail when transaction id is missing", func() {
+			req.TransactionId = ""
+			processRes, err := StkAPI.ProcessStkTransaction(ctx, req)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(processRes).Should(BeNil())
@@ -42,22 +42,22 @@ var _ = Describe("Processing stk payload @process", func() {
 	})
 
 	Describe("Processing request with malformed request", func() {
-		var payloadID string
+		var ID string
 		Context("Lets create stk payload first", func() {
 			It("should succeed", func() {
-				payloadDB, err := StkPayloadDB(mockStkPayload())
+				db, err := STKTransactionModel(mockStkTransaction())
 				Expect(err).ShouldNot(HaveOccurred())
-				err = StkAPIServer.SQLDB.Create(payloadDB).Error
+				err = StkAPIServer.SQLDB.Create(db).Error
 				Expect(err).ShouldNot(HaveOccurred())
-				payloadID = payloadDB.TransactionID
+				ID = fmt.Sprint(db.ID)
 			})
 		})
 
 		Describe("Processing the request", func() {
 			It("should succeed", func() {
-				processReq.PayloadId = payloadID
-				processReq.Processed = true
-				processRes, err := StkAPI.ProcessStkPayload(ctx, processReq)
+				req.TransactionId = ID
+				req.Processed = true
+				processRes, err := StkAPI.ProcessStkTransaction(ctx, req)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
 				Expect(processRes).ShouldNot(BeNil())
@@ -66,8 +66,8 @@ var _ = Describe("Processing stk payload @process", func() {
 
 		Context("Getting the stk payload", func() {
 			Specify("processed to be true", func() {
-				getRes, err := StkAPI.GetStkPayload(ctx, &stk.GetStkPayloadRequest{
-					PayloadId: payloadID,
+				getRes, err := StkAPI.GetStkTransaction(ctx, &stk.GetStkTransactionRequest{
+					TransactionId: ID,
 				})
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))

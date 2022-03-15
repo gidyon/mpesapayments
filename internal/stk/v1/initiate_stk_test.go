@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

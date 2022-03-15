@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -20,8 +20,8 @@ func randomParagraph(l int) string {
 	return par
 }
 
-func mockStkPayload() *stk.StkPayload {
-	return &stk.StkPayload{
+func mockStkTransaction() *stk.StkTransaction {
+	return &stk.StkTransaction{
 		MerchantRequestId:    randomdata.RandStringRunes(48),
 		CheckoutRequestId:    randomdata.RandStringRunes(44),
 		ResultCode:           fmt.Sprint(randomdata.Number(0, 9999)),
@@ -35,13 +35,13 @@ func mockStkPayload() *stk.StkPayload {
 
 var _ = Describe("Creating stk payload record @create", func() {
 	var (
-		createReq *stk.CreateStkPayloadRequest
+		createReq *stk.CreateStkTransactionRequest
 		ctx       context.Context
 	)
 
 	BeforeEach(func() {
-		createReq = &stk.CreateStkPayloadRequest{
-			Payload: mockStkPayload(),
+		createReq = &stk.CreateStkTransactionRequest{
+			Payload: mockStkTransaction(),
 		}
 		ctx = context.Background()
 	})
@@ -49,49 +49,49 @@ var _ = Describe("Creating stk payload record @create", func() {
 	Describe("Creating stk payload with malformed request", func() {
 		It("should fail when the request is nil", func() {
 			createReq = nil
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when payload is nil", func() {
 			createReq.Payload = nil
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when the result code is missing", func() {
 			createReq.Payload.ResultCode = ""
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when the result desc is missing", func() {
 			createReq.Payload.ResultDesc = ""
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when amount is missing", func() {
 			createReq.Payload.Amount = ""
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when transaction date is missing", func() {
 			createReq.Payload.TransactionTimestamp = 0
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
 		})
 		It("should fail when phone number is missing", func() {
 			createReq.Payload.PhoneNumber = ""
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(createRes).Should(BeNil())
@@ -101,7 +101,7 @@ var _ = Describe("Creating stk payload record @create", func() {
 	Describe("Creating stk payload with correct body", func() {
 		var checkoutID string
 		It("should succeed when payload is correct", func() {
-			createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+			createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 			Expect(err).ShouldNot(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.OK))
 			Expect(createRes).ShouldNot(BeNil())
@@ -111,7 +111,7 @@ var _ = Describe("Creating stk payload record @create", func() {
 		Describe("Creating stk payload of similar transaction", func() {
 			It("should succeed because create is indempotent", func() {
 				createReq.Payload.CheckoutRequestId = checkoutID
-				createRes, err := StkAPI.CreateStkPayload(ctx, createReq)
+				createRes, err := StkAPI.CreateStkTransaction(ctx, createReq)
 				Expect(err).ShouldNot(HaveOccurred())
 				Expect(status.Code(err)).Should(Equal(codes.OK))
 				Expect(createRes).ShouldNot(BeNil())

@@ -12,8 +12,8 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 
 	incomingPayments := make([]*incomingPayment, 0, bulkInsertSize)
 
-	createFn := func() []*PayloadStk {
-		txs := make([]*PayloadStk, 0, len(incomingPayments))
+	createFn := func() []*STKTransaction {
+		txs := make([]*STKTransaction, 0, len(incomingPayments))
 		for _, incomingPayment := range incomingPayments {
 			txs = append(txs, incomingPayment.payment)
 		}

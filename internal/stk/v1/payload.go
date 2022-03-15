@@ -1,7 +1,7 @@
 package stk
 
-// PayloadStkRequest is STK push request payload
-type PayloadStkRequest struct {
+// STKRequestBody is STK push request payload
+type STKRequestBody struct {
 	BusinessShortCode string `json:"BusinessShortCode,omitempty"`
 	Password          string `json:"Password,omitempty"`
 	Timestamp         string `json:"Timestamp,omitempty"`

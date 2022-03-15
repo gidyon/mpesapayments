@@ -4,36 +4,36 @@ import (
 	"context"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 var _ = Describe("Listing stk payloads @list", func() {
 	var (
-		listReq *stk.ListStkPayloadsRequest
-		ctx     context.Context
+		req *stk.ListStkTransactionsRequest
+		ctx context.Context
 	)
 
 	BeforeEach(func() {
-		listReq = &stk.ListStkPayloadsRequest{
+		req = &stk.ListStkTransactionsRequest{
 			PageSize: 20,
-			Filter:   &stk.ListStkPayloadFilter{},
+			Filter:   &stk.ListStkTransactionFilter{},
 		}
 		ctx = context.Background()
 	})
 
 	Describe("Listing stk payloads with malformed request", func() {
 		It("should fail when the request is nil", func() {
-			listReq = nil
-			listRes, err := StkAPI.ListStkPayloads(ctx, listReq)
+			req = nil
+			listRes, err := StkAPI.ListStkTransactions(ctx, req)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(listRes).Should(BeNil())
 		})
 		It("should fail when filter date is incorrect", func() {
-			listReq.Filter.TxDate = time.Now().String()[:11]
-			listRes, err := StkAPI.ListStkPayloads(ctx, listReq)
+			req.Filter.TxDate = time.Now().String()[:11]
+			listRes, err := StkAPI.ListStkTransactions(ctx, req)
 			Expect(err).Should(HaveOccurred())
 			Expect(status.Code(err)).Should(Equal(codes.InvalidArgument))
 			Expect(listRes).Should(BeNil())
@@ -44,17 +44,17 @@ var _ = Describe("Listing stk payloads @list", func() {
 		Context("Lets create random stk payloads", func() {
 			It("should succeed", func() {
 				for i := 0; i < 100; i++ {
-					createRes, err := StkAPI.CreateStkPayload(ctx, &stk.CreateStkPayloadRequest{
-						Payload: mockStkPayload(),
+					createRes, err := StkAPI.CreateStkTransaction(ctx, &stk.CreateStkTransactionRequest{
+						Payload: mockStkTransaction(),
 					})
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(status.Code(err)).Should(Equal(codes.OK))
 					Expect(createRes).ShouldNot(BeNil())
 
 					// DB Direct
-					payloadDB, err := StkPayloadDB(mockStkPayload())
+					db, err := STKTransactionModel(mockStkTransaction())
 					Expect(err).ShouldNot(HaveOccurred())
-					err = StkAPIServer.SQLDB.Create(payloadDB).Error
+					err = StkAPIServer.SQLDB.Create(db).Error
 					Expect(err).ShouldNot(HaveOccurred())
 				}
 			})
@@ -66,8 +66,8 @@ var _ = Describe("Listing stk payloads @list", func() {
 				)
 				It("should succeed", func() {
 					for nextPageToken != "" {
-						listReq.PageToken = pageToken
-						listRes, err := StkAPI.ListStkPayloads(ctx, listReq)
+						req.PageToken = pageToken
+						listRes, err := StkAPI.ListStkTransactions(ctx, req)
 						Expect(err).ShouldNot(HaveOccurred())
 						Expect(status.Code(err)).Should(Equal(codes.OK))
 						Expect(listRes).ShouldNot(BeNil())
@@ -79,11 +79,11 @@ var _ = Describe("Listing stk payloads @list", func() {
 
 			Describe("Listing payments with filter on", func() {
 				It("should succeed", func() {
-					listReq.Filter = &stk.ListStkPayloadFilter{
+					req.Filter = &stk.ListStkTransactionFilter{
 						TxDate:  time.Now().String()[:10],
 						Msisdns: []string{"345678"},
 					}
-					listRes, err := StkAPI.ListStkPayloads(ctx, listReq)
+					listRes, err := StkAPI.ListStkTransactions(ctx, req)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(status.Code(err)).Should(Equal(codes.OK))
 					Expect(listRes).ShouldNot(BeNil())

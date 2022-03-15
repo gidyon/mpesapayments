@@ -13,8 +13,8 @@ import (
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/mocks"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog"
@@ -71,7 +71,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(db.Migrator().DropTable(StkTable)).ShouldNot(HaveOccurred())
 
-	Expect(db.AutoMigrate(&PayloadStk{})).ShouldNot(HaveOccurred())
+	Expect(db.AutoMigrate(&STKTransaction{})).ShouldNot(HaveOccurred())
 
 	redisDB := conn.OpenRedisConn(&redis.Options{
 		Addr: "localhost:6379",
@@ -105,7 +105,6 @@ var _ = BeforeSuite(func() {
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Second * 5,
 		WorkerDuration:            time.Second * 10,
-		RedisKeyPrefix:            "test",
 	}
 
 	mpesaAPI := c2b.UnimplementedLipaNaMPESAServer{}
@@ -151,11 +150,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.HTTPClient = httpClient
-	opt.RedisKeyPrefix = ""
-	_, err = NewStkAPI(ctx, opt, mpesaAPI)
-	Expect(err).Should(HaveOccurred())
-
-	opt.RedisKeyPrefix = "test"
 	opt.OptionsSTK = nil
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
