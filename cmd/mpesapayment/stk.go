@@ -118,23 +118,6 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		Succeeded:            stkPayload.Body.STKCallback.ResultCode == 0,
 	}
 
-	// Save only if the transaction was successful
-	if !stkPayloadPB.Succeeded {
-		_, err = w.Write([]byte("stk transaction not successful"))
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		gw.Logger.Warningf("stk not successful: %s", stkPayloadPB.ResultDesc)
-	}
-
-	// Save to database
-	_, err = gw.stkAPI.CreateStkPayload(
-		gw.ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
-	)
-	if err != nil {
-		gw.Logger.Errorf("failed to create stk payload: %v", err)
-	}
-
 	// Get initiator payload
 	bs, err := gw.RedisDB.Get(r.Context(), stkapp.GetMpesaRequestKey(stkPayload.Body.STKCallback.MerchantRequestID)).Result()
 	if err != nil {
@@ -145,6 +128,12 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	err = proto.Unmarshal([]byte(bs), &initReq)
 	if err != nil {
 		gw.Logger.Warningf("failed to unmarshal init request: %v", err)
+	}
+
+	// Update stkPayload
+	if !stkPayloadPB.Succeeded {
+		stkPayloadPB.PhoneNumber = firstVal(stkPayloadPB.PhoneNumber, initReq.GetPhone())
+		stkPayloadPB.Amount = firstVal(stkPayloadPB.Amount, fmt.Sprint(initReq.GetAmount()))
 	}
 
 	if initReq.Publish {
@@ -166,6 +155,14 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		} else {
 			publish()
 		}
+	}
+
+	// Save to database
+	_, err = gw.stkAPI.CreateStkPayload(
+		gw.ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
+	)
+	if err != nil {
+		gw.Logger.Errorf("failed to create stk payload: %v", err)
 	}
 
 	_, err = w.Write([]byte("mpesa stk processed"))
