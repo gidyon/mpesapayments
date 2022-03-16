@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

@@ -14,7 +14,7 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	redis "github.com/go-redis/redis/v8"
 	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
@@ -179,10 +179,10 @@ func NewAPIServerMPESA(ctx context.Context, opt *Options) (c2b.LipaNaMPESAServer
 	}
 
 	// Disable strict group by
-	err = c2bAPI.SQLDB.Exec("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));").Error
-	if err != nil {
-		return nil, fmt.Errorf("failed to set group by mode: %v", err)
-	}
+	// err = c2bAPI.SQLDB.Exec("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));").Error
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed to set group by mode: %v", err)
+	// }
 
 	// Insert worker
 	go c2bAPI.insertWorker(ctx)

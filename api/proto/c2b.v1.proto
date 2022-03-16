@@ -1,0 +1,689 @@
+syntax = "proto3";
+
+package gidyon.mpesa;
+
+option go_package = "github.com/gidyon/mpesapayments/pkg/api/c2b/v1";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/api/field_behaviour.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+message C2BPayment {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "C2BPayment"
+      description : "Lipa na MPESA Payment information"
+    }
+  };
+
+  string payment_id = 1;
+  string transaction_type = 2;
+  string transaction_id = 3;
+  string msisdn = 4;
+  string names = 5;
+  string ref_number = 6;
+  int64 transaction_time_seconds = 7;
+  int64 create_time_seconds = 8;
+  float amount = 9;
+  float org_balance = 10;
+  int32 business_short_code = 11;
+  bool processed = 12;
+}
+
+message CreateC2BPaymentRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "CreateC2BPaymentRequest"
+      description : "Request to create record of mpesa payment"
+      required : [ "mpesa_payment" ]
+    }
+  };
+
+  C2BPayment mpesa_payment = 1 [ (google.api.field_behavior) = REQUIRED ];
+  bool publish = 2;
+}
+
+message CreateC2BPaymentResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "CreateC2BPaymentResponse"
+      description : "Response after creating payment containing payment id"
+    }
+  };
+
+  string payment_id = 1;
+}
+
+message GetC2BPaymentRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "GetC2BPaymentRequest"
+      description : "Request to retrieve mpesa payment"
+      required : [ "payment_id" ]
+    }
+  };
+
+  string payment_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+message ExistC2BPaymentRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ExistC2BPaymentRequest"
+      description : "Request to check whether mpesa c2b payment exist"
+      required : [ "payment_id" ]
+    }
+  };
+
+  string payment_id = 1;
+}
+
+message ExistC2BPaymentResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ExistC2BPaymentResponse"
+      description : "Response indicating whether c2b payment exists"
+    }
+  };
+
+  bool exists = 1;
+  float amount = 2;
+}
+
+enum ProcessedState {
+  PROCESS_STATE_UNSPECIFIED = 0;
+  PROCESSED = 1;
+  NOT_PROCESSED = 2;
+}
+
+message ListC2BPaymentsFilter {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListC2BPaymentsFilter"
+      description : "Filter payload for querying payments"
+    }
+  };
+
+  string tx_date = 1;
+  repeated string msisdns = 2;
+  repeated string accounts_number = 3;
+  repeated string short_codes = 4;
+  repeated float amounts = 5;
+  ProcessedState process_state = 6;
+  int64 start_time_seconds = 7;
+  int64 end_time_seconds = 8;
+  bool only_unique = 9;
+}
+
+message ListC2BPaymentsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListC2BPaymentsRequest"
+      description : "Request to retrieve a collection of mpesa payments"
+    }
+  };
+
+  string page_token = 1;
+  int32 page_size = 2;
+  ListC2BPaymentsFilter filter = 3;
+}
+
+message ListC2BPaymentsResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListC2BPaymentsResponse"
+      description : "Reponse containing a collection of mpesa payments"
+    }
+  };
+
+  string next_page_token = 1;
+  repeated C2BPayment mpesa_payments = 2;
+}
+
+message Scopes {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "Scopes"
+      description : "Identities that is allowed access"
+    }
+  };
+
+  repeated string allowed_short_codes = 1;
+  repeated string allowed_phones = 2;
+  repeated string allowed_acc_number = 3;
+  repeated float allowed_amounts = 4;
+  float percentage = 5;
+}
+
+message SaveScopesRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "SaveScopesRequest"
+      description : "Request to add scopes"
+      required : [ "user_id", "scopes" ]
+    }
+  };
+
+  string user_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+  Scopes scopes = 2 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+message SaveScopesResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "SaveScopesResponse"
+      description : "Response containing scopes"
+    }
+  };
+
+  Scopes scopes = 1;
+}
+
+message GetScopesRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "GetScopesRequest"
+      description : "Request to scopes for an identity"
+      required : [ "user_id" ]
+    }
+  };
+
+  string user_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+message GetScopesResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "GetScopesResponse"
+      description : "Reponse containing scopes"
+    }
+  };
+
+  Scopes scopes = 1;
+}
+
+message ProcessC2BPaymentRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ProcessC2BPaymentRequest"
+      description : "Request to update Mpesa transaction processed state"
+    }
+  };
+
+  string payment_id = 1;
+  bool state = 2;
+  bool retry = 3;
+}
+
+message PublishC2BPaymentRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "PublishC2BPaymentRequest"
+      description : "Request to publish an mpesa transaction for listerners to "
+                    "process"
+    }
+  };
+
+  string payment_id = 1;
+  string initiator_id = 2;
+  ProcessedState processed_state = 3;
+}
+
+message PublishAllC2BPaymentsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "PublishAllC2BPaymentsRequest"
+      description : "Update Mpesa tx processed state to either true or false"
+    }
+  };
+
+  ProcessedState processed_state = 1;
+  int64 start_time_seconds = 2;
+  int64 end_time_seconds = 3;
+}
+
+message GetTransactionsCountRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "GetTransactionsCountRequest"
+      description : "Request to retrieve transactions information"
+    }
+  };
+
+  repeated string accounts_number = 1;
+  repeated string short_codes = 2;
+  repeated string msisdns = 3;
+  repeated float amounts = 4 [ (google.api.field_behavior) = REQUIRED ];
+  int64 start_time_seconds = 5;
+  int64 end_time_seconds = 6;
+}
+
+message TransactionsSummary {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "TransactionsSummary"
+      description : "Transactions summary"
+    }
+  };
+
+  float total_amount = 1;
+  int32 transactions_count = 2;
+}
+
+message ArchiveTransactionsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ArchiveTransactionsRequest"
+      description : "Request to archive all transactions in active table to a "
+                    "separate table"
+    }
+  };
+
+  int64 from_time_seconds = 1;
+  int64 to_time_seconds = 2;
+  repeated string ref_numbers = 3;
+  string archive_name = 4;
+  bool generate_stat = 5;
+}
+
+message GetRandomTransactionRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "RandomTransactionRequest"
+      description : "Request to a random transaction information"
+    }
+  };
+
+  repeated string accounts_number = 1;
+  int64 start_time_seconds = 2;
+  int64 end_time_seconds = 3;
+  float amount = 4 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+message Stat {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {title : "Stat" description : "Transaction statistics"}
+  };
+
+  string stat_id = 1;
+  string date = 2;
+  string short_code = 3;
+  string account_name = 4;
+  int32 total_transactions = 5;
+  float total_amount = 6;
+  int64 create_date_seconds = 7;
+  int64 update_time_seconds = 8;
+}
+
+message GetStatsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "GetStatsRequest"
+      description : "Request to get mpesa transaction statistics for a short "
+                    "code"
+    }
+  };
+
+  repeated string dates = 1;
+  string short_code = 2;
+  string account_name = 3;
+}
+
+message StatsResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "StatsResponse"
+      description : "Response containing multiple statistics"
+    }
+  };
+
+  repeated Stat stats = 1;
+  string next_page_token = 2;
+}
+
+message ListStatsFilter {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListStatsFilter"
+      description : "Filter criteria for listing statistics"
+    }
+  };
+
+  repeated string short_codes = 1;
+  repeated string accounts_number = 2;
+  int64 start_time_seconds = 3;
+  int64 end_time_seconds = 4;
+  string tx_date = 5;
+}
+
+message ListStatsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListStatsRequest"
+      description : "Request to retrieve statistics"
+    }
+  };
+
+  string page_token = 1;
+  int32 page_size = 2;
+  ListStatsFilter filter = 3;
+}
+
+message BlastPhonesRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "BlastPhonesRequest"
+      description : "Request to send out blast SMS message"
+    }
+  };
+
+  ListC2BPaymentsFilter export_filter = 1;
+  string comment = 2;
+  string originator = 3;
+  string originator_id = 4;
+}
+
+message BlastPhonesFromFileRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "BlastPhonesFromFileRequest"
+      description : "Request to blast using uploaded file"
+    }
+  };
+
+  string comment = 2;
+  string originator = 3;
+  string originator_id = 4;
+  string file_id = 5;
+  int32 start_index = 6;
+  int32 end_index = 7;
+}
+
+message BlastReport {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {title : "BlastReport" description : "Blast statistic"}
+  };
+
+  string report_id = 1;
+  string comment = 2;
+  string initiator = 3;
+  string originator = 4;
+  string source = 5;
+  string blast_file = 6;
+  string blast_file_id = 7;
+  int32 total_exported = 9;
+  int64 create_date_seconds = 10;
+  ListC2BPaymentsFilter export_filter = 11;
+}
+
+message BlastFile {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "BlastFile"
+      description : "File metadata for file uploaded containing phone numbers"
+    }
+  };
+
+  string file_id = 1;
+  string reference_name = 2;
+  string file_name = 3;
+  string uploader_names = 4;
+  int64 upload_time_seconds = 5;
+  int32 total_msisdn = 6;
+}
+
+message ListBlastReportsRequest {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListBlastReportsRequest"
+      description : "Request to get export report"
+    }
+  };
+
+  string page_token = 1;
+  int32 page_size = 2;
+}
+
+message ListBlastReportsResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "ListBlastReportsResponse"
+      description : "Response containing export data"
+    }
+  };
+
+  repeated BlastReport blast_reports = 1;
+  string next_page_token = 2;
+}
+
+message ListBlastFilesRequest {
+  string page_token = 1;
+  int32 page_size = 2;
+}
+
+message ListBlastFilesResponse {
+  repeated BlastFile blast_files = 1;
+  string next_page_token = 2;
+}
+
+// Stores and retrieves LIPA NA MPESA payments
+service LipaNaMPESA {
+  // Creates a record of mpesa payment.
+  rpc CreateC2BPayment(CreateC2BPaymentRequest)
+      returns (CreateC2BPaymentResponse) {
+    option (google.api.http) = {
+      post : "/api/mpestx/c2b"
+      body : "*"
+    };
+  };
+
+  // Retrieves MPESA payment.
+  rpc GetC2BPayment(GetC2BPaymentRequest) returns (C2BPayment) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/{payment_id}"
+    };
+  };
+
+  // Checks whether c2b payment exists
+  rpc ExistC2BPayment(ExistC2BPaymentRequest)
+      returns (ExistC2BPaymentResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/{payment_id}/exists"
+      additional_bindings {post : "/api/mpestx/c2b:existC2BPayment" body : "*"}
+    };
+  };
+
+  // Retrieves a collection of MPESA payments.
+  rpc ListC2BPayments(ListC2BPaymentsRequest)
+      returns (ListC2BPaymentsResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b"
+      additional_bindings {post : "/api/mpestx/c2b:listC2BPayments" body : "*"}
+    };
+  };
+
+  // Saves scopes for a user.
+  rpc SaveScopes(SaveScopesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/api/mpestx/c2b/scopes:add"
+      body : "*"
+      additional_bindings {post : "/api/mpestx/c2b:saveScopes" body : "*"}
+    };
+  };
+
+  // Retrieves scopes for a user.
+  rpc GetScopes(GetScopesRequest) returns (GetScopesResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/scopes/{user_id}"
+      additional_bindings {post : "/api/mpestx/c2b:getScopes" body : "*"}
+    };
+  };
+
+  // Updates Mpesa transaction processed state to either true or false.
+  rpc ProcessC2BPayment(ProcessC2BPaymentRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/api/mpestx/c2b/actions/processC2BPayment"
+      body : "*"
+      additional_bindings {post : "/api/mpestx/c2b:processC2B" body : "*"}
+    };
+  };
+
+  // Publishes Mpesa statement for listeners to process. Safe to be called many
+  // times.
+  rpc PublishC2BPayment(PublishC2BPaymentRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/api/mpestx/c2b/actions/publishC2BPayment"
+      body : "*"
+      additional_bindings {post : "/api/mpestx/c2b:publishC2B" body : "*"}
+    };
+  };
+
+  // Publish all failed Mpesa transaction for listeners to process.
+  rpc PublishAllC2BPayments(PublishAllC2BPaymentsRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post : "/api/mpestx/c2b/actions/publishAllC2BPayments"
+      body : "*"
+      additional_bindings {post : "/api/mpestx/c2b:publishAllC2Bs" body : "*"}
+    };
+  };
+
+  // Get transactions count summary
+  rpc GetTransactionsCount(GetTransactionsCountRequest)
+      returns (TransactionsSummary) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/getTransactionsCount"
+      additional_bindings {
+        post : "/api/mpestx/c2b:getTransactionsCount"
+        body : "*"
+      }
+    };
+  };
+
+  // Retrives a random transaction using RM=NG algorithm
+  rpc GetRandomTransaction(GetRandomTransactionRequest) returns (C2BPayment) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/getRandomTransactionn"
+      additional_bindings {
+        post : "/api/mpestx/c2b:getRandomTransaction"
+        body : "*"
+      }
+    };
+  };
+
+  // Archives transactions in a separate table`
+  rpc ArchiveTransactions(ArchiveTransactionsRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/archiveTransactions"
+      additional_bindings {
+        post : "/api/mpestx/c2b:archiveTransactions"
+        body : "*"
+      }
+    };
+  };
+
+  // Get statistics for transactions
+  rpc GetStats(GetStatsRequest) returns (StatsResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/getStats"
+      additional_bindings {post : "/api/mpestx/c2b:getStats" body : "*"}
+    };
+  };
+
+  // Retrieves a collection of statistics
+  rpc ListStats(ListStatsRequest) returns (StatsResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/listStats"
+      additional_bindings {post : "/api/mpestx/c2b:listStats" body : "*"}
+    };
+  };
+
+  // Sends SMS to filtered msisdn
+  rpc BlastPhones(BlastPhonesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/blastPhones"
+      additional_bindings {post : "/api/mpestx/c2b:blastPhones" body : "*"}
+    };
+  };
+
+  // Sends SMS using contents of file
+  rpc BlastPhonesFromFile(BlastPhonesFromFileRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/blastPhonesFromFile"
+      additional_bindings {
+        post : "/api/mpestx/c2b:blastPhonesFromFile"
+        body : "*"
+      }
+    };
+  };
+
+  // Fetches a collection of export reports
+  rpc ListBlastReports(ListBlastReportsRequest)
+      returns (ListBlastReportsResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/listBlastReports"
+      additional_bindings {post : "/api/mpestx/c2b:listBlastReports" body : "*"}
+    };
+  };
+
+  // Retrieves list of blas
+  rpc ListBlastFiles(ListBlastFilesRequest) returns (ListBlastFilesResponse) {
+    option (google.api.http) = {
+      get : "/api/mpestx/c2b/actions/listBlastFiles"
+      additional_bindings {post : "/api/mpestx/c2b:listBlastFiles" body : "*"}
+    };
+  };
+}
+
+option (grpc.gateway.protoc_gen_swagger.options.openapiv2_swagger) = {
+  info : {title : "MPESA Payment Service";
+description : "Gateway for c2b MPESA payments, and a CRUD Rest + gRPC API for "
+              "C2B resource" version : "v1";
+contact : {
+name:
+  "Github <Gideon Kamau>";
+url:
+  "https://github.com/gidyon/mpesapayments/blob/master/api/proto/"
+  "mpesa_payment.proto";
+email:
+  "gideonhacer@gmail.com";
+};
+license : {
+name:
+  "GNU GENERAL PUBLIC LICENSE";
+url:
+  "https://github.com/gidyon/mpesapayments/src/master/LICENSE";
+};
+}
+;
+schemes : HTTP;
+schemes : HTTPS;
+consumes : "application/json";
+produces : "application/json";
+security_definitions : {
+security : {
+key:
+  "bearer" value : {
+  type:
+    TYPE_API_KEY
+  in:
+    IN_HEADER
+  name:
+    "Authorization"
+    description : "Authentication token, prefixed by Bearer: Bearer <token>"
+  }
+}
+}
+security : {
+security_requirement : {
+key:
+  "bearer"
+}
+}
+}
+;

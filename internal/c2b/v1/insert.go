@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 )
 
 func valFunc(v1, v2 string) string {

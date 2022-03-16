@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gidyon/micro/v2/utils/errs"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	"gorm.io/gorm"
 )
 

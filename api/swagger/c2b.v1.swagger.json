@@ -3,7 +3,7 @@
   "info": {
     "title": "MPESA Payment Service",
     "description": "Gateway for c2b MPESA payments, and a CRUD Rest + gRPC API for C2B resource",
-    "version": "0.1",
+    "version": "v1",
     "contact": {
       "name": "Github \u003cGideon Kamau\u003e",
       "url": "https://github.com/gidyon/mpesapayments/blob/master/api/proto/mpesa_payment.proto",
