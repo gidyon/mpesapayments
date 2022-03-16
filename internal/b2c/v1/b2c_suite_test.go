@@ -13,7 +13,7 @@ import (
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/mocks"
 	"github.com/gidyon/micro/v2/utils/encryption"
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/rs/zerolog"

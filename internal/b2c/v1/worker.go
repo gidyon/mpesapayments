@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 )
 
 func (b2cAPI *b2cAPIServer) updateAccessTokenWorker(ctx context.Context, dur time.Duration) {
@@ -37,10 +39,14 @@ func (b2cAPI *b2cAPIServer) updateAccessToken() error {
 
 	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", b2cAPI.OptionsB2C.basicToken))
 
+	httputils.DumpRequest(req, "B2C ACCESS TOKEN REQUEST")
+
 	res, err := b2cAPI.HTTPClient.Do(req)
 	if err != nil && !errors.Is(err, io.EOF) {
 		return fmt.Errorf("request failed: %v", err)
 	}
+
+	httputils.DumpResponse(res, "B2C ACCESS TOKEN RESPONSE")
 
 	resTo := make(map[string]interface{})
 	err = json.NewDecoder(res.Body).Decode(&resTo)

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

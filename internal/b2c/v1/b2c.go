@@ -17,8 +17,8 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"github.com/go-redis/redis/v8"

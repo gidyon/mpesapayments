@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	"gorm.io/gorm/clause"
 )
 

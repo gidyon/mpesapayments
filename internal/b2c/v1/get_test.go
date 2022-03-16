@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/Pallinder/go-randomdata"
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
