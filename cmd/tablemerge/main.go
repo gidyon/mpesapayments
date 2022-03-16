@@ -10,7 +10,7 @@ import (
 
 	"github.com/gidyon/micro/pkg/conn"
 	"github.com/gidyon/micro/utils/errs"
-	"github.com/gidyon/mpesapayments/internal/c2b"
+	c2b "github.com/gidyon/mpesapayments/internal/c2b/v1"
 )
 
 var (
