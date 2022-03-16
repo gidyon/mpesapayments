@@ -27,7 +27,7 @@ type STKTransaction struct {
 	PhoneNumber       string       `gorm:"index;type:varchar(50);not null"`
 	Succeeded         string       `gorm:"index;type:enum('YES','NO');default:NO"`
 	Processed         string       `gorm:"index;type:enum('YES','NO');default:NO"`
-	TransactionTime   sql.NullTime `gorm:"type:type:datetime(6)"`
+	TransactionTime   sql.NullTime `gorm:"index:;type:datetime(6)"`
 	CreateTime        time.Time    `gorm:"autoCreateTime:nano;not null;type:datetime(6)"`
 }
 
