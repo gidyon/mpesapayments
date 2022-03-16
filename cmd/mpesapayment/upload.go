@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
-	c2bapp "github.com/gidyon/mpesapayments/internal/c2b"
+	c2bapp "github.com/gidyon/mpesapayments/internal/c2b/v1"
 	"google.golang.org/grpc/metadata"
 )
 

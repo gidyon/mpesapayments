@@ -10,8 +10,8 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
-	mpesa "github.com/gidyon/mpesapayments/internal/c2b"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
+	mpesa "github.com/gidyon/mpesapayments/internal/c2b/v1"
+	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"google.golang.org/grpc/metadata"

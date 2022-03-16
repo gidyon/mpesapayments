@@ -15,16 +15,14 @@ import (
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/zaplogger"
 	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/micro/v2/utils/errs"
-	b2capp "github.com/gidyon/mpesapayments/internal/b2c"
-	mpesa "github.com/gidyon/mpesapayments/internal/c2b"
-	stkapp "github.com/gidyon/mpesapayments/internal/stk"
-	"github.com/gidyon/mpesapayments/pkg/api/b2c"
-	"github.com/gidyon/mpesapayments/pkg/api/c2b"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	b2capp_v1 "github.com/gidyon/mpesapayments/internal/b2c/v1"
+	c2bapp_v1 "github.com/gidyon/mpesapayments/internal/c2b/v1"
+	stkapp_v1 "github.com/gidyon/mpesapayments/internal/stk/v1"
+	b2c_v1 "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
+	c2b_v1 "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
+	stk_v1 "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
-
-	httpmiddleware "github.com/gidyon/micro/v2/pkg/middleware/http"
 
 	app_grpc_middleware "github.com/gidyon/micro/v2/pkg/middleware/grpc"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
@@ -107,7 +105,7 @@ func main() {
 		Type:    healthcheck.ProbeLiveNess,
 	}))
 
-	app.AddHTTPMiddlewares(httpmiddleware.SupportCORS)
+	// app.AddHTTPMiddlewares(httpmiddleware.SupportCORS)
 
 	app.AddServeMuxOptions(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
@@ -124,13 +122,13 @@ func main() {
 			disableSTKAPI = os.Getenv("DISABLE_STK_SERVICE") != ""
 			disableC2BAPI = os.Getenv("DISABLE_MPESA_SERVICE") != ""
 			disableB2CAPI = os.Getenv("DISABLE_B2C_SERVICE") != ""
-			mpesaAPI      c2b.LipaNaMPESAServer
-			stkAPI        stk.StkPushAPIServer
-			b2cAPI        b2c.B2CAPIServer
+			mpesaAPI      c2b_v1.LipaNaMPESAServer
+			stkAPI        stk_v1.StkPushAPIServer
+			b2cAPI        b2c_v1.B2CAPIServer
 		)
 
 		if !disableC2BAPI {
-			opt := mpesa.Options{
+			opt := c2bapp_v1.Options{
 				PublishChannel:   os.Getenv("C2B_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
 				SQLDB:            app.GormDBByName("sqlWrites"),
@@ -140,18 +138,18 @@ func main() {
 				PaginationHasher: paginationHasher,
 			}
 			// MPESA API
-			mpesaAPI, err = mpesa.NewAPIServerMPESA(ctx, &opt)
+			mpesaAPI, err = c2bapp_v1.NewAPIServerMPESA(ctx, &opt)
 			errs.Panic(err)
 
-			c2b.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
-			errs.Panic(c2b.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+			c2b_v1.RegisterLipaNaMPESAServer(app.GRPCServer(), mpesaAPI)
+			errs.Panic(c2b_v1.RegisterLipaNaMPESAHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		if !disableSTKAPI {
-			stkOption := &stkapp.OptionsSTK{
+			stkOption := &stkapp_v1.OptionsSTK{
 				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-				ConsumerKey:       os.Getenv("SAF_CONSUMER_KEY"),
-				ConsumerSecret:    os.Getenv("SAF_CONSUMER_SECRET"),
+				ConsumerKey:       firstVal(os.Getenv("STK_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+				ConsumerSecret:    firstVal(os.Getenv("STK_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
 				BusinessShortCode: os.Getenv("STK_BUSINESS_SHORT_CODE"),
 				AccountReference:  os.Getenv("STK_MPESA_ACCOUNT_REFERENCE"),
 				Timestamp:         os.Getenv("STK_MPESA_ACCESS_TIMESTAMP"),
@@ -161,7 +159,7 @@ func main() {
 				QueryURL:          os.Getenv("STK_MPESA_QUERY_URL"),
 			}
 
-			opt := stkapp.Options{
+			opt := stkapp_v1.Options{
 				SQLDB:               app.GormDBByName("sqlWrites"),
 				RedisDB:             app.RedisClientByName("redisWrites"),
 				Logger:              app.Logger(),
@@ -169,23 +167,21 @@ func main() {
 				HTTPClient:          http.DefaultClient,
 				OptionsSTK:          stkOption,
 				PublishChannel:      os.Getenv("STK_PUBLISH_CHANNEL"),
-				RedisKeyPrefix:      os.Getenv("REDIS_KEY_PREFIX"),
 				DisableMpesaService: disableC2BAPI,
 			}
 
-			// STK Push API
-			stkAPI, err = stkapp.NewStkAPI(ctx, &opt, mpesaAPI)
+			stkAPI, err = stkapp_v1.NewStkAPI(ctx, &opt, mpesaAPI)
 			errs.Panic(err)
 
-			stk.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
-			errs.Panic(stk.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+			stk_v1.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
+			errs.Panic(stk_v1.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		if !disableB2CAPI {
-			optB2C := &b2capp.OptionsB2C{
+			optB2C := &b2capp_v1.OptionsB2C{
 				AccessTokenURL:             os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-				ConsumerKey:                os.Getenv("SAF_CONSUMER_KEY"),
-				ConsumerSecret:             os.Getenv("SAF_CONSUMER_SECRET"),
+				ConsumerKey:                firstVal(os.Getenv("B2C_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+				ConsumerSecret:             firstVal(os.Getenv("B2C_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
 				QueueTimeOutURL:            os.Getenv("B2C_QUEUE_TIMEOUT_URL"),
 				ResultURL:                  os.Getenv("B2C_RESULT_URL"),
 				InitiatorUsername:          os.Getenv("B2C_INITIATOR_USERNAME"),
@@ -193,7 +189,7 @@ func main() {
 				InitiatorEncryptedPassword: os.Getenv("B2C_INITIATOR_ENCRYPTED_PASSWORD"),
 			}
 
-			opt := &b2capp.Options{
+			opt := &b2capp_v1.Options{
 				PublishChannel:   os.Getenv("B2C_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
 				B2CLocalTopic:    os.Getenv("B2C_PUBLISH_CHANNEL_LOCAL"),
@@ -208,11 +204,11 @@ func main() {
 				HTTPClient:       http.DefaultClient,
 				OptionsB2C:       optB2C,
 			}
-			b2cAPI, err = b2capp.NewB2CAPI(ctx, opt)
+			b2cAPI, err = b2capp_v1.NewB2CAPI(ctx, opt)
 			errs.Panic(err)
 
-			b2c.RegisterB2CAPIServer(app.GRPCServer(), b2cAPI)
-			errs.Panic(b2c.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+			b2c_v1.RegisterB2CAPIServer(app.GRPCServer(), b2cAPI)
+			errs.Panic(b2c_v1.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		b2cTxCost, _ := strconv.ParseFloat(os.Getenv("B2C_TRANSACTION_CHARGES"), 32)

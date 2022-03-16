@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
-	stkapp "github.com/gidyon/mpesapayments/internal/stk"
-	"github.com/gidyon/mpesapayments/pkg/api/stk"
+	stkapp "github.com/gidyon/mpesapayments/internal/stk/v1"
+	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"google.golang.org/grpc/metadata"
@@ -106,7 +106,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stkPayloadPB := &stk.StkPayload{
+	pb := &stk.StkTransaction{
 		MerchantRequestId:    stkPayload.Body.STKCallback.MerchantRequestID,
 		CheckoutRequestId:    stkPayload.Body.STKCallback.CheckoutRequestID,
 		ResultCode:           fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
@@ -127,20 +127,31 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	initReq := stk.InitiateSTKPushRequest{}
 	err = proto.Unmarshal([]byte(bs), &initReq)
 	if err != nil {
-		gw.Logger.Warningf("failed to unmarshal init request: %v", err)
+		gw.Logger.Warningf("failed to unmarshal initiator request: %v", err)
 	}
 
+	pb.InitiatorId = initReq.InitiatorId
+
 	// Update stkPayload
-	if !stkPayloadPB.Succeeded {
-		stkPayloadPB.PhoneNumber = firstVal(stkPayloadPB.PhoneNumber, initReq.GetPhone())
-		stkPayloadPB.Amount = firstVal(stkPayloadPB.Amount, fmt.Sprint(initReq.GetAmount()))
+	if !pb.Succeeded {
+		pb.PhoneNumber = firstVal(pb.PhoneNumber, initReq.GetPhone())
+		pb.Amount = firstVal(pb.Amount, fmt.Sprint(initReq.GetAmount()))
+	}
+
+	// Save to database
+	res, err := gw.stkAPI.CreateStkTransaction(
+		gw.ctxExt, &stk.CreateStkTransactionRequest{Payload: pb},
+	)
+	if err != nil {
+		gw.Logger.Errorf("failed to create stk payload: %v", err)
 	}
 
 	if initReq.Publish {
 		publish := func() {
-			_, err = gw.stkAPI.PublishStkPayload(gw.ctxExt, &stk.PublishStkPayloadRequest{
+			_, err = gw.stkAPI.PublishStkTransaction(gw.ctxExt, &stk.PublishStkTransactionRequest{
 				PublishMessage: &stk.PublishMessage{
-					TransactionInfo: stkPayloadPB,
+					TransactionId:   res.TransactionId,
+					TransactionInfo: pb,
 					PublishInfo:     initReq.PublishMessage,
 				},
 			})
@@ -149,20 +160,12 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		if initReq.GetPublishMessage().GetOnlyOnSuccess() {
-			if stkPayloadPB.Succeeded {
+			if pb.Succeeded {
 				publish()
 			}
 		} else {
 			publish()
 		}
-	}
-
-	// Save to database
-	_, err = gw.stkAPI.CreateStkPayload(
-		gw.ctxExt, &stk.CreateStkPayloadRequest{Payload: stkPayloadPB},
-	)
-	if err != nil {
-		gw.Logger.Errorf("failed to create stk payload: %v", err)
 	}
 
 	_, err = w.Write([]byte("mpesa stk processed"))
