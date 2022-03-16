@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "STK Mpesa Service",
-    "description": "API for initiating STK push and CRUD API for stks payments",
+    "description": "API for initiating STK push and receiving payments",
     "version": "0.1",
     "contact": {
       "name": "Github \u003cGideon Kamau\u003e",
@@ -25,15 +25,15 @@
     "application/json"
   ],
   "paths": {
-    "/api/mpestx/stkpush": {
+    "/v1/api/mpestx/stk": {
       "get": {
         "summary": "Retrieves a collection of stk push payloads",
-        "operationId": "StkPushAPI_ListStkPayloads",
+        "operationId": "StkPushAPI_ListStkTransactions",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaListStkPayloadsResponse"
+              "$ref": "#/definitions/mpesaListStkTransactionsResponse"
             }
           },
           "default": {
@@ -106,12 +106,12 @@
       },
       "post": {
         "summary": "Creates a record of stk push response sent to callback",
-        "operationId": "StkPushAPI_CreateStkPayload",
+        "operationId": "StkPushAPI_CreateStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/mpesaStkPayload"
+              "$ref": "#/definitions/mpesaStkTransaction"
             }
           },
           "default": {
@@ -127,7 +127,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaCreateStkPayloadRequest"
+              "$ref": "#/definitions/mpesaCreateStkTransactionRequest"
             }
           }
         ],
@@ -136,7 +136,44 @@
         ]
       }
     },
-    "/api/mpestx/stkpush/action/initiate": {
+    "/v1/api/mpestx/stk/{transactionId}": {
+      "get": {
+        "summary": "Retrieves a single stk payload",
+        "operationId": "StkPushAPI_GetStkTransaction",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/mpesaStkTransaction"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "transactionId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "mpesaReceiptId",
+            "in": "query",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "StkPushAPI"
+        ]
+      }
+    },
+    "/v1/api/mpestx/stk:initiateSTKPush": {
       "post": {
         "summary": "Initiates mpesa payment.",
         "operationId": "StkPushAPI_InitiateSTKPush",
@@ -169,10 +206,10 @@
         ]
       }
     },
-    "/api/mpestx/stkpush/action/process": {
+    "/v1/api/mpestx/stk:processStkTransaction": {
       "post": {
         "summary": "Processes stk push payload updating its status",
-        "operationId": "StkPushAPI_ProcessStkPayload",
+        "operationId": "StkPushAPI_ProcessStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -193,7 +230,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaProcessStkPayloadRequest"
+              "$ref": "#/definitions/mpesaProcessStkTransactionRequest"
             }
           }
         ],
@@ -202,10 +239,10 @@
         ]
       }
     },
-    "/api/mpestx/stkpush/action/publish": {
+    "/v1/api/mpestx/stk:publishStkTransaction": {
       "post": {
         "summary": "Publishes stk push payload for consumers",
-        "operationId": "StkPushAPI_PublishStkPayload",
+        "operationId": "StkPushAPI_PublishStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -226,39 +263,8 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/mpesaPublishStkPayloadRequest"
+              "$ref": "#/definitions/mpesaPublishStkTransactionRequest"
             }
-          }
-        ],
-        "tags": [
-          "StkPushAPI"
-        ]
-      }
-    },
-    "/api/mpestx/stkpush/{payloadId}": {
-      "get": {
-        "summary": "Retrieves a single stk payload",
-        "operationId": "StkPushAPI_GetStkPayload",
-        "responses": {
-          "200": {
-            "description": "A successful response.",
-            "schema": {
-              "$ref": "#/definitions/mpesaStkPayload"
-            }
-          },
-          "default": {
-            "description": "An unexpected error response.",
-            "schema": {
-              "$ref": "#/definitions/rpcStatus"
-            }
-          }
-        },
-        "parameters": [
-          {
-            "name": "payloadId",
-            "in": "path",
-            "required": true,
-            "type": "string"
           }
         ],
         "tags": [
@@ -268,18 +274,18 @@
     }
   },
   "definitions": {
-    "mpesaCreateStkPayloadRequest": {
+    "mpesaCreateStkTransactionRequest": {
       "type": "object",
       "properties": {
         "payload": {
-          "$ref": "#/definitions/mpesaStkPayload"
+          "$ref": "#/definitions/mpesaStkTransaction"
         },
         "publish": {
           "type": "boolean"
         }
       },
       "description": "Request to create stk push payload",
-      "title": "CreateStkPayloadRequest",
+      "title": "CreateStkTransactionRequest",
       "required": [
         "payload"
       ]
@@ -324,7 +330,7 @@
       "description": "Response after initiating STK push",
       "title": "InitiateSTKPushResponse"
     },
-    "mpesaListStkPayloadFilter": {
+    "mpesaListStkTransactionFilter": {
       "type": "object",
       "properties": {
         "txDate": {
@@ -349,28 +355,31 @@
         }
       },
       "description": "Filter payload for querying stk payloads",
-      "title": "ListStkPayloadFilter"
+      "title": "ListStkTransactionFilter"
     },
-    "mpesaListStkPayloadsResponse": {
+    "mpesaListStkTransactionsResponse": {
       "type": "object",
       "properties": {
         "nextPageToken": {
           "type": "string"
         },
-        "stkPayloads": {
+        "stkTransactions": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/mpesaStkPayload"
+            "$ref": "#/definitions/mpesaStkTransaction"
           }
         }
       },
       "description": "Reponse containing a collection of stk push payloads",
-      "title": "ListStkPayloadsResponse"
+      "title": "ListStkTransactionsResponse"
     },
-    "mpesaProcessStkPayloadRequest": {
+    "mpesaProcessStkTransactionRequest": {
       "type": "object",
       "properties": {
-        "payloadId": {
+        "transactionId": {
+          "type": "string"
+        },
+        "mpesaReceiptId": {
           "type": "string"
         },
         "processed": {
@@ -378,7 +387,7 @@
         }
       },
       "description": "Request to update stk push processed state",
-      "title": "ProcessStkPayloadRequest"
+      "title": "ProcessStkTransactionRequest"
     },
     "mpesaProcessedState": {
       "type": "string",
@@ -412,10 +421,10 @@
         "initiatorId": {
           "type": "string"
         },
-        "payloadId": {
+        "transactionId": {
           "type": "string"
         },
-        "transactionId": {
+        "mpesaReceiptId": {
           "type": "string"
         },
         "phoneNumber": {
@@ -425,13 +434,13 @@
           "$ref": "#/definitions/mpesaPublishInfo"
         },
         "transactionInfo": {
-          "$ref": "#/definitions/mpesaStkPayload"
+          "$ref": "#/definitions/mpesaStkTransaction"
         }
       },
       "description": "Published stk message to consumers",
       "title": "PublishMessage"
     },
-    "mpesaPublishStkPayloadRequest": {
+    "mpesaPublishStkTransactionRequest": {
       "type": "object",
       "properties": {
         "publishMessage": {
@@ -442,15 +451,15 @@
         }
       },
       "description": "Request to publish a stk push payload",
-      "title": "PublishStkPayloadRequest"
+      "title": "PublishStkTransactionRequest"
     },
-    "mpesaStkPayload": {
+    "mpesaStkTransaction": {
       "type": "object",
       "properties": {
         "initiatorId": {
           "type": "string"
         },
-        "payloadId": {
+        "transactionId": {
           "type": "string"
         },
         "merchantRequestId": {
@@ -468,7 +477,7 @@
         "amount": {
           "type": "string"
         },
-        "transactionId": {
+        "mpesaReceiptId": {
           "type": "string"
         },
         "balance": {
@@ -493,7 +502,7 @@
         }
       },
       "description": "Stk Push payload callback",
-      "title": "StkPayload"
+      "title": "StkTransaction"
     },
     "protobufAny": {
       "type": "object",
