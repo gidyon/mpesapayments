@@ -18,13 +18,11 @@ require (
 	github.com/onsi/gomega v1.10.4
 	github.com/rs/zerolog v1.20.0
 	github.com/speps/go-hashids v2.0.0+incompatible
-	github.com/stretchr/testify v1.7.0
 	go.uber.org/zap v1.16.0
 	golang.org/x/oauth2 v0.0.0-20210126194326-f9ce19ea3013 // indirect
 	golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c // indirect
 	google.golang.org/genproto v0.0.0-20210126160654-44e461bb6506
 	google.golang.org/grpc v1.35.0
-	google.golang.org/grpc/examples v0.0.0-20210129004707-0bc741730b81 // indirect
 	google.golang.org/protobuf v1.25.0
 	gorm.io/driver/mysql v1.0.4 // indirect
 	gorm.io/driver/postgres v1.0.7 // indirect
