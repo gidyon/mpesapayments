@@ -64,6 +64,7 @@ func main() {
 		Issuer:     "MPESA API",
 		Audience:   "apis",
 	})
+
 	errs.Panic(err)
 
 	// Generate jwt token

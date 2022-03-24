@@ -62,9 +62,7 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
-	gw.Logger.Infoln("received stk request from mpesa")
-
-	httputils.DumpRequest(r, "Mpesa STK Payload")
+	httputils.DumpRequest(r, "Incoming Mpesa STK Payload")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {
@@ -133,6 +131,9 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	pb.InitiatorId = initReq.InitiatorId
 
 	// Update stkPayload
+	pb.AccountReference = initReq.AccountReference
+	pb.TransactionDesc = initReq.TransactionDesc
+	pb.ShortCode = initReq.GetPublishMessage().GetPayload()["short_code"]
 	if !pb.Succeeded {
 		pb.PhoneNumber = firstVal(pb.PhoneNumber, initReq.GetPhone())
 		pb.Amount = firstVal(pb.Amount, fmt.Sprint(initReq.GetAmount()))

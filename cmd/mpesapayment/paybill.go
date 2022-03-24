@@ -62,9 +62,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gw.Logger.Infoln("received mpesa transaction transaction")
-
-	httputils.DumpRequest(r, "Mpesa C2B Payload")
+	httputils.DumpRequest(r, "Incoming Mpesa C2B Payload")
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "bad method; only POST allowed", http.StatusBadRequest)

@@ -82,9 +82,7 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) {
 
-	gw.Logger.Infoln("received b2c transaction from mpesa")
-
-	httputils.DumpRequest(r, "Mpesa B2C Payload")
+	httputils.DumpRequest(r, "Incoming Mpesa B2C Payload")
 
 	// Must be POST request
 	if r.Method != http.MethodPost {

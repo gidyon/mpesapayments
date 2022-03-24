@@ -14,12 +14,19 @@ const StkTable = "stk_transactions"
 
 var tablePrefix = ""
 
+// string short_code = 5;
+// string account_reference = 6;
+// string transaction_desc = 7;
+
 // STKTransaction contains mpesa stk transaction details
 type STKTransaction struct {
 	ID                uint         `gorm:"primaryKey;autoIncrement"`
 	InitiatorID       string       `gorm:"index;type:varchar(50);not null"`
 	MerchantRequestID string       `gorm:"index;type:varchar(50);not null"`
 	CheckoutRequestID string       `gorm:"type:varchar(50);not null"`
+	ShortCode         string       `gorm:"index;type:varchar(15)"`
+	AccountReference  string       `gorm:"index;type:varchar(50)"`
+	TransactionDesc   string       `gorm:"type:varchar(100)"`
 	ResultCode        string       `gorm:"type:varchar(5);not null"`
 	ResultDesc        string       `gorm:"type:varchar(100);not null"`
 	Amount            string       `gorm:"type:float(10);not null"`
@@ -57,9 +64,13 @@ func STKTransactionModel(pb *stk.StkTransaction) (*STKTransaction, error) {
 	}
 
 	db := &STKTransaction{
+		ID:                0,
 		InitiatorID:       pb.InitiatorId,
 		MerchantRequestID: pb.MerchantRequestId,
 		CheckoutRequestID: pb.CheckoutRequestId,
+		ShortCode:         pb.ShortCode,
+		AccountReference:  pb.AccountReference,
+		TransactionDesc:   pb.TransactionDesc,
 		ResultCode:        pb.ResultCode,
 		ResultDesc:        pb.ResultDesc,
 		Amount:            pb.Amount,
@@ -67,6 +78,8 @@ func STKTransactionModel(pb *stk.StkTransaction) (*STKTransaction, error) {
 		PhoneNumber:       pb.PhoneNumber,
 		Succeeded:         success,
 		Processed:         processed,
+		TransactionTime:   sql.NullTime{},
+		CreateTime:        time.Time{},
 	}
 
 	if pb.TransactionTimestamp != 0 {

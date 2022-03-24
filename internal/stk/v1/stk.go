@@ -270,6 +270,15 @@ func GetMpesaRequestKey(requestId string) string {
 	return fmt.Sprintf("stk:%s", requestId)
 }
 
+func firstVal(A ...string) string {
+	for _, s := range A {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
 func (stkAPI *stkAPIServer) InitiateSTKPush(
 	ctx context.Context, req *stk.InitiateSTKPushRequest,
 ) (*stk.InitiateSTKPushResponse, error) {
@@ -326,9 +335,19 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		PartyB:            stkAPI.OptionsSTK.BusinessShortCode,
 		PhoneNumber:       phoneNumber,
 		CallBackURL:       stkAPI.OptionsSTK.CallBackURL,
-		AccountReference:  stkAPI.OptionsSTK.AccountReference,
-		TransactionDesc:   "payload",
+		AccountReference:  firstVal(req.AccountReference, stkAPI.OptionsSTK.AccountReference),
+		TransactionDesc:   firstVal(req.TransactionDesc, "NA"),
 	}
+
+	if req.PublishMessage == nil {
+		req.PublishMessage = &stk.PublishInfo{
+			Payload: map[string]string{},
+		}
+	}
+	if req.PublishMessage.Payload == nil {
+		req.PublishMessage.Payload = map[string]string{}
+	}
+	req.PublishMessage.Payload["short_code"] = stkAPI.OptionsSTK.BusinessShortCode
 
 	// Json Marshal
 	bs, err := json.Marshal(stkBody)
@@ -459,7 +478,7 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 	db := &STKTransaction{}
 
 	if req.TransactionId != "" {
-		err = stkAPI.SQLDB.First(db, "transaction_id=?", ID).Error
+		err = stkAPI.SQLDB.First(db, "id=?", ID).Error
 	} else if req.MpesaReceiptId != "" {
 		err = stkAPI.SQLDB.First(db, "mpesa_receipt_id=?", req.MpesaReceiptId).Error
 	}
@@ -656,7 +675,7 @@ func (stkAPI *stkAPIServer) ProcessStkTransaction(
 	}
 
 	if req.TransactionId != "" {
-		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("transaction_id=?", ID).
+		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("id=?", ID).
 			Update("processed", processed).Error
 	} else {
 		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("mpesa_receipt_id=?", req.MpesaReceiptId).

@@ -22,16 +22,19 @@ message StkTransaction {
   string transaction_id = 2;
   string merchant_request_id = 3;
   string checkout_request_id = 4;
-  string result_code = 5;
-  string result_desc = 6;
-  string amount = 7;
-  string mpesa_receipt_id = 8;
-  string balance = 9;
-  string phone_number = 11;
-  bool succeeded = 12;
-  bool processed = 13;
-  int64 transaction_timestamp = 14;
-  int64 create_timestamp = 15;
+  string short_code = 5;
+  string account_reference = 6;
+  string transaction_desc = 7;
+  string result_code = 8;
+  string result_desc = 9;
+  string amount = 10;
+  string mpesa_receipt_id = 11;
+  string balance = 12;
+  string phone_number = 13;
+  bool succeeded = 14;
+  bool processed = 15;
+  int64 transaction_timestamp = 16;
+  int64 create_timestamp = 17;
 }
 
 message PublishInfo {
@@ -52,8 +55,10 @@ message InitiateSTKPushRequest {
   string initiator_id = 1 [ (google.api.field_behavior) = REQUIRED ];
   string phone = 2 [ (google.api.field_behavior) = REQUIRED ];
   double amount = 3 [ (google.api.field_behavior) = REQUIRED ];
-  bool publish = 4;
-  PublishInfo publish_message = 5;
+  string account_reference = 4;
+  string transaction_desc = 5;
+  bool publish = 6;
+  PublishInfo publish_message = 7;
 }
 
 message InitiateSTKPushResponse {

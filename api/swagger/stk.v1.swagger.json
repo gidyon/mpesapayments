@@ -303,6 +303,12 @@
           "type": "number",
           "format": "double"
         },
+        "accountReference": {
+          "type": "string"
+        },
+        "transactionDesc": {
+          "type": "string"
+        },
         "publish": {
           "type": "boolean"
         },
@@ -466,6 +472,15 @@
           "type": "string"
         },
         "checkoutRequestId": {
+          "type": "string"
+        },
+        "shortCode": {
+          "type": "string"
+        },
+        "accountReference": {
+          "type": "string"
+        },
+        "transactionDesc": {
           "type": "string"
         },
         "resultCode": {
