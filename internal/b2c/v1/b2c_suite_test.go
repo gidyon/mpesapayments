@@ -11,7 +11,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
-	"github.com/gidyon/micro/v2/pkg/mocks"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/encryption"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	redis "github.com/go-redis/redis/v8"
@@ -79,7 +79,13 @@ var _ = BeforeSuite(func() {
 	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
 	Expect(err).ShouldNot(HaveOccurred())
 
-	authAPI := mocks.AuthAPI
+	// Authentication API
+	authAPI, err := auth.NewAPI(&auth.Options{
+		SigningKey: []byte("awefr"),
+		Issuer:     "MPESA API",
+		Audience:   "apis",
+	})
+	Expect(err).ShouldNot(HaveOccurred())
 
 	optB2C := &OptionsB2C{
 		ConsumerKey:                randomdata.RandStringRunes(32),

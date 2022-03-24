@@ -10,7 +10,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
-	"github.com/gidyon/micro/v2/pkg/mocks"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/encryption"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	redis "github.com/go-redis/redis/v8"
@@ -74,7 +74,13 @@ var _ = BeforeSuite(func() {
 	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
 	Expect(err).ShouldNot(HaveOccurred())
 
-	// authAPI := mocks.AuthAPI
+	// Authentication API
+	authAPI, err := auth.NewAPI(&auth.Options{
+		SigningKey: []byte("awefr"),
+		Issuer:     "MPESA API",
+		Audience:   "apis",
+	})
+	Expect(err).ShouldNot(HaveOccurred())
 
 	opt := &Options{
 		PublishChannel:   "test",
@@ -82,7 +88,7 @@ var _ = BeforeSuite(func() {
 		SQLDB:            db,
 		RedisDB:          redisDB,
 		Logger:           logger,
-		AuthAPI:          mocks.AuthAPI,
+		AuthAPI:          authAPI,
 		PaginationHasher: paginationHasher,
 	}
 
@@ -116,7 +122,7 @@ var _ = BeforeSuite(func() {
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.AuthAPI = mocks.AuthAPI
+	opt.AuthAPI = authAPI
 	opt.PaginationHasher = nil
 	_, err = NewAPIServerMPESA(ctx, opt)
 	Expect(err).Should(HaveOccurred())

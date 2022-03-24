@@ -12,7 +12,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
-	"github.com/gidyon/micro/v2/pkg/mocks"
+	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	redis "github.com/go-redis/redis/v8"
@@ -79,6 +79,14 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("C2B_app", zerolog.TraceLevel)
 
+	// Authentication API
+	authAPI, err := auth.NewAPI(&auth.Options{
+		SigningKey: []byte("awefr"),
+		Issuer:     "MPESA API",
+		Audience:   "apis",
+	})
+	Expect(err).ShouldNot(HaveOccurred())
+
 	stkOptions := &OptionsSTK{
 		AccessTokenURL:    randomdata.IpV4Address(),
 		accessToken:       randomdata.RandStringRunes(32),
@@ -100,7 +108,7 @@ var _ = BeforeSuite(func() {
 		SQLDB:                     db,
 		RedisDB:                   redisDB,
 		Logger:                    logger,
-		AuthAPI:                   mocks.AuthAPI,
+		AuthAPI:                   authAPI,
 		OptionsSTK:                stkOptions,
 		HTTPClient:                httpClient,
 		UpdateAccessTokenDuration: time.Second * 5,
@@ -144,7 +152,7 @@ var _ = BeforeSuite(func() {
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
 
-	opt.AuthAPI = mocks.AuthAPI
+	opt.AuthAPI = authAPI
 	opt.HTTPClient = nil
 	_, err = NewStkAPI(ctx, opt, mpesaAPI)
 	Expect(err).Should(HaveOccurred())
