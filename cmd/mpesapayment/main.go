@@ -33,7 +33,7 @@ func main() {
 	ctx := context.Background()
 
 	// config
-	cfg, err := config.New(config.FromFile)
+	cfg, err := config.New()
 	errs.Panic(err)
 
 	// initialize logger
