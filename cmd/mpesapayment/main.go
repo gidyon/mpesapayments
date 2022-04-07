@@ -191,19 +191,16 @@ func main() {
 			}
 
 			opt := &b2capp_v1.Options{
-				PublishChannel:   os.Getenv("B2C_PUBLISH_CHANNEL"),
-				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
-				B2CLocalTopic:    os.Getenv("B2C_PUBLISH_CHANNEL_LOCAL"),
-				QueryBalanceURL:  os.Getenv("B2C_QUERY_BALANCE_URL"),
-				B2CURL:           os.Getenv("B2C_URL"),
-				ReversalURL:      os.Getenv("B2C_REVERSAL_URL"),
-				SQLDB:            app.GormDBByName("sqlWrites"),
-				RedisDB:          app.RedisClientByName("redisWrites"),
-				Logger:           app.Logger(),
-				AuthAPI:          authAPI,
-				PaginationHasher: paginationHasher,
-				HTTPClient:       http.DefaultClient,
-				OptionsB2C:       optB2C,
+				PublishChannel:  os.Getenv("B2C_PUBLISH_CHANNEL"),
+				QueryBalanceURL: os.Getenv("B2C_QUERY_BALANCE_URL"),
+				B2CURL:          os.Getenv("B2C_URL"),
+				ReversalURL:     os.Getenv("B2C_REVERSAL_URL"),
+				SQLDB:           app.GormDBByName("sqlWrites"),
+				RedisDB:         app.RedisClientByName("redisWrites"),
+				Logger:          app.Logger(),
+				AuthAPI:         authAPI,
+				HTTPClient:      http.DefaultClient,
+				OptionsB2C:      optB2C,
 			}
 			b2cAPI, err = b2capp_v1.NewB2CAPI(ctx, opt)
 			errs.Panic(err)
@@ -226,8 +223,6 @@ func main() {
 			DisableMpesaService:   disableC2BAPI,
 			DisableSTKService:     disableSTKAPI,
 			DisableB2CService:     disableB2CAPI,
-			RedisKeyPrefix:        os.Getenv("REDIS_KEY_PREFIX"),
-			B2CLocalTopic:         os.Getenv("B2C_PUBLISH_CHANNEL_LOCAL"),
 			B2CTransactionCharges: float32(b2cTxCost),
 		}
 

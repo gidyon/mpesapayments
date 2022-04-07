@@ -26,8 +26,6 @@ type Options struct {
 	DisableMpesaService   bool
 	DisableSTKService     bool
 	DisableB2CService     bool
-	RedisKeyPrefix        string
-	B2CLocalTopic         string
 	B2CTransactionCharges float32
 }
 
@@ -50,10 +48,6 @@ func validateOptions(opt *Options) error {
 		err = errs.NilObject("mpesa API")
 	case opt.B2CAPI == nil && !opt.DisableB2CService:
 		err = errs.NilObject("b2c API")
-	case !opt.DisableSTKService && opt.RedisKeyPrefix == "":
-		err = errs.MissingField("redis key prefix")
-	case !opt.DisableB2CService && opt.B2CLocalTopic == "":
-		err = errs.MissingField("local topic channel for b2c")
 	}
 	return err
 }
