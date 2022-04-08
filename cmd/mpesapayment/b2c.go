@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"encoding/json"
-	"errors"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	b2capp "github.com/gidyon/mpesapayments/internal/b2c/v1"
@@ -17,7 +16,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/gidyon/mpesapayments/pkg/payload"
-	"github.com/go-redis/redis/v8"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -72,8 +70,8 @@ func (gw *b2cGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if source == "DARAJA" {
 		code, err := gw.fromSaf(w, r)
 		if err != nil {
+			gw.Logger.Errorln("Error serving incoming B2C Transaction: %s", err)
 			http.Error(w, "request handler failed", code)
-			gw.Logger.Errorln("error handling request from safaricom: %s", err)
 			return
 		}
 	} else {
@@ -85,7 +83,6 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 
 	httputils.DumpRequest(r, "Incoming Mpesa B2C Payload")
 
-	// Must be POST request
 	if r.Method != http.MethodPost {
 		return http.StatusBadRequest, fmt.Errorf("bad method; only POST allowed; received %v method", r.Method)
 	}
@@ -95,7 +92,6 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		err         error
 	)
 
-	// Request must have content-type as application/json
 	switch strings.ToLower(r.Header.Get("content-type")) {
 	case "application/json", "application/json;charset=utf-8", "application/json;charset=utf8":
 		err = json.NewDecoder(r.Body).Decode(transaction)
@@ -107,7 +103,6 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		return http.StatusBadRequest, fmt.Errorf("incorrect content type: %s", ctype)
 	}
 
-	// Validation of request body payload
 	switch {
 	case transaction == nil:
 		err = fmt.Errorf("nil mpesa transaction")
@@ -119,31 +114,28 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		err = fmt.Errorf("missing description")
 	}
 	if err != nil {
-		return http.StatusBadRequest, fmt.Errorf("validation error: %s", err)
+		return http.StatusBadRequest, fmt.Errorf("request body validation error: %s", err)
 	}
 
-	initReq := &b2c.TransferFundsRequest{}
+	tReq := &b2c.TransferFundsRequest{}
 
 	ctx := r.Context()
 
 	res, err := gw.RedisDB.Get(ctx, b2capp.GetMpesaRequestKey(transaction.ConversationID())).Result()
 	switch {
 	case err == nil:
-		err = proto.Unmarshal([]byte(res), initReq)
+		err = proto.Unmarshal([]byte(res), tReq)
 		if err != nil {
-			return http.StatusBadRequest, fmt.Errorf("failed to unmarshal initiator: %v", err)
+			return http.StatusBadRequest, fmt.Errorf("failed to unmarshal transfer request: %v", err)
 		}
-	case errors.Is(err, redis.Nil):
-	default:
 	}
 
-	// Transaction payload
 	pb := &b2c.B2CPayment{
-		InitiatorId:              initReq.InitiatorId,
-		OrgShortCode:             fmt.Sprint(initReq.ShortCode),
+		InitiatorId:              tReq.InitiatorId,
+		OrgShortCode:             fmt.Sprint(tReq.ShortCode),
 		Msisdn:                   transaction.MSISDN(),
 		ReceiverPartyPublicName:  transaction.ReceiverPartyPublicName(),
-		TransactionType:          initReq.CommandId.String(),
+		TransactionType:          tReq.CommandId.String(),
 		TransactionId:            transaction.TransactionReceipt(),
 		ConversationId:           transaction.Result.ConversationID,
 		OriginatorConversationId: transaction.Result.OriginatorConversationID,
@@ -160,7 +152,6 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		Processed:                false,
 	}
 
-	// We save the transaction
 	pb, err = gw.b2cAPI.CreateB2CPayment(gw.ctxExt, &b2c.CreateB2CPaymentRequest{
 		Payment: pb,
 	})
@@ -168,17 +159,23 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		return http.StatusInternalServerError, fmt.Errorf("failed to create b2c payment: %v", err)
 	}
 
-	if initReq.Publish {
+	if tReq.Publish {
 		publish := func() {
 			_, err = gw.b2cAPI.PublishB2CPayment(gw.ctxExt, &b2c.PublishB2CPaymentRequest{
-				PaymentId:   pb.PaymentId,
-				InitiatorId: initReq.InitiatorId,
+				PublishMessage: &b2c.PublishMessage{
+					InitiatorId:    tReq.InitiatorId,
+					PaymentId:      pb.PaymentId,
+					MpesaReceiptId: pb.TransactionId,
+					PhoneNumber:    transaction.MSISDN(),
+					PublishInfo:    tReq.PublishMessage,
+					Payment:        pb,
+				},
 			})
 			if err != nil {
 				gw.Logger.Warningf("failed to publish message: %v", err)
 			}
 		}
-		if initReq.GetPublishMessage().GetOnlyOnSuccess() {
+		if tReq.GetPublishMessage().GetOnlyOnSuccess() {
 			if pb.Succeeded {
 				publish()
 			}

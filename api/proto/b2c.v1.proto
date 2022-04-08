@@ -77,6 +77,28 @@ message QueryAccountBalanceResponse {
   bool completed = 7;
 }
 
+message PublishMessage {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "PublishMessage"
+      description : "Published stk message to consumers"
+    }
+  };
+
+  string initiator_id = 1;
+  string payment_id = 2;
+  string mpesa_receipt_id = 3;
+  string phone_number = 4;
+  PublishInfo publish_info = 5;
+  B2CPayment payment = 6;
+}
+
+message PublishInfo {
+  bool only_on_success = 1;
+  string channel_name = 2;
+  map<string, string> payload = 3;
+}
+
 message TransferFundsRequest {
   option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
     json_schema : {
@@ -98,9 +120,9 @@ message TransferFundsRequest {
   string remarks = 4 [ (google.api.field_behavior) = REQUIRED ];
   string occassion = 5;
   CommandId command_id = 6;
-  string request_id = 7;
   string initiator_id = 8 [ (google.api.field_behavior) = REQUIRED ];
-  bool synchronous = 9;
+  bool publish = 9;
+  PublishInfo publish_message = 7;
 }
 
 message ReverseTransactionRequest {
@@ -143,9 +165,7 @@ message InitiatorPayload {
   string short_code = 4 [ (google.api.field_behavior) = REQUIRED ];
   string transaction_type = 5 [ (google.api.field_behavior) = REQUIRED ];
   string source = 6;
-  bool publish_local = 7;
-  bool publish_on_create = 8;
-  bool drop_transaction = 9;
+  bool publish = 7;
 }
 
 message B2CPayment {
@@ -165,7 +185,6 @@ message B2CPayment {
   string result_code = 10;
   string result_description = 11;
   int64 transaction_timestamp = 12;
-  int64 create_timestamp = 13;
   float amount = 14;
   float working_account_funds = 15;
   float utility_account_funds = 16;
@@ -174,18 +193,7 @@ message B2CPayment {
   bool recipient_registered = 19;
   bool succeeded = 20;
   bool processed = 21;
-}
-
-message InitiateTransactionRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-    json_schema : {
-      title : "InitiateTransactionRequest"
-      description : "Request to start a b2c transaction"
-      required : [ "initiator" ]
-    }
-  };
-
-  InitiatorPayload initiator = 2 [ (google.api.field_behavior) = REQUIRED ];
+  string create_date = 13;
 }
 
 message CreateB2CPaymentRequest {
@@ -198,7 +206,6 @@ message CreateB2CPaymentRequest {
   };
 
   B2CPayment payment = 1 [ (google.api.field_behavior) = REQUIRED ];
-  bool publish = 2;
 }
 
 message GetB2CPaymentRequest {
@@ -211,6 +218,11 @@ message GetB2CPaymentRequest {
   };
 
   string payment_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+}
+
+enum OrderField {
+  PAYMENT_ID = 0;
+  TRANSACTION_TIMESTAMP = 1;
 }
 
 message ListB2CPaymentFilter {
@@ -228,6 +240,7 @@ message ListB2CPaymentFilter {
   int64 start_timestamp = 5;
   int64 end_timestamp = 6;
   bool use_like_initiator = 7;
+  OrderField order_field = 8;
 }
 
 message ListB2CPaymentsRequest {
@@ -253,6 +266,7 @@ message ListB2CPaymentsResponse {
 
   string next_page_token = 1;
   repeated B2CPayment b2c_payments = 2;
+  int64 collection_count = 3;
 }
 
 message ProcessB2CPaymentRequest {
@@ -275,22 +289,8 @@ message PublishB2CPaymentRequest {
     }
   };
 
-  string payment_id = 1 [ (google.api.field_behavior) = REQUIRED ];
-  string initiator_id = 2 [ (google.api.field_behavior) = REQUIRED ];
+  PublishMessage publish_message = 1 [ (google.api.field_behavior) = REQUIRED ];
   ProcessedState processed_state = 3;
-}
-
-message PublishAllB2CPaymentsRequest {
-  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
-    json_schema : {
-      title : "PublishAllB2CPaymentsRequest"
-      description : "Request to publish all b2c payments"
-    }
-  };
-
-  ProcessedState processed_state = 1;
-  int64 start_timestamp = 2;
-  int64 end_timestamp = 3;
 }
 
 message DailyStat {
@@ -352,12 +352,23 @@ message ListDailyStatsRequest {
   ListStatsFilter filter = 3;
 }
 
+message TransferFundsResponse {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "TransferFundsResponse"
+      description : "Response after TransferFunds request"
+    }
+  };
+
+  bool progress = 1;
+  string message = 2;
+}
+
 service B2CAPI {
-  // Initiates a b2c transaction
-  rpc InitiateTransaction(InitiateTransactionRequest)
-      returns (google.protobuf.Empty) {
+  // Transfer funds from business to customer or another business
+  rpc TransferFunds(TransferFundsRequest) returns (TransferFundsResponse) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:initiateTransaction"
+      post : "/v1/api/mpestx/b2c:transferFunds"
       body : "*"
     };
   };
@@ -366,7 +377,7 @@ service B2CAPI {
   rpc QueryTransactionStatus(QueryTransactionStatusRequest)
       returns (QueryResponse) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:queryTransactionStatus"
+      post : "/v1/api/mpestx/b2c:queryTransactionStatus"
       body : "*"
     };
   };
@@ -375,15 +386,7 @@ service B2CAPI {
   rpc QueryAccountBalance(QueryAccountBalanceRequest)
       returns (QueryAccountBalanceResponse) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:queryAccountBalance"
-      body : "*"
-    };
-  };
-
-  // Transfer funds from business to customer or another business
-  rpc TransferFunds(TransferFundsRequest) returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      post : "/api/mpestx/b2c:transferFunds"
+      post : "/v1/api/mpestx/b2c:queryAccountBalance"
       body : "*"
     };
   };
@@ -392,7 +395,7 @@ service B2CAPI {
   rpc ReverseTransaction(ReverseTransactionRequest)
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:reverseTransaction"
+      post : "/v1/api/mpestx/b2c:reverseTransaction"
       body : "*"
     };
   };
@@ -400,7 +403,7 @@ service B2CAPI {
   // Creates a record of b2c payment
   rpc CreateB2CPayment(CreateB2CPaymentRequest) returns (B2CPayment) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c"
+      post : "/v1/api/mpestx/b2c"
       body : "*"
     };
   };
@@ -408,7 +411,7 @@ service B2CAPI {
   // Retrieves a single b2c payment
   rpc GetB2CPayment(GetB2CPaymentRequest) returns (B2CPayment) {
     option (google.api.http) = {
-      get : "/api/mpestx/b2c/{payment_id}"
+      get : "/v1/api/mpestx/b2c/{payment_id}"
     };
   };
 
@@ -416,8 +419,7 @@ service B2CAPI {
   rpc ListB2CPayments(ListB2CPaymentsRequest)
       returns (ListB2CPaymentsResponse) {
     option (google.api.http) = {
-      get : "/api/mpestx/b2c"
-      additional_bindings {post : "/api/mpestx/b2c:listB2CPayments" body : "*"}
+      get : "/v1/api/mpestx/b2c"
     };
   };
 
@@ -425,7 +427,7 @@ service B2CAPI {
   rpc ProcessB2CPayment(ProcessB2CPaymentRequest)
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:processB2CPayment"
+      post : "/v1/api/mpestx/b2c:processB2CPayment"
       body : "*"
     };
   };
@@ -434,16 +436,7 @@ service B2CAPI {
   rpc PublishB2CPayment(PublishB2CPaymentRequest)
       returns (google.protobuf.Empty) {
     option (google.api.http) = {
-      post : "/api/mpestx/b2c:publishB2CPayment"
-      body : "*"
-    };
-  };
-
-  // Publihses all b2c payments to consumers
-  rpc PublishAllB2CPayments(PublishAllB2CPaymentsRequest)
-      returns (google.protobuf.Empty) {
-    option (google.api.http) = {
-      post : "/api/mpestx/b2c:publishAllB2CPayments"
+      post : "/v1/api/mpestx/b2c:publishB2CPayment"
       body : "*"
     };
   };
@@ -451,8 +444,8 @@ service B2CAPI {
   // Retrieves a collection of statistics
   rpc ListDailyStats(ListDailyStatsRequest) returns (StatsResponse) {
     option (google.api.http) = {
-      get : "/api/mpestx/b2c/actions/list-stats"
-      additional_bindings {post : "/api/mpestx/b2c:listStats" body : "*"}
+      post : "/v1/api/mpestx/b2c:listDailyStats"
+      body : "*"
     };
   };
 }

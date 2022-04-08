@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package gidyon.mpesa;
+
+option go_package = "github.com/gidyon/mpesapayments/pkg/api/publish";
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/api/field_behaviour.proto";
+import "protoc-gen-swagger/options/annotations.proto";
+
+message PublishInfo {
+  bool only_on_success = 1;
+  string channel_name = 2;
+  map<string, string> payload = 3;
+}
+
+message PublishMessage {
+  option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
+    json_schema : {
+      title : "PublishMessage"
+      description : "Published stk message to consumers"
+    }
+  };
+
+  string initiator_id = 1;
+  string transaction_id = 2;
+  string mpesa_receipt_id = 3;
+  string phone_number = 4;
+  PublishInfo publish_info = 5;
+  StkTransaction transaction_info = 6;
+}

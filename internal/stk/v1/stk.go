@@ -16,6 +16,7 @@ import (
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
+	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
@@ -325,7 +326,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	}
 
 	// STK Payload
-	stkBody := &STKRequestBody{
+	pb := &STKRequestBody{
 		BusinessShortCode: stkAPI.OptionsSTK.BusinessShortCode,
 		Password:          stkAPI.OptionsSTK.password,
 		Timestamp:         stkAPI.OptionsSTK.Timestamp,
@@ -349,21 +350,18 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 	}
 	req.PublishMessage.Payload["short_code"] = stkAPI.OptionsSTK.BusinessShortCode
 
-	// Json Marshal
-	bs, err := json.Marshal(stkBody)
+	bs, err := json.Marshal(pb)
 	if err != nil {
 		stkAPI.RedisDB.Del(ctx, cacheKey)
-		return nil, errs.FromJSONMarshal(err, "stkBody")
+		return nil, errs.FromJSONMarshal(err, "pb")
 	}
 
-	// Create request
 	reqHtpp, err := http.NewRequest(http.MethodPost, stkAPI.OptionsSTK.PostURL, bytes.NewReader(bs))
 	if err != nil {
 		stkAPI.RedisDB.Del(ctx, cacheKey)
 		return nil, errs.WrapMessage(codes.Internal, "failed to create new request")
 	}
 
-	// Update headers
 	reqHtpp.Header.Set("Authorization", fmt.Sprintf("Bearer %s", stkAPI.OptionsSTK.accessToken))
 	reqHtpp.Header.Set("Content-Type", "application/json")
 
@@ -373,7 +371,6 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		// Post to MPESA API
 		res, err := stkAPI.HTTPClient.Do(reqHtpp)
 		if err != nil {
 			stkAPI.Logger.Errorf("failed to post stk payload to mpesa API: %v", err)
@@ -390,27 +387,30 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 			return
 		}
 
-		// Check for error
 		errMsg, ok := resData["errorMessage"]
 		if ok {
 			stkAPI.Logger.Errorf("error happened while sending stk push: %v", errMsg)
 			return
 		}
 
-		// Marshal req
-		bs, err := proto.Marshal(req)
-		if err != nil {
-			stkAPI.Logger.Errorln(err)
-			return
-		}
+		switch strings.ToLower(res.Header.Get("content-type")) {
+		case "application/json", "application/json;charset=utf-8":
+			bs, err := proto.Marshal(req)
+			if err != nil {
+				stkAPI.Logger.Errorln(err)
+				return
+			}
 
-		requestId := GetMpesaRequestKey(fmt.Sprint(resData["MerchantRequestID"]))
+			requestId := GetMpesaRequestKey(fmt.Sprint(resData["MerchantRequestID"]))
 
-		// Save payload to cache
-		err = stkAPI.RedisDB.Set(ctx, requestId, bs, time.Minute*30).Err()
-		if err != nil {
-			stkAPI.Logger.Errorln(err)
-			return
+			err = stkAPI.RedisDB.Set(ctx, requestId, bs, time.Minute*15).Err()
+			if err != nil {
+				stkAPI.Logger.Errorln(err)
+				return
+			}
+
+			stkAPI.RedisDB.Del(ctx, cacheKey)
+		default:
 		}
 	}()
 
@@ -460,7 +460,7 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 	var err error
 
 	// Validation
-	var ID int
+	var key int
 	switch {
 	case req == nil:
 		return nil, errs.NilObject("GetStkTransactionRequest")
@@ -468,7 +468,7 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 		return nil, errs.MissingField("transaction/mpesa id")
 	default:
 		if req.TransactionId != "" {
-			ID, err = strconv.Atoi(req.TransactionId)
+			key, err = strconv.Atoi(req.TransactionId)
 			if err != nil {
 				return nil, errs.WrapMessage(codes.InvalidArgument, "transaction id")
 			}
@@ -478,7 +478,7 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 	db := &STKTransaction{}
 
 	if req.TransactionId != "" {
-		err = stkAPI.SQLDB.First(db, "id=?", ID).Error
+		err = stkAPI.SQLDB.First(db, "id=?", key).Error
 	} else if req.MpesaReceiptId != "" {
 		err = stkAPI.SQLDB.First(db, "mpesa_receipt_id=?", req.MpesaReceiptId).Error
 	}
@@ -496,8 +496,8 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 
 const defaultPageSize = 100
 
-func userAllowedPhonesSet(userID string) string {
-	return fmt.Sprintf("stk:user:%s:allowedphones", userID)
+func userAllowedPhonesSet(userkey string) string {
+	return fmt.Sprintf("stk:user:%s:allowedphones", userkey)
 }
 
 func (stkAPI *stkAPIServer) ListStkTransactions(
@@ -536,7 +536,7 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 		}
 	}
 
-	var ID uint
+	var key string
 
 	pageToken := req.GetPageToken()
 	if pageToken != "" {
@@ -544,18 +544,26 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 		if err != nil {
 			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
 		}
-		v, err := strconv.ParseUint(string(bs), 10, 64)
-		if err != nil {
-			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "incorrect page token")
-		}
-		ID = uint(v)
+		key = string(bs)
 	}
 
 	dbs := make([]*STKTransaction, 0, pageSize+1)
 
-	db := stkAPI.SQLDB.Limit(int(pageSize) + 1).Order("id DESC")
-	if ID != 0 {
-		db = db.Where("id<?", ID)
+	db := stkAPI.SQLDB.Model(&STKTransaction{}).Limit(int(pageSize) + 1)
+	if key != "" {
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			db = db.Where("id<?", key).Order("id DESC")
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			db = db.Where("transaction_time<?", key).Order("transaction_time DESC")
+		}
+	} else {
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			db = db.Order("id DESC")
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			db = db.Order("transaction_time DESC")
+		}
 	}
 
 	if len(allowedPhones) > 0 {
@@ -569,14 +577,24 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 
 		// Timestamp filter
 		if endTimestamp > startTimestamp {
-			db = db.Where("create_time BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
+			switch req.GetFilter().GetOrderField() {
+			case b2c.OrderField_PAYMENT_ID:
+				db = db.Where("created_at BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
+			case b2c.OrderField_TRANSACTION_TIMESTAMP:
+				db = db.Where("transaction_time BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
+			}
 		} else if req.Filter.TxDate != "" {
 			// Date filter
 			t, err := getTime(req.Filter.TxDate)
 			if err != nil {
 				return nil, err
 			}
-			db = db.Where("create_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
+			switch req.GetFilter().GetOrderField() {
+			case b2c.OrderField_PAYMENT_ID:
+				db = db.Where("created_at BETWEEN ? AND ?", t, t.Add(time.Hour*24))
+			case b2c.OrderField_TRANSACTION_TIMESTAMP:
+				db = db.Where("transaction_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
+			}
 		}
 
 		if len(req.Filter.Msisdns) > 0 {
@@ -615,13 +633,18 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 
 		pbs = append(pbs, pb)
 
-		ID = db.ID
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			key = fmt.Sprint(db.ID)
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			key = db.TransactionTime.Time.UTC().Format(time.RFC3339)
+		}
 	}
 
 	var token string
 	if len(dbs) > int(pageSize) {
 		// Next page token
-		token = base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(ID)))
+		token = base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(key)))
 	}
 
 	return &stk.ListStkTransactionsResponse{
@@ -654,7 +677,7 @@ func (stkAPI *stkAPIServer) ProcessStkTransaction(
 	}
 
 	// Validation
-	var ID int
+	var key int
 	switch {
 	case req == nil:
 		return nil, errs.NilObject("process request")
@@ -662,7 +685,7 @@ func (stkAPI *stkAPIServer) ProcessStkTransaction(
 		return nil, errs.MissingField("transaction/mpesa id")
 	default:
 		if req.TransactionId != "" {
-			ID, err = strconv.Atoi(req.TransactionId)
+			key, err = strconv.Atoi(req.TransactionId)
 			if err != nil {
 				return nil, errs.WrapMessage(codes.InvalidArgument, "transaction id")
 			}
@@ -675,7 +698,7 @@ func (stkAPI *stkAPIServer) ProcessStkTransaction(
 	}
 
 	if req.TransactionId != "" {
-		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("id=?", ID).
+		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("id=?", key).
 			Update("processed", processed).Error
 	} else {
 		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("mpesa_receipt_id=?", req.MpesaReceiptId).
@@ -708,22 +731,19 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		return nil, errs.MissingField("publish message")
 	}
 
-	stkBody := req.PublishMessage.GetTransactionInfo()
+	pb := req.GetPublishMessage().GetTransactionInfo()
 
-	if req.PublishMessage.TransactionId != "" {
-		// Get mpesa payload
-		v, err := stkAPI.GetStkTransaction(ctx, &stk.GetStkTransactionRequest{
+	if pb.GetTransactionId() == "" && req.GetPublishMessage().GetTransactionId() != "" {
+		pb, err = stkAPI.GetStkTransaction(ctx, &stk.GetStkTransactionRequest{
 			TransactionId: req.PublishMessage.TransactionId,
 		})
 		if err == nil {
-			stkBody = v
-		} else {
 			stkAPI.Logger.Errorln(err)
 		}
 	}
 
 	// Update the value
-	req.PublishMessage.TransactionInfo = stkBody
+	req.PublishMessage.TransactionInfo = pb
 
 	// Marshal data
 	bs, err := proto.Marshal(req.PublishMessage)
@@ -731,7 +751,7 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		return nil, errs.FromProtoMarshal(err, "publish message")
 	}
 
-	channel := stkAPI.PublishChannel
+	channel := firstVal(req.GetPublishMessage().GetPublishInfo().GetChannelName(), stkAPI.PublishChannel)
 
 	// Publish based on state
 	switch req.ProcessedState {
@@ -742,7 +762,7 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		}
 	case c2b.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
-		if stkBody.Processed {
+		if pb.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -750,7 +770,7 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		}
 	case c2b.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !stkBody.Processed {
+		if !pb.Processed {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")

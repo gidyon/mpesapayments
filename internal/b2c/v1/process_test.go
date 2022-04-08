@@ -51,7 +51,7 @@ var _ = Describe("Processing b2c transaction @process", func() {
 				err = B2CAPIServer.SQLDB.Create(paymentDB).Error
 				Expect(err).ShouldNot(HaveOccurred())
 
-				paymentID = fmt.Sprint(paymentDB.PaymentID)
+				paymentID = fmt.Sprint(paymentDB.ID)
 			})
 		})
 

@@ -16,26 +16,26 @@ var b2cTable = ""
 
 // Payment is B2C payment model
 type Payment struct {
-	PaymentID                uint      `gorm:"primaryKey;autoIncrement"`
+	ID                       uint      `gorm:"primaryKey;autoIncrement"`
 	InitiatorID              string    `gorm:"index;type:varchar(50)"`
 	Msisdn                   string    `gorm:"index;type:varchar(15)"`
 	OrgShortCode             string    `gorm:"index;type:varchar(15)"`
 	ReceiverPublicName       string    `gorm:"type:varchar(50)"`
-	TransactionType          string    `gorm:"type:varchar(50)"`
+	TransactionType          string    `gorm:"index;type:varchar(50)"`
 	TransactionID            string    `gorm:"index;type:varchar(50);unique"`
 	ConversationID           string    `gorm:"type:varchar(50)"`
 	OriginatorConversationID string    `gorm:"type:varchar(50)"`
-	ResultCode               string    `gorm:"type:varchar(2)"`
+	ResultCode               string    `gorm:"index;type:varchar(2)"`
 	ResultDescription        string    `gorm:"type:varchar(100)"`
-	TransactionTime          time.Time `gorm:"autoCreateTime"`
+	TransactionTime          time.Time `gorm:"index:;type:datetime(6)"`
 	Amount                   float32   `gorm:"index;type:float(10)"`
 	WorkingAccountFunds      float32   `gorm:"type:float(10)"`
 	UtilityAccountFunds      float32   `gorm:"type:float(10)"`
 	MpesaCharges             float32   `gorm:"type:float(10)"`
 	OnfonCharges             float32   `gorm:"type:float(10)"`
-	RecipientRegistered      bool      `gorm:"type:tinyint(1)"`
-	Succeeded                bool      `gorm:"type:tinyint(1)"`
-	Processed                bool      `gorm:"type:tinyint(1)"`
+	RecipientRegistered      bool      `gorm:"index;type:tinyint(1)"`
+	Succeeded                bool      `gorm:"index;type:tinyint(1)"`
+	Processed                bool      `gorm:"index;type:tinyint(1)"`
 	CreatedAt                time.Time `gorm:"primaryKey;autoCreateTime;->;<-:create;not null"`
 }
 
@@ -76,7 +76,7 @@ func B2CPaymentDB(pb *b2c.B2CPayment) (*Payment, error) {
 // B2CPaymentPB is wrapper to converts protobuf b2c payment to database model
 func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
 	pb := &b2c.B2CPayment{
-		PaymentId:                fmt.Sprint(db.PaymentID),
+		PaymentId:                fmt.Sprint(db.ID),
 		InitiatorId:              db.InitiatorID,
 		Msisdn:                   db.Msisdn,
 		OrgShortCode:             db.OrgShortCode,
@@ -88,7 +88,7 @@ func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
 		ResultCode:               db.ResultCode,
 		ResultDescription:        db.ResultDescription,
 		TransactionTimestamp:     db.TransactionTime.Unix(),
-		CreateTimestamp:          db.CreatedAt.Unix(),
+		CreateDate:               db.CreatedAt.UTC().Format(time.RFC3339),
 		Amount:                   db.Amount,
 		WorkingAccountFunds:      db.WorkingAccountFunds,
 		UtilityAccountFunds:      db.UtilityAccountFunds,

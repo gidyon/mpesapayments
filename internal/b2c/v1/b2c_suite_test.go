@@ -11,8 +11,7 @@ import (
 	"github.com/Pallinder/go-randomdata"
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
-	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
-	"github.com/gidyon/micro/v2/utils/encryption"
+	"github.com/gidyon/micro/v2/pkg/mocks/mocks"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
@@ -76,15 +75,8 @@ var _ = BeforeSuite(func() {
 
 	logger := micro.NewLogger("B2CPayment App", zerolog.TraceLevel)
 
-	paginationHasher, err := encryption.NewHasher(string([]byte(randomdata.RandStringRunes(32))))
-	Expect(err).ShouldNot(HaveOccurred())
+	authAPI := &mocks.AuthAPIMock{}
 
-	// Authentication API
-	authAPI, err := auth.NewAPI(&auth.Options{
-		SigningKey: []byte("awefr"),
-		Issuer:     "MPESA API",
-		Audience:   "apis",
-	})
 	Expect(err).ShouldNot(HaveOccurred())
 
 	optB2C := &OptionsB2C{
@@ -100,19 +92,16 @@ var _ = BeforeSuite(func() {
 	}
 
 	opt := &Options{
-		RedisKeyPrefix:   "test",
-		PublishChannel:   "test",
-		B2CLocalTopic:    "local",
-		QueryBalanceURL:  "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query",
-		B2CURL:           "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
-		ReversalURL:      "https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request",
-		SQLDB:            db,
-		RedisDB:          redisDB,
-		Logger:           logger,
-		AuthAPI:          authAPI,
-		PaginationHasher: paginationHasher,
-		HTTPClient:       client(1),
-		OptionsB2C:       optB2C,
+		PublishChannel:  "test",
+		QueryBalanceURL: "https://sandbox.safaricom.co.ke/mpesa/accountbalance/v1/query",
+		B2CURL:          "https://sandbox.safaricom.co.ke/mpesa/b2c/v1/paymentrequest",
+		ReversalURL:     "https://sandbox.safaricom.co.ke/mpesa/reversal/v1/request",
+		SQLDB:           db,
+		RedisDB:         redisDB,
+		Logger:          logger,
+		AuthAPI:         authAPI,
+		HTTPClient:      client(1),
+		OptionsB2C:      optB2C,
 	}
 
 	// Create MPESA payments API
@@ -170,21 +159,11 @@ var _ = BeforeSuite(func() {
 	opt.OptionsB2C.ResultURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
 
 	// Validate options for service
-	opt.RedisKeyPrefix = ""
-	_, err = NewB2CAPI(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.RedisKeyPrefix = "test"
 	opt.PublishChannel = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
 	opt.PublishChannel = "test"
-	opt.B2CLocalTopic = ""
-	_, err = NewB2CAPI(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.B2CLocalTopic = "local"
 	opt.QueryBalanceURL = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
@@ -220,11 +199,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.AuthAPI = authAPI
-	opt.PaginationHasher = nil
-	_, err = NewB2CAPI(ctx, opt)
-	Expect(err).Should(HaveOccurred())
-
-	opt.PaginationHasher = paginationHasher
 	opt.HTTPClient = nil
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())

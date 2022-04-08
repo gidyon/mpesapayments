@@ -25,7 +25,6 @@ var _ = Describe("Transfering funds @transferfunds", func() {
 			Remarks:   randParagraph(),
 			Occassion: randParagraph(),
 			CommandId: b2c.TransferFundsRequest_BUSINESS_PAYMENT,
-			RequestId: randomdata.RandStringRunes(32),
 		}
 		ctx = context.Background()
 	})
@@ -80,12 +79,8 @@ var _ = Describe("Transfering funds @transferfunds", func() {
 			bs, err := proto.Marshal(fakeB2CPayment())
 			Expect(err).ShouldNot(HaveOccurred())
 
-			err = B2CAPIServer.RedisDB.Set(ctx, AddPrefix(transferReq.RequestId, B2CAPIServer.RedisKeyPrefix), bs, 10*time.Second).Err()
+			err = B2CAPIServer.RedisDB.Set(ctx, transferReq.InitiatorId, bs, 10*time.Second).Err()
 			Expect(err).ShouldNot(HaveOccurred())
-
-			time.AfterFunc(time.Second, func() {
-				B2CAPIServer.unsubcribe(transferReq.RequestId)
-			})
 
 			queryRes, err := B2CAPI.TransferFunds(ctx, transferReq)
 			Expect(err).ShouldNot(HaveOccurred())

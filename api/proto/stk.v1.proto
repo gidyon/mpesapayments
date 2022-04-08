@@ -9,6 +9,7 @@ import "google/protobuf/empty.proto";
 import "google/api/field_behaviour.proto";
 import "protoc-gen-swagger/options/annotations.proto";
 import "c2b.v1.proto";
+import "b2c.v1.proto";
 
 message StkTransaction {
   option (grpc.gateway.protoc_gen_swagger.options.openapiv2_schema) = {
@@ -112,6 +113,7 @@ message ListStkTransactionFilter {
   gidyon.mpesa.ProcessedState process_state = 3;
   int64 start_timestamp = 4;
   int64 end_timestamp = 5;
+  gidyon.mpesa.b2c.OrderField order_field = 6;
 }
 
 message ListStkTransactionsRequest {
@@ -137,6 +139,7 @@ message ListStkTransactionsResponse {
 
   string next_page_token = 1;
   repeated StkTransaction stk_transactions = 2;
+  int64 collection_count = 3;
 }
 
 message ProcessStkTransactionRequest {

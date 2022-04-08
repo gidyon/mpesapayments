@@ -29,7 +29,7 @@ func fakeB2CPayment() *b2c.B2CPayment {
 		ResultCode:               "0",
 		ResultDescription:        randParagraph(),
 		TransactionTimestamp:     time.Now().Unix(),
-		CreateTimestamp:          time.Now().Unix(),
+		CreateDate:               time.Now().UTC().Format(time.RFC3339),
 		Amount:                   float32(randomdata.Decimal(999, 99999)),
 		WorkingAccountFunds:      float32(randomdata.Decimal(99999, 999999)),
 		UtilityAccountFunds:      float32(randomdata.Decimal(99999, 999999)),
@@ -49,7 +49,6 @@ var _ = Describe("Creating B2CPayment @create", func() {
 	BeforeEach(func() {
 		createReq = &b2c.CreateB2CPaymentRequest{
 			Payment: fakeB2CPayment(),
-			Publish: true,
 		}
 		ctx = context.Background()
 	})

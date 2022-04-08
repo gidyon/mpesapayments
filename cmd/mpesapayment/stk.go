@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"time"
@@ -55,39 +56,40 @@ func NewSTKGateway(ctx context.Context, opt *Options) (http.Handler, error) {
 }
 
 func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	code, err := gw.serveHTTP(w, r)
+	if err != nil {
+		gw.Logger.Errorf("Error serving incoming Stk Transaction %v", err)
+		http.Error(w, "request handler failed", code)
+	}
+}
+
+func (gw *stkGateway) serveHTTP(w http.ResponseWriter, r *http.Request) (int, error) {
 	if gw.DisableSTKService {
 		http.Error(w, "receiving stk transactions disabled", http.StatusServiceUnavailable)
-		return
+		return http.StatusServiceUnavailable, errors.New("receiving stk transactions disabled")
 	}
-
-	var err error
 
 	httputils.DumpRequest(r, "Incoming Mpesa STK Payload")
 
-	// Must be POST request
 	if r.Method != http.MethodPost {
-		gw.Logger.Infoln("only post allowed")
-		http.Error(w, "bad method; only POST allowed", http.StatusBadRequest)
-		return
+		return http.StatusBadRequest, fmt.Errorf("bad method; only POST allowed; received %v method", r.Method)
 	}
 
-	stkPayload := &payload.STKPayload{}
+	var (
+		err        error
+		stkPayload = &payload.STKPayload{}
+	)
 
 	switch r.Header.Get("content-type") {
 	case "application/json", "application/json;charset=UTF-8":
-		// Marshaling
 		err = json.NewDecoder(r.Body).Decode(stkPayload)
 		if err != nil {
-			gw.Logger.Errorf("error is %v", err)
-			http.Error(w, "decoding json failed: "+err.Error(), http.StatusBadRequest)
-			return
+			return http.StatusBadRequest, fmt.Errorf("decoding json failed: %w", err)
 		}
 	default:
-		gw.Logger.Warningln("incorrect  content type: %v", r.Header.Get("content-type"))
-		return
+		return http.StatusBadRequest, fmt.Errorf("incorrect content type: %v", r.Header.Get("content-type"))
 	}
 
-	// Validation
 	switch {
 	case stkPayload == nil:
 		err = fmt.Errorf("nil mpesa transaction")
@@ -99,38 +101,41 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		err = fmt.Errorf("missing description")
 	}
 	if err != nil {
-		gw.Logger.Errorf("validation error: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+		return http.StatusBadRequest, fmt.Errorf("request body validation error: %v", err)
 	}
 
 	pb := &stk.StkTransaction{
+		InitiatorId:          "",
+		TransactionId:        stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
 		MerchantRequestId:    stkPayload.Body.STKCallback.MerchantRequestID,
 		CheckoutRequestId:    stkPayload.Body.STKCallback.CheckoutRequestID,
 		ResultCode:           fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
 		ResultDesc:           stkPayload.Body.STKCallback.ResultDesc,
 		Amount:               fmt.Sprintf("%.2f", stkPayload.Body.STKCallback.CallbackMetadata.GetAmount()),
-		TransactionId:        stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
-		TransactionTimestamp: stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().Unix(),
+		MpesaReceiptId:       stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
+		Balance:              stkPayload.Body.STKCallback.CallbackMetadata.Balance(),
 		PhoneNumber:          stkPayload.Body.STKCallback.CallbackMetadata.PhoneNumber(),
 		Succeeded:            stkPayload.Body.STKCallback.ResultCode == 0,
+		Processed:            false,
+		TransactionTimestamp: stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime().Unix(),
+		CreateTimestamp:      0,
 	}
 
-	// Get initiator payload
-	bs, err := gw.RedisDB.Get(r.Context(), stkapp.GetMpesaRequestKey(stkPayload.Body.STKCallback.MerchantRequestID)).Result()
-	if err != nil {
-		gw.Logger.Warningf("failed to get initiator id for stk: %v", err)
-	}
+	initReq := &stk.InitiateSTKPushRequest{}
 
-	initReq := stk.InitiateSTKPushRequest{}
-	err = proto.Unmarshal([]byte(bs), &initReq)
-	if err != nil {
-		gw.Logger.Warningf("failed to unmarshal initiator request: %v", err)
+	ctx := r.Context()
+
+	bs, err := gw.RedisDB.Get(ctx, stkapp.GetMpesaRequestKey(stkPayload.Body.STKCallback.MerchantRequestID)).Result()
+	switch {
+	case err == nil:
+		err = proto.Unmarshal([]byte(bs), initReq)
+		if err != nil {
+			return http.StatusBadRequest, fmt.Errorf("failed to unmarshal initiate stk request: %v", err)
+		}
 	}
 
 	pb.InitiatorId = initReq.InitiatorId
 
-	// Update stkPayload
 	pb.AccountReference = initReq.AccountReference
 	pb.TransactionDesc = initReq.TransactionDesc
 	pb.ShortCode = initReq.GetPublishMessage().GetPayload()["short_code"]
@@ -139,25 +144,29 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		pb.Amount = firstVal(pb.Amount, fmt.Sprint(initReq.GetAmount()))
 	}
 
-	// Save to database
 	res, err := gw.stkAPI.CreateStkTransaction(
 		gw.ctxExt, &stk.CreateStkTransactionRequest{Payload: pb},
 	)
 	if err != nil {
-		gw.Logger.Errorf("failed to create stk payload: %v", err)
+		return http.StatusInternalServerError, fmt.Errorf("failed to save stk transaction: %v", err)
 	}
 
 	if initReq.Publish {
 		publish := func() {
 			_, err = gw.stkAPI.PublishStkTransaction(gw.ctxExt, &stk.PublishStkTransactionRequest{
 				PublishMessage: &stk.PublishMessage{
+					InitiatorId:     initReq.InitiatorId,
 					TransactionId:   res.TransactionId,
-					TransactionInfo: pb,
+					MpesaReceiptId:  res.MpesaReceiptId,
+					PhoneNumber:     res.PhoneNumber,
 					PublishInfo:     initReq.PublishMessage,
+					TransactionInfo: res,
 				},
 			})
 			if err != nil {
 				gw.Logger.Warningf("failed to publish message: %v", err)
+			} else {
+				gw.Logger.Infoln("stk published ", firstVal(initReq.GetPublishMessage().GetChannelName()))
 			}
 		}
 		if initReq.GetPublishMessage().GetOnlyOnSuccess() {
@@ -171,6 +180,8 @@ func (gw *stkGateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	_, err = w.Write([]byte("mpesa stk processed"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return http.StatusInternalServerError, err
 	}
+
+	return http.StatusOK, nil
 }

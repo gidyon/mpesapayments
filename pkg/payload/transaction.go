@@ -36,7 +36,16 @@ func (tx *Transaction) Succeeded() bool {
 	return tx.Result.ResultCode == 0
 }
 
-// MSISDN retrievs phone number
+// OriginatorConversationID is the originator id
+func (tx *Transaction) OriginatorConversationID() string {
+	return tx.Result.OriginatorConversationID
+}
+
+// ConversationID returns value of tx.Result.ConversationID
+func (tx *Transaction) ConversationID() string {
+	return tx.Result.ConversationID
+}
+
 func (tx *Transaction) MSISDN() string {
 	for _, v := range tx.Result.ResultParameters.ResultParameter {
 		if v.Key == "ReceiverPartyPublicName" && v.Value != "" {

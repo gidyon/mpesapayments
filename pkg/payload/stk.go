@@ -60,6 +60,16 @@ func (c *CallbackMeta) MpesaReceiptNumber() string {
 	return fmt.Sprint(c.Item[1].Value)
 }
 
+// Balance returns the transaction balance
+func (c *CallbackMeta) Balance() string {
+	itemsLen := len(c.Item)
+	if itemsLen != 5 && itemsLen != 4 {
+		return ""
+	}
+
+	return fmt.Sprint(c.Item[2].Value)
+}
+
 // GetTransTime returns the transaction time
 func (c *CallbackMeta) GetTransTime() time.Time {
 	itemsLen := len(c.Item)

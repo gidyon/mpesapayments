@@ -69,12 +69,8 @@ var _ = Describe("Querying balance from an API @querybalance", func() {
 			bs, err := proto.Marshal(fakeB2CPayment())
 			Expect(err).ShouldNot(HaveOccurred())
 
-			err = B2CAPIServer.RedisDB.Set(ctx, AddPrefix(queryReq.RequestId, B2CAPIServer.RedisKeyPrefix), bs, 10*time.Second).Err()
+			err = B2CAPIServer.RedisDB.Set(ctx, queryReq.RequestId, bs, 10*time.Second).Err()
 			Expect(err).ShouldNot(HaveOccurred())
-
-			time.AfterFunc(time.Second, func() {
-				B2CAPIServer.unsubcribe(queryReq.RequestId)
-			})
 
 			queryRes, err := B2CAPI.QueryAccountBalance(ctx, queryReq)
 			Expect(err).ShouldNot(HaveOccurred())

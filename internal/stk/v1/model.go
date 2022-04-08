@@ -35,7 +35,7 @@ type STKTransaction struct {
 	Succeeded         string       `gorm:"index;type:enum('YES','NO');default:NO"`
 	Processed         string       `gorm:"index;type:enum('YES','NO');default:NO"`
 	TransactionTime   sql.NullTime `gorm:"index:;type:datetime(6)"`
-	CreateTime        time.Time    `gorm:"autoCreateTime:nano;not null;type:datetime(6)"`
+	CreateTime        time.Time    `gorm:"primaryKey;autoCreateTime:nano;not null;type:datetime(6)"`
 }
 
 // TableName returns the name of the table

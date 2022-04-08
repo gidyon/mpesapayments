@@ -9,10 +9,9 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"strconv"
-	"sync"
+	"strings"
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
@@ -22,8 +21,6 @@ import (
 	"github.com/gidyon/mpesapayments/pkg/payload"
 	"github.com/gidyon/mpesapayments/pkg/utils/httputils"
 	"github.com/go-redis/redis/v8"
-	"github.com/google/uuid"
-	"github.com/speps/go-hashids"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
 	"google.golang.org/grpc/metadata"
@@ -32,92 +29,21 @@ import (
 	"gorm.io/gorm"
 )
 
-const (
-	// FailedTxList is redis list for failed mpesa transactions
-	FailedTxList   = "mpesa:b2c:failedtx:list"
-	bulkInsertSize = 1000
-
-	// InitiatorID ...
-	InitiatorID = "initiator_id"
-	// RequestIDQuery ...
-	RequestIDQuery = "request_id"
-	// ShortCodeQuery ...
-	ShortCodeQuery = "short_code"
-	// MSISDNQuery ...
-	MSISDNQuery = "msisdn"
-	// PublishLocalQuery ...
-	PublishLocalQuery = "publish_local"
-	// PublishGlobalQuery ...
-	PublishGlobalQuery = "publish_global"
-	// TxTypeQuery ...
-	TxTypeQuery = "tx_type"
-	// DropQuery ...
-	DropQuery = "drop"
-)
+const SourceKey = "source"
 
 type httpClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-type pubsub struct {
-	mu   *sync.RWMutex // guards subs
-	subs map[string]chan struct{}
-}
-
-func (pb *pubsub) subcribe(subscription string) {
-	pb.mu.Lock()
-	defer pb.mu.Unlock()
-
-	pb.subs[subscription] = make(chan struct{}, 1)
-}
-
-func (pb *pubsub) unsubcribe(subscription string) {
-	pb.mu.Lock()
-	defer pb.mu.Unlock()
-
-	if _, ok := pb.subs[subscription]; ok {
-		close(pb.subs[subscription])
-		delete(pb.subs, subscription)
-	}
-}
-
-func (pb *pubsub) wait(subscription string) <-chan struct{} {
-	pb.mu.RLock()
-	ch, ok := pb.subs[subscription]
-	pb.mu.RUnlock()
-
-	if ok {
-		<-ch
-	}
-
-	return ch
-}
-
-func (pb *pubsub) release(subscription string) {
-	pb.mu.Lock()
-	delete(pb.subs, subscription)
-	pb.mu.Unlock()
-}
-
-type incomingPayment struct {
-	payment *Payment
-	publish bool
-}
-
 type b2cAPIServer struct {
 	b2c.UnimplementedB2CAPIServer
-	insertChan    chan *incomingPayment
-	insertTimeOut time.Duration
-	*Options
-	*pubsub
 	ctxAdmin context.Context
+	*Options
 }
 
 // Options contains options for starting b2c service
 type Options struct {
-	RedisKeyPrefix     string
 	PublishChannel     string
-	B2CLocalTopic      string
 	QueryBalanceURL    string
 	B2CURL             string
 	ReversalURL        string
@@ -125,7 +51,6 @@ type Options struct {
 	RedisDB            *redis.Client
 	Logger             grpclog.LoggerV2
 	AuthAPI            auth.API
-	PaginationHasher   *hashids.HashID
 	HTTPClient         httpClient
 	OptionsB2C         *OptionsB2C
 	TransactionCharges float32
@@ -145,18 +70,12 @@ func ValidateOptions(opt *Options) error {
 		err = errs.NilObject("logger")
 	case opt.AuthAPI == nil:
 		err = errs.NilObject("auth API")
-	case opt.PaginationHasher == nil:
-		err = errs.NilObject("pagination hasher")
 	case opt.HTTPClient == nil:
 		err = errs.NilObject("http client")
 	case opt.OptionsB2C == nil:
 		err = errs.NilObject("b2c options")
-	case opt.RedisKeyPrefix == "":
-		err = errs.MissingField("keys prefix")
 	case opt.PublishChannel == "":
 		err = errs.MissingField("publish channel")
-	case opt.B2CLocalTopic == "":
-		err = errs.MissingField("b2c local channel")
 	case opt.QueryBalanceURL == "":
 		err = errs.MissingField("query balance url")
 	case opt.B2CURL == "":
@@ -183,12 +102,12 @@ type OptionsB2C struct {
 	basicToken                 string
 }
 
-// ValidateOptionsB2C validates stk options
+// ValidateOptionsB2C validates b2c options
 func ValidateOptionsB2C(opt *OptionsB2C) error {
 	var err error
 	switch {
 	case opt == nil:
-		err = errs.NilObject("stk options")
+		err = errs.NilObject("b2c options")
 	case opt.AccessTokenURL == "":
 		err = errs.MissingField("access token url")
 	case opt.ConsumerKey == "":
@@ -248,14 +167,11 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 	}
 
 	b2cAPI := &b2cAPIServer{
-		insertChan:    make(chan *incomingPayment, bulkInsertSize),
-		insertTimeOut: time.Duration(5 * time.Second),
-		Options:       opt,
-		pubsub:        &pubsub{mu: &sync.RWMutex{}, subs: map[string]chan struct{}{}},
-		ctxAdmin:      ctxAdmin,
+		Options:  opt,
+		ctxAdmin: ctxAdmin,
 	}
 
-	b2cAPI.Logger.Infof("Publishing to b2c consumers on channel: %v", AddPrefix(b2cAPI.PublishChannel, b2cAPI.RedisKeyPrefix))
+	b2cAPI.Logger.Infof("Publishing to b2c consumers on channel: %v", b2cAPI.PublishChannel)
 
 	b2cTable = os.Getenv("B2C_TRANSACTIONS_TABLE")
 
@@ -279,27 +195,82 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 	// Worker for updating access token
 	go b2cAPI.updateAccessTokenWorker(ctx, 30*time.Minute)
 
-	// Start worker to insert mpesa transactions
-	go b2cAPI.insertWorker(ctx)
-
-	// Start worker to reconcile subscriptions
-	go b2cAPI.subscriptionsWorker(ctx)
-
 	// Worker to generate daily statistics
 	go b2cAPI.dailyDailyStatWorker(ctx)
 
 	return b2cAPI, nil
 }
 
-type queryOptions struct {
-	initiatorID          string
-	requestID            string
-	msisdn               string
-	shortCode            string
-	publishLocalChannel  string
-	publishGlobalChannel string
-	txType               string
-	dropTransaction      bool
+func (b2cAPI *b2cAPIServer) CreateB2CPayment(
+	ctx context.Context, createReq *b2c.CreateB2CPaymentRequest,
+) (*b2c.B2CPayment, error) {
+	// Authorization
+	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validation
+	switch {
+	case createReq == nil:
+		return nil, errs.NilObject("create request")
+	default:
+		err = ValidatePayment(createReq.Payment)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Get model
+	db, err := B2CPaymentDB(createReq.Payment)
+	if err != nil {
+		return nil, err
+	}
+
+	// Save payment
+	err = b2cAPI.SQLDB.Create(db).Error
+	if err != nil {
+		b2cAPI.Logger.Errorln(err)
+		return nil, errs.WrapMessage(codes.Internal, "failed to create")
+	}
+
+	return B2CPaymentPB(db)
+}
+
+func (b2cAPI *b2cAPIServer) GetB2CPayment(
+	ctx context.Context, req *b2c.GetB2CPaymentRequest,
+) (*b2c.B2CPayment, error) {
+	// Validation
+	var (
+		key int
+		err error
+	)
+	switch {
+	case req == nil:
+		return nil, errs.NilObject("get request")
+	case req.PaymentId == "":
+		return nil, errs.MissingField("payment id")
+	default:
+		key, _ = strconv.Atoi(req.PaymentId)
+	}
+
+	db := &Payment{}
+
+	if key != 0 {
+		err = b2cAPI.SQLDB.First(db, "id=?", key).Error
+	} else {
+		err = b2cAPI.SQLDB.First(db, "transaction_id=?", req.PaymentId).Error
+	}
+	switch {
+	case err == nil:
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		return nil, errs.DoesNotExist("b2c transaction", req.PaymentId)
+	default:
+		b2cAPI.Logger.Errorln(err)
+		return nil, errs.WrapMessage(codes.Internal, "failed to get b2c payment")
+	}
+
+	return B2CPaymentPB(db)
 }
 
 func (b2cAPI *b2cAPIServer) QueryTransactionStatus(
@@ -308,106 +279,19 @@ func (b2cAPI *b2cAPIServer) QueryTransactionStatus(
 	return &b2c.QueryResponse{}, nil
 }
 
-func addQueryParams(opt *queryOptions, urlStr string) (string, error) {
-	u, err := url.Parse(urlStr)
-	if err != nil {
-		return "", err
-	}
-	q := u.Query()
-	q.Set("oops", "golang")
-	if opt.initiatorID != "" {
-		q.Set(InitiatorID, opt.initiatorID)
-	}
-	if opt.requestID != "" {
-		q.Set(RequestIDQuery, opt.requestID)
-	}
-	if opt.msisdn != "" {
-		q.Set(MSISDNQuery, opt.msisdn)
-	}
-	if opt.shortCode != "" {
-		q.Set(ShortCodeQuery, opt.shortCode)
-	}
-	if opt.publishGlobalChannel != "" {
-		q.Set(PublishGlobalQuery, opt.publishGlobalChannel)
-	}
-	if opt.publishLocalChannel != "" {
-		q.Set(PublishLocalQuery, opt.publishLocalChannel)
-	}
-	if opt.txType != "" {
-		q.Set(TxTypeQuery, opt.txType)
-	}
-	if opt.dropTransaction {
-		q.Set(DropQuery, "true")
-	}
-	u.RawQuery = q.Encode()
-	return u.String(), nil
+// GetMpesaRequestKey is key that initiates data
+func GetMpesaRequestKey(requestId string) string {
+	return fmt.Sprintf("b2c:%s", requestId)
 }
 
-func firstVal(vals ...string) string {
-	for _, val := range vals {
-		if val != "" {
-			return val
-		}
-	}
-	return ""
+// GetMpesaSTKPushKey retrives key storing initiator key
+func GetMpesaB2CPushKey(msisdn string) string {
+	return fmt.Sprintf("b2crequests:%s", msisdn)
 }
 
-// AddPrefix adds a prefix to the key
-func AddPrefix(key, prefix string) string {
-	return fmt.Sprintf("%s:%s", prefix, key)
-}
-
-func (b2cAPI *b2cAPIServer) AddPrefix(key string) string {
-	return AddPrefix(key, b2cAPI.RedisKeyPrefix)
-}
-
-// GetInitiatorKey creates an initiator key for b2c transaction
-func GetInitiatorKey(msidn string) string {
-	return "initiator:b2c:" + msidn
-}
-
-func (b2cAPI *b2cAPIServer) InitiateTransaction(
-	ctx context.Context, initiateReq *b2c.InitiateTransactionRequest,
-) (*emptypb.Empty, error) {
-	// Authorize the request
-	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate the request
-	switch {
-	case initiateReq == nil:
-		return nil, errs.NilObject("initiate request")
-	case initiateReq.Initiator == nil:
-		return nil, errs.NilObject("initiator")
-	case initiateReq.Initiator.Msisdn == "":
-		return nil, errs.MissingField("initiator msisdn")
-	case initiateReq.Initiator.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
-	}
-
-	// Get key
-	key := GetInitiatorKey(initiateReq.Initiator.Msisdn)
-
-	// Marshal initiator data
-	bs, err := proto.Marshal(initiateReq.Initiator)
-	if err != nil {
-		return nil, errs.FromProtoMarshal(err, "initiator")
-	}
-
-	// Save in cache temporarily
-	err = b2cAPI.RedisDB.Set(ctx, key, bs, 5*time.Minute).Err()
-	if err != nil {
-		return nil, errs.RedisCmdFailed(err, "set")
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (b2cAPI *b2cAPIServer) QueryAccountBalance(
-	ctx context.Context, queryReq *b2c.QueryAccountBalanceRequest,
-) (*b2c.QueryAccountBalanceResponse, error) {
+func (b2cAPI *b2cAPIServer) TransferFunds(
+	ctx context.Context, req *b2c.TransferFundsRequest,
+) (*b2c.TransferFundsResponse, error) {
 	// Authorize request
 	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
 	if err != nil {
@@ -416,75 +300,199 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 
 	// Validate request
 	switch {
-	case queryReq == nil:
-		return nil, errs.NilObject("query request")
-	case queryReq.PartyA == 0:
-		return nil, errs.MissingField("party")
-	case queryReq.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
-	case queryReq.Remarks == "":
+	case req == nil:
+		return nil, errs.NilObject("transfer request")
+	case req.Amount == 0:
+		return nil, errs.MissingField("amount")
+	case req.CommandId == b2c.TransferFundsRequest_COMMANDID_UNSPECIFIED:
+		return nil, errs.MissingField("command id")
+	case req.Msisdn == 0:
+		return nil, errs.MissingField("msisdn")
+	case req.ShortCode == 0:
+		return nil, errs.MissingField("short code")
+	case req.Remarks == "":
 		return nil, errs.MissingField("remarks")
-	case queryReq.IdentifierType == b2c.QueryAccountBalanceRequest_QUERY_ACCOUNT_UNSPECIFIED:
+	}
+
+	cacheKey := GetMpesaB2CPushKey(fmt.Sprint(req.Msisdn))
+
+	// Check whether another transaction is under way
+	exists, err := b2cAPI.RedisDB.Exists(ctx, cacheKey).Result()
+	if err != nil {
+		return nil, errs.RedisCmdFailed(err, "exists")
+	}
+
+	if exists == 1 {
+		return &b2c.TransferFundsResponse{
+			Progress: false,
+			Message:  "Another B2C Transaction is currently underway. Please wait.",
+		}, nil
+	}
+
+	// Save key in cache for 100 seconds
+	err = b2cAPI.RedisDB.Set(ctx, cacheKey, "active", 100*time.Second).Err()
+	if err != nil {
+		b2cAPI.RedisDB.Del(ctx, cacheKey)
+		return nil, errs.RedisCmdFailed(err, "set")
+	}
+
+	var commandID string
+	switch req.CommandId {
+	case b2c.TransferFundsRequest_BUSINESS_PAYMENT:
+		commandID = "BusinessPayment"
+	case b2c.TransferFundsRequest_PROMOTION_PAYMENT:
+		commandID = "PromotionPayment"
+	case b2c.TransferFundsRequest_SALARY_PAYMENT:
+		commandID = "SalaryPayment"
+	}
+
+	// Transfer funds payload
+	queryBalPayload := &payload.B2CRequest{
+		InitiatorName:      b2cAPI.Options.OptionsB2C.InitiatorUsername,
+		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
+		CommandID:          commandID,
+		Amount:             fmt.Sprint(req.Amount),
+		PartyA:             fmt.Sprint(req.ShortCode),
+		PartyB:             req.Msisdn,
+		Remarks:            req.Remarks,
+		QueueTimeOutURL:    fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionsB2C.QueueTimeOutURL, SourceKey),
+		ResultURL:          fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionsB2C.ResultURL, SourceKey),
+		Occassion:          req.Occassion,
+	}
+
+	if req.PublishMessage == nil {
+		req.PublishMessage = &b2c.PublishInfo{
+			Payload: map[string]string{},
+		}
+	}
+	if req.PublishMessage.Payload == nil {
+		req.PublishMessage.Payload = map[string]string{}
+	}
+
+	bs, err := json.Marshal(queryBalPayload)
+	if err != nil {
+		return nil, errs.FromJSONMarshal(err, "b2cPayload")
+	}
+
+	hReq, err := http.NewRequest(http.MethodPost, b2cAPI.B2CURL, bytes.NewReader(bs))
+	if err != nil {
+		return nil, errs.WrapMessage(codes.Internal, "failed to create transfer funds request")
+	}
+
+	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
+	hReq.Header.Set("Content-Type", "application/json")
+
+	httputils.DumpRequest(hReq, "TransferFunds Request")
+
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		res, err := b2cAPI.HTTPClient.Do(hReq)
+		if err != nil {
+			b2cAPI.Logger.Errorf("failed to post transfer request to mpesa API: %v", err)
+			return
+		}
+
+		httputils.DumpResponse(res, "TransferFunds Response")
+
+		apiRes := &payload.GenericAPIResponse{}
+
+		err = json.NewDecoder(res.Body).Decode(&apiRes.Response)
+		if err != nil && err != io.EOF {
+			b2cAPI.Logger.Errorf("failed to decode mpesa response: %v", err)
+			return
+		}
+
+		errMsg, ok := apiRes.Response["errorMessage"]
+		if ok {
+			b2cAPI.Logger.Errorf("error happened while sending transfer funds request: %v", errMsg)
+			return
+		}
+
+		switch strings.ToLower(res.Header.Get("content-type")) {
+		case "application/json", "application/json;charset=utf-8":
+			// Marshal req
+			bs, err := proto.Marshal(req)
+			if err != nil {
+				b2cAPI.Logger.Errorln(err)
+				return
+			}
+
+			requestId := GetMpesaRequestKey(fmt.Sprint(apiRes.Response["ConversationID"]))
+
+			err = b2cAPI.RedisDB.Set(ctx, requestId, bs, time.Minute*30).Err()
+			if err != nil {
+				b2cAPI.Logger.Errorln(err)
+				return
+			}
+
+			b2cAPI.RedisDB.Del(ctx, cacheKey)
+		default:
+		}
+	}()
+
+	return &b2c.TransferFundsResponse{
+		Progress: true,
+		Message:  "Processing. Disbursement will come",
+	}, nil
+}
+
+func (b2cAPI *b2cAPIServer) QueryAccountBalance(
+	ctx context.Context, req *b2c.QueryAccountBalanceRequest,
+) (*b2c.QueryAccountBalanceResponse, error) {
+	// Authorize request
+	_, err := b2cAPI.AuthAPI.AuthorizeGroup(ctx, b2cAPI.AuthAPI.AdminGroups()...)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate request
+	switch {
+	case req == nil:
+		return nil, errs.NilObject("query request")
+	case req.PartyA == 0:
+		return nil, errs.MissingField("party")
+	case req.InitiatorId == "":
+		return nil, errs.MissingField("initiator id")
+	case req.Remarks == "":
+		return nil, errs.MissingField("remarks")
+	case req.IdentifierType == b2c.QueryAccountBalanceRequest_QUERY_ACCOUNT_UNSPECIFIED:
 		return nil, errs.MissingField("identifier type")
-	}
-
-	requestID := firstVal(queryReq.RequestId, uuid.New().String())
-
-	if queryReq.Synchronous {
-		// Subscribe if synchronous
-		b2cAPI.subcribe(requestID)
-		defer b2cAPI.release(requestID)
-	}
-
-	queryOptions := &queryOptions{
-		initiatorID:          queryReq.InitiatorId,
-		requestID:            requestID,
-		msisdn:               fmt.Sprint(queryReq.PartyA),
-		shortCode:            fmt.Sprint(queryReq.PartyA),
-		publishLocalChannel:  b2cAPI.B2CLocalTopic,
-		publishGlobalChannel: b2cAPI.PublishChannel,
-		dropTransaction:      true,
 	}
 
 	// Send the request to safaricom
 	queryBalPayload := &payload.AccountBalanceRequest{
 		CommandID:          "AccountBalance",
-		PartyA:             int32(queryReq.PartyA),
-		IdentifierType:     int32(queryReq.IdentifierType),
-		Remarks:            queryReq.Remarks,
+		PartyA:             int32(req.PartyA),
+		IdentifierType:     int32(req.IdentifierType),
+		Remarks:            req.Remarks,
 		Initiator:          b2cAPI.OptionsB2C.InitiatorUsername,
 		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
-	}
-
-	queryBalPayload.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
-	}
-	queryBalPayload.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
+		QueueTimeOutURL:    b2cAPI.OptionsB2C.QueueTimeOutURL,
+		ResultURL:          b2cAPI.OptionsB2C.ResultURL,
 	}
 
 	// Json Marshal
 	bs, err := json.Marshal(queryBalPayload)
 	if err != nil {
-		return nil, errs.FromJSONMarshal(err, "stkPayload")
+		return nil, errs.FromJSONMarshal(err, "b2cPayload")
 	}
 
 	// Create request
-	req, err := http.NewRequest(http.MethodPost, b2cAPI.QueryBalanceURL, bytes.NewReader(bs))
+	hReq, err := http.NewRequest(http.MethodPost, b2cAPI.QueryBalanceURL, bytes.NewReader(bs))
 	if err != nil {
 		return nil, errs.WrapMessage(codes.Internal, "failed to create request to query balance")
 	}
 
 	// Update headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
-	req.Header.Set("Content-Type", "application/json")
+	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
+	hReq.Header.Set("Content-Type", "application/json")
 
-	httputils.DumpRequest(req, "QueryAccountBalance Request")
+	httputils.DumpRequest(hReq, "QueryAccountBalance Request")
 
 	// Post to MPESA API
-	res, err := b2cAPI.HTTPClient.Do(req)
+	res, err := b2cAPI.HTTPClient.Do(hReq)
 	if err != nil {
 		return nil, errs.WrapError(err)
 	}
@@ -502,165 +510,13 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
-	transaction := &b2c.B2CPayment{}
-
-	if queryReq.Synchronous {
-		// Wait for response from mpesa server for not more than a minute
-		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-		defer cancel()
-
-		select {
-		case <-ctxWait.Done():
-			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-		case <-b2cAPI.wait(requestID):
-		}
-
-		// Get from cache
-		str, err := b2cAPI.RedisDB.Get(ctx, AddPrefix(requestID, b2cAPI.RedisKeyPrefix)).Result()
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "get")
-		}
-
-		err = proto.Unmarshal([]byte(str), transaction)
-		if err != nil {
-			return nil, errs.FromProtoUnMarshal(err, "b2cpayment")
-		}
-	}
-
 	return &b2c.QueryAccountBalanceResponse{
-		Party:               queryReq.PartyA,
-		WorkingAccountFunds: transaction.WorkingAccountFunds,
-		UtilityAccountFunds: transaction.UtilityAccountFunds,
-		ChargesPaidFunds:    transaction.MpesaCharges,
-		Completed:           queryReq.Synchronous,
+		Party: req.PartyA,
+		// WorkingAccountFunds: transaction.WorkingAccountFunds,
+		// UtilityAccountFunds: transaction.UtilityAccountFunds,
+		// ChargesPaidFunds:    transaction.MpesaCharges,
+		Completed: req.Synchronous,
 	}, nil
-}
-
-func (b2cAPI *b2cAPIServer) TransferFunds(
-	ctx context.Context, transferReq *b2c.TransferFundsRequest,
-) (*emptypb.Empty, error) {
-	// Authorize request
-	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validate request
-	switch {
-	case transferReq == nil:
-		return nil, errs.NilObject("transfer request")
-	case transferReq.Amount == 0:
-		return nil, errs.MissingField("amount")
-	case transferReq.CommandId == b2c.TransferFundsRequest_COMMANDID_UNSPECIFIED:
-		return nil, errs.MissingField("command id")
-	case transferReq.Msisdn == 0:
-		return nil, errs.MissingField("msisdn")
-	case transferReq.ShortCode == 0:
-		return nil, errs.MissingField("short code")
-	case transferReq.Remarks == "":
-		return nil, errs.MissingField("remarks")
-	}
-
-	requestID := firstVal(transferReq.RequestId, uuid.New().String())
-
-	if transferReq.Synchronous {
-		// Subscribe if synchronous mode
-		b2cAPI.subcribe(requestID)
-		defer b2cAPI.release(requestID)
-	}
-
-	queryOptions := &queryOptions{
-		initiatorID:          transferReq.InitiatorId,
-		requestID:            requestID,
-		msisdn:               fmt.Sprint(transferReq.Msisdn),
-		shortCode:            fmt.Sprint(transferReq.ShortCode),
-		publishGlobalChannel: b2cAPI.PublishChannel,
-		publishLocalChannel:  b2cAPI.B2CLocalTopic,
-		txType:               "TransferFunds",
-		dropTransaction:      false,
-	}
-
-	var commandID string
-	switch transferReq.CommandId {
-	case b2c.TransferFundsRequest_BUSINESS_PAYMENT:
-		commandID = "BusinessPayment"
-	case b2c.TransferFundsRequest_PROMOTION_PAYMENT:
-		commandID = "PromotionPayment"
-	case b2c.TransferFundsRequest_SALARY_PAYMENT:
-		commandID = "SalaryPayment"
-	}
-
-	// Send the request to mpesa API
-	queryBalPayload := &payload.B2CRequest{
-		InitiatorName:      b2cAPI.Options.OptionsB2C.InitiatorUsername,
-		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
-		CommandID:          commandID,
-		Amount:             fmt.Sprint(transferReq.Amount),
-		PartyA:             fmt.Sprint(transferReq.ShortCode),
-		PartyB:             transferReq.Msisdn,
-		Remarks:            transferReq.Remarks,
-		Occassion:          transferReq.Occassion,
-	}
-
-	queryBalPayload.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
-	}
-	queryBalPayload.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
-	}
-
-	// Json Marshal
-	bs, err := json.Marshal(queryBalPayload)
-	if err != nil {
-		return nil, errs.FromJSONMarshal(err, "stkPayload")
-	}
-
-	// Create request
-	req, err := http.NewRequest(http.MethodPost, b2cAPI.B2CURL, bytes.NewReader(bs))
-	if err != nil {
-		return nil, errs.WrapMessage(codes.Internal, "failed to create new request")
-	}
-
-	// Update headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
-	req.Header.Set("Content-Type", "application/json")
-
-	httputils.DumpRequest(req, "TransferFunds Request")
-
-	// Post to MPESA API
-	res, err := b2cAPI.HTTPClient.Do(req)
-	if err != nil {
-		return nil, errs.WrapError(err)
-	}
-
-	httputils.DumpResponse(res, "TransferFunds Response")
-
-	apiRes := &payload.GenericAPIResponse{}
-
-	err = json.NewDecoder(res.Body).Decode(&apiRes.Response)
-	if err != nil && err != io.EOF {
-		return nil, errs.WrapError(err)
-	}
-
-	if !apiRes.Succeeded() {
-		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
-	}
-
-	if transferReq.Synchronous {
-		// Wait for response from mpesa server for not more than a minute
-		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-		defer cancel()
-
-		select {
-		case <-ctxWait.Done():
-			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-		case <-b2cAPI.wait(requestID):
-		}
-	}
-
-	return &emptypb.Empty{}, nil
 }
 
 func (b2cAPI *b2cAPIServer) ReverseTransaction(
@@ -686,23 +542,6 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.MissingField("remarks")
 	}
 
-	requestID := firstVal(reverseReq.RequestId, uuid.New().String())
-
-	if reverseReq.Synchronous {
-		// Subscribe
-		b2cAPI.subcribe(requestID)
-		defer b2cAPI.release(requestID)
-	}
-
-	queryOptions := &queryOptions{
-		initiatorID:          reverseReq.InitiatorId,
-		requestID:            requestID,
-		shortCode:            fmt.Sprint(reverseReq.ShortCode),
-		publishGlobalChannel: b2cAPI.PublishChannel,
-		publishLocalChannel:  b2cAPI.B2CLocalTopic,
-		dropTransaction:      false,
-	}
-
 	// Send the request to mpesa API
 	reverseRequest := &payload.ReversalRequest{
 		CommandID:              "TransactionReversal",
@@ -715,19 +554,10 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		Occassion:              reverseReq.Occassion,
 	}
 
-	reverseRequest.QueueTimeOutURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.QueueTimeOutURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse QueueTimeOutURL")
-	}
-	reverseRequest.ResultURL, err = addQueryParams(queryOptions, b2cAPI.OptionsB2C.ResultURL)
-	if err != nil {
-		return nil, errs.WrapErrorWithCodeAndMsg(codes.Internal, err, "failed to parse ResultURL")
-	}
-
 	// Json Marshal
 	bs, err := json.Marshal(reverseRequest)
 	if err != nil {
-		return nil, errs.FromJSONMarshal(err, "stkPayload")
+		return nil, errs.FromJSONMarshal(err, "b2cPayload")
 	}
 
 	// Create request
@@ -761,18 +591,6 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		return nil, errs.WrapMessage(codes.Unknown, apiRes.Error())
 	}
 
-	if reverseReq.Synchronous {
-		// Wait for response from mpesa server for not more than a minute
-		ctxWait, cancel := context.WithTimeout(ctx, time.Minute)
-		defer cancel()
-
-		select {
-		case <-ctxWait.Done():
-			return nil, errs.WrapMessage(codes.DeadlineExceeded, "request to mpesa took too long")
-		case <-b2cAPI.wait(requestID):
-		}
-	}
-
 	return &emptypb.Empty{}, nil
 }
 
@@ -792,75 +610,6 @@ func ValidatePayment(paymentPB *b2c.B2CPayment) error {
 	return err
 }
 
-func (b2cAPI *b2cAPIServer) CreateB2CPayment(
-	ctx context.Context, createReq *b2c.CreateB2CPaymentRequest,
-) (*b2c.B2CPayment, error) {
-	// Authorization
-	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validation
-	switch {
-	case createReq == nil:
-		return nil, errs.NilObject("create request")
-	default:
-		err = ValidatePayment(createReq.Payment)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	paymentDB, err := B2CPaymentDB(createReq.Payment)
-	if err != nil {
-		return nil, err
-	}
-
-	// Save payment via channel
-	go func() {
-		b2cAPI.insertChan <- &incomingPayment{
-			payment: paymentDB,
-			publish: createReq.Publish,
-		}
-	}()
-
-	return createReq.Payment, nil
-}
-
-func (b2cAPI *b2cAPIServer) GetB2CPayment(
-	ctx context.Context, getReq *b2c.GetB2CPaymentRequest,
-) (*b2c.B2CPayment, error) {
-	// Validation
-	var (
-		paymentID int
-		err       error
-	)
-	switch {
-	case getReq == nil:
-		return nil, errs.NilObject("get request")
-	case getReq.PaymentId == "":
-		return nil, errs.MissingField("payment id")
-	default:
-		paymentID, _ = strconv.Atoi(getReq.PaymentId)
-	}
-
-	paymentDB := &Payment{}
-
-	if paymentID != 0 {
-		err = b2cAPI.SQLDB.First(paymentDB, "payment_id=?", paymentID).Error
-	} else {
-		err = b2cAPI.SQLDB.First(paymentDB, "transaction_id=?", getReq.PaymentId).Error
-	}
-	switch {
-	case err == nil:
-	case errors.Is(err, gorm.ErrRecordNotFound):
-		return nil, errs.DoesNotExist("mpesa transaction", getReq.PaymentId)
-	}
-
-	return B2CPaymentPB(paymentDB)
-}
-
 const defaultPageSize = 20
 
 func getTime(dateStr string) (time.Time, error) {
@@ -878,7 +627,7 @@ func getTime(dateStr string) (time.Time, error) {
 }
 
 func (b2cAPI *b2cAPIServer) ListB2CPayments(
-	ctx context.Context, listReq *b2c.ListB2CPaymentsRequest,
+	ctx context.Context, req *b2c.ListB2CPaymentsRequest,
 ) (*b2c.ListB2CPaymentsResponse, error) {
 	// Authorization
 	payload, err := b2cAPI.AuthAPI.GetJwtPayload(ctx)
@@ -888,13 +637,13 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 
 	// Validation
 	switch {
-	case listReq == nil:
+	case req == nil:
 		return nil, errs.NilObject("list request")
-	case listReq.PageSize < 0:
+	case req.PageSize < 0:
 		return nil, errs.IncorrectVal("page size")
 	}
 
-	pageSize := listReq.GetPageSize()
+	pageSize := req.GetPageSize()
 	if pageSize > defaultPageSize {
 		if !b2cAPI.AuthAPI.IsAdmin(payload.Group) {
 			pageSize = defaultPageSize
@@ -903,57 +652,73 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		pageSize = defaultPageSize
 	}
 
-	var paymentID uint
+	var key string
 
-	pageToken := listReq.GetPageToken()
+	pageToken := req.GetPageToken()
 	if pageToken != "" {
-		ids, err := b2cAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
+		bs, err := base64.StdEncoding.DecodeString(req.GetPageToken())
 		if err != nil {
-			return nil, errs.WrapErrorWithCodeAndMsg(
-				codes.InvalidArgument, err, "failed to parse page token",
-			)
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
 		}
-		paymentID = uint(ids[0])
+		key = string(bs)
 	}
 
-	transactions := make([]*Payment, 0, pageSize+1)
-
-	db := b2cAPI.SQLDB.Limit(int(pageSize) + 1).Order("payment_id DESC")
-
-	// Apply payment id filter
-	if paymentID != 0 {
-		db = db.Where("payment_id<?", paymentID)
+	db := b2cAPI.SQLDB.Model(&Payment{}).Limit(int(pageSize + 1))
+	if key != "" {
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			db = db.Where("id<?", key).Order("id DESC")
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			db = db.Where("transaction_time<?", key).Order("transaction_time DESC")
+		}
+	} else {
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			db = db.Order("id DESC")
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			db = db.Order("transaction_time DESC")
+		}
 	}
 
 	// Apply filters
-	if listReq.Filter != nil {
-		startTimestamp := listReq.Filter.GetStartTimestamp()
-		endTimestamp := listReq.Filter.GetEndTimestamp()
+	if req.Filter != nil {
+		startTimestamp := req.Filter.GetStartTimestamp()
+		endTimestamp := req.Filter.GetEndTimestamp()
 
 		if endTimestamp > startTimestamp {
-			db = db.Where("transaction_time BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
-		} else if listReq.Filter.TxDate != "" {
-			t, err := getTime(listReq.Filter.TxDate)
+			switch req.GetFilter().GetOrderField() {
+			case b2c.OrderField_PAYMENT_ID:
+				db = db.Where("created_at BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
+			case b2c.OrderField_TRANSACTION_TIMESTAMP:
+				db = db.Where("transaction_time BETWEEN ? AND ?", time.Unix(startTimestamp, 0), time.Unix(endTimestamp, 0))
+			}
+		} else if req.Filter.TxDate != "" {
+			t, err := getTime(req.Filter.TxDate)
 			if err != nil {
 				return nil, err
 			}
-			db = db.Where("transaction_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
-		}
-
-		if listReq.Filter.InitiatorId != "" {
-			if listReq.Filter.UseLikeInitiator {
-				db = db.Where("initiator_id LIKE ?", "%"+listReq.Filter.InitiatorId+"%")
-			} else {
-				db = db.Where("initiator_id = ?", listReq.Filter.InitiatorId)
+			switch req.GetFilter().GetOrderField() {
+			case b2c.OrderField_PAYMENT_ID:
+				db = db.Where("created_at BETWEEN ? AND ?", t, t.Add(time.Hour*24))
+			case b2c.OrderField_TRANSACTION_TIMESTAMP:
+				db = db.Where("transaction_time BETWEEN ? AND ?", t, t.Add(time.Hour*24))
 			}
 		}
 
-		if len(listReq.Filter.Msisdns) > 0 {
-			db = db.Where("msisdn IN(?)", listReq.Filter.Msisdns)
+		if req.Filter.InitiatorId != "" {
+			if req.Filter.UseLikeInitiator {
+				db = db.Where("initiator_id LIKE ?", "%"+req.Filter.InitiatorId+"%")
+			} else {
+				db = db.Where("initiator_id = ?", req.Filter.InitiatorId)
+			}
 		}
 
-		if listReq.Filter.ProcessState != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
-			switch listReq.Filter.ProcessState {
+		if len(req.Filter.Msisdns) > 0 {
+			db = db.Where("msisdn IN(?)", req.Filter.Msisdns)
+		}
+
+		if req.Filter.ProcessState != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
+			switch req.Filter.ProcessState {
 			case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
 			case c2b.ProcessedState_NOT_PROCESSED:
 				db = db.Where("processed=false")
@@ -963,17 +728,30 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		}
 	}
 
-	err = db.Find(&transactions).Error
+	var collectionCount int64
+
+	if pageToken == "" {
+		err = db.Count(&collectionCount).Error
+		if err != nil {
+			b2cAPI.Logger.Errorln(err)
+			return nil, errs.WrapMessage(codes.Internal, "failed to get count of b2c txs")
+		}
+	}
+
+	txs := make([]*Payment, 0, pageSize+1)
+
+	err = db.Find(&txs).Error
 	switch {
 	case err == nil:
 	default:
-		return nil, errs.FailedToFind("mpesa transactions", err)
+		b2cAPI.Logger.Errorln(err)
+		return nil, errs.WrapMessage(codes.Internal, "failed to get b2c transactions")
 	}
 
-	transactionsPB := make([]*b2c.B2CPayment, 0, len(transactions))
+	pbs := make([]*b2c.B2CPayment, 0, len(txs))
 
-	for i, paymentDB := range transactions {
-		paymentPaymenPB, err := B2CPaymentPB(paymentDB)
+	for i, db := range txs {
+		pb, err := B2CPaymentPB(db)
 		if err != nil {
 			return nil, err
 		}
@@ -982,27 +760,29 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 			break
 		}
 
-		transactionsPB = append(transactionsPB, paymentPaymenPB)
-		paymentID = paymentDB.PaymentID
+		pbs = append(pbs, pb)
+		switch req.GetFilter().GetOrderField() {
+		case b2c.OrderField_PAYMENT_ID:
+			key = fmt.Sprint(db.ID)
+		case b2c.OrderField_TRANSACTION_TIMESTAMP:
+			key = db.TransactionTime.UTC().Format(time.RFC3339)
+		}
 	}
 
 	var token string
-	if len(transactions) > int(pageSize) {
+	if len(txs) > int(pageSize) {
 		// Next page token
-		token, err = b2cAPI.PaginationHasher.EncodeInt64([]int64{int64(paymentID)})
-		if err != nil {
-			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to generate next page token")
-		}
+		token = base64.StdEncoding.EncodeToString([]byte(key))
 	}
 
 	return &b2c.ListB2CPaymentsResponse{
 		NextPageToken: token,
-		B2CPayments:   transactionsPB,
+		B2CPayments:   pbs,
 	}, nil
 }
 
 func (b2cAPI *b2cAPIServer) ProcessB2CPayment(
-	ctx context.Context, processReq *b2c.ProcessB2CPaymentRequest,
+	ctx context.Context, req *b2c.ProcessB2CPaymentRequest,
 ) (*emptypb.Empty, error) {
 	// Authorization
 	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
@@ -1011,22 +791,22 @@ func (b2cAPI *b2cAPIServer) ProcessB2CPayment(
 	}
 
 	// Validation
-	var paymentID int
+	var key int
 	switch {
-	case processReq == nil:
+	case req == nil:
 		return nil, errs.NilObject("process request")
-	case processReq.PaymentId == "":
+	case req.PaymentId == "":
 		return nil, errs.MissingField("payment id")
 	default:
-		paymentID, _ = strconv.Atoi(processReq.PaymentId)
+		key, _ = strconv.Atoi(req.PaymentId)
 	}
 
-	if paymentID != 0 {
-		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("payment_id=?", paymentID).
-			Update("processed", processReq.Processed).Error
+	if key != 0 {
+		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("id=?", key).
+			Update("processed", req.Processed).Error
 	} else {
-		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("transaction_id=?", processReq.PaymentId).
-			Update("processed", processReq.Processed).Error
+		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("transaction_id=?", req.PaymentId).
+			Update("processed", req.Processed).Error
 	}
 	switch {
 	case err == nil:
@@ -1037,8 +817,17 @@ func (b2cAPI *b2cAPIServer) ProcessB2CPayment(
 	return &emptypb.Empty{}, nil
 }
 
+func firstVal(A ...string) string {
+	for _, s := range A {
+		if s != "" {
+			return s
+		}
+	}
+	return ""
+}
+
 func (b2cAPI *b2cAPIServer) PublishB2CPayment(
-	ctx context.Context, pubReq *b2c.PublishB2CPaymentRequest,
+	ctx context.Context, req *b2c.PublishB2CPaymentRequest,
 ) (*emptypb.Empty, error) {
 	// Authentication
 	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
@@ -1048,141 +837,58 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 
 	// Validation
 	switch {
-	case pubReq == nil:
+	case req == nil:
 		return nil, errs.NilObject("publish request")
-	case pubReq.PaymentId == "":
-		return nil, errs.MissingField("payment id")
-	case pubReq.InitiatorId == "":
-		return nil, errs.MissingField("initiator id")
+	case req.PublishMessage == nil:
+		return nil, errs.MissingField("publish message")
 	}
 
-	// Get the transaction
-	b2cPayment, err := b2cAPI.GetB2CPayment(ctx, &b2c.GetB2CPaymentRequest{
-		PaymentId: pubReq.PaymentId,
-	})
+	pb := req.GetPublishMessage().GetPayment()
+
+	// Get payment if missing
+	if pb.GetPaymentId() != "" && req.GetPublishMessage().GetPaymentId() != "" {
+		pb, err = b2cAPI.GetB2CPayment(ctx, &b2c.GetB2CPaymentRequest{
+			PaymentId: req.GetPublishMessage().GetPaymentId(),
+		})
+		if err != nil {
+			b2cAPI.Logger.Errorln(err)
+		}
+	}
+
+	// Update payment value
+	req.PublishMessage.Payment = pb
+
+	// Marshal publish message
+	bs, err := proto.Marshal(req.PublishMessage)
 	if err != nil {
-		return nil, err
+		return nil, errs.FromProtoMarshal(err, "publish message")
 	}
 
-	var publishPayload string
-	if b2cPayment.Succeeded {
-		publishPayload = fmt.Sprintf("SUCCESS:%s:%s:%s", pubReq.PaymentId, firstVal(pubReq.InitiatorId, b2cPayment.InitiatorId), b2cPayment.ResultDescription)
-	} else {
-		publishPayload = fmt.Sprintf("FAILED:%s:%s:%s", pubReq.PaymentId, firstVal(pubReq.InitiatorId, b2cPayment.InitiatorId), b2cPayment.ResultDescription)
-	}
+	// Channel name in request override default channel name
+	channel := firstVal(req.GetPublishMessage().GetPublishInfo().GetChannelName(), b2cAPI.PublishChannel)
 
 	// Publish based on state
-	switch pubReq.ProcessedState {
+	switch req.ProcessedState {
 	case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-		err = b2cAPI.RedisDB.Publish(
-			ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
-		).Err()
+		err = b2cAPI.RedisDB.Publish(ctx, channel, bs).Err()
 		if err != nil {
 			return nil, errs.RedisCmdFailed(err, "PUBSUB")
 		}
 	case c2b.ProcessedState_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !b2cPayment.Processed {
-			err = b2cAPI.RedisDB.Publish(
-				ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
-			).Err()
+		if !pb.Processed {
+			err = b2cAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
 		}
 	case c2b.ProcessedState_PROCESSED:
 		// Publish only if the processed state is true
-		if b2cPayment.Processed {
-			err = b2cAPI.RedisDB.Publish(
-				ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload,
-			).Err()
+		if pb.Processed {
+			err = b2cAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
 			}
-		}
-	}
-
-	return &emptypb.Empty{}, nil
-}
-
-func (b2cAPI *b2cAPIServer) PublishAllB2CPayments(
-	ctx context.Context, pubReq *b2c.PublishAllB2CPaymentsRequest,
-) (*emptypb.Empty, error) {
-	// Authentication
-	_, err := b2cAPI.AuthAPI.AuthorizeAdmin(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	// Validation
-	switch {
-	case pubReq == nil:
-		return nil, errs.NilObject("publish all request")
-	case pubReq.StartTimestamp > time.Now().Unix() || pubReq.EndTimestamp > time.Now().Unix():
-		return nil, errs.WrapMessage(codes.InvalidArgument, "cannot work with future times")
-	default:
-		if pubReq.EndTimestamp != 0 || pubReq.StartTimestamp != 0 {
-			if pubReq.EndTimestamp < pubReq.StartTimestamp {
-				return nil, errs.WrapMessage(
-					codes.InvalidArgument, "start timestamp cannot be greater than end timestamp",
-				)
-			}
-		}
-	}
-
-	if pubReq.StartTimestamp == 0 {
-		if pubReq.EndTimestamp == 0 {
-			pubReq.EndTimestamp = time.Now().Unix()
-		}
-		pubReq.StartTimestamp = pubReq.EndTimestamp - int64(7*24*60*60)
-		if pubReq.StartTimestamp < 0 {
-			pubReq.StartTimestamp = 0
-		}
-	}
-
-	var (
-		nextPageToken string
-		pageSize      int32 = 1000
-		next          bool  = true
-	)
-
-	for next {
-		// List transactions
-		listRes, err := b2cAPI.ListB2CPayments(ctx, &b2c.ListB2CPaymentsRequest{
-			PageToken: nextPageToken,
-			PageSize:  pageSize,
-			Filter: &b2c.ListB2CPaymentFilter{
-				ProcessState:   pubReq.ProcessedState,
-				StartTimestamp: pubReq.StartTimestamp,
-				EndTimestamp:   pubReq.StartTimestamp,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		nextPageToken = listRes.NextPageToken
-		if listRes.NextPageToken == "" {
-			next = false
-		}
-
-		// Pipeline
-		pipeliner := b2cAPI.RedisDB.Pipeline()
-
-		// Publish the mpesa transactions to listeners
-		for _, mpesaPB := range listRes.B2CPayments {
-			publishPayload := fmt.Sprintf("TRANSACTION:%s:%s", mpesaPB.PaymentId, mpesaPB.InitiatorId)
-
-			err := pipeliner.Publish(ctx, b2cAPI.AddPrefix(b2cAPI.PublishChannel), publishPayload).Err()
-			if err != nil {
-				return nil, err
-			}
-		}
-
-		// Execute the pipeline
-		_, err = pipeliner.Exec(ctx)
-		if err != nil {
-			return nil, errs.RedisCmdFailed(err, "exec")
 		}
 	}
 
@@ -1190,19 +896,19 @@ func (b2cAPI *b2cAPIServer) PublishAllB2CPayments(
 }
 
 func (b2cAPI *b2cAPIServer) ListDailyStats(
-	ctx context.Context, listReq *b2c.ListDailyStatsRequest,
+	ctx context.Context, req *b2c.ListDailyStatsRequest,
 ) (*b2c.StatsResponse, error) {
 	// Validation
 	switch {
-	case listReq == nil:
+	case req == nil:
 		return nil, errs.NilObject("list request")
 	}
 
 	var (
-		pageSize      = listReq.GetPageSize()
-		pageToken     = listReq.GetPageToken()
-		orgShortCodes = listReq.GetFilter().GetOrganizationShortCodes()
-		statID        uint
+		pageSize      = req.GetPageSize()
+		pageToken     = req.GetPageToken()
+		orgShortCodes = req.GetFilter().GetOrganizationShortCodes()
+		ID            uint
 		err           error
 	)
 
@@ -1211,28 +917,30 @@ func (b2cAPI *b2cAPIServer) ListDailyStats(
 	}
 
 	if pageToken != "" {
-		ids, err := b2cAPI.PaginationHasher.DecodeInt64WithError(listReq.GetPageToken())
+		bs, err := base64.StdEncoding.DecodeString(req.GetPageToken())
 		if err != nil {
 			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to parse page token")
 		}
-		statID = uint(ids[0])
+		v, err := strconv.ParseUint(string(bs), 10, 64)
+		if err != nil {
+			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "incorrect page token")
+		}
+		ID = uint(v)
 	}
 
 	db := b2cAPI.SQLDB.Limit(int(pageSize + 1)).Order("id DESC")
-
-	// Apply payment id filter
-	if statID != 0 {
-		db = db.Where("id<?", statID)
+	if ID != 0 {
+		db = db.Where("id<?", ID)
 	}
 
 	// Apply filters
 	if len(orgShortCodes) > 0 {
 		db = db.Where("short_code IN(?)", orgShortCodes)
 	}
-	if listReq.GetFilter().GetStartTimeSeconds() < listReq.GetFilter().GetEndTimeSeconds() {
-		db = db.Where("created_at BETWEEN ? AND ?", listReq.GetFilter().GetStartTimeSeconds(), listReq.GetFilter().GetEndTimeSeconds())
-	} else if len(listReq.GetFilter().GetTxDates()) > 0 {
-		db = db.Where("date IN (?)", listReq.GetFilter().GetTxDates())
+	if req.GetFilter().GetStartTimeSeconds() < req.GetFilter().GetEndTimeSeconds() {
+		db = db.Where("created_at BETWEEN ? AND ?", req.GetFilter().GetStartTimeSeconds(), req.GetFilter().GetEndTimeSeconds())
+	} else if len(req.GetFilter().GetTxDates()) > 0 {
+		db = db.Where("date IN (?)", req.GetFilter().GetTxDates())
 	}
 
 	stats := make([]*DailyStat, 0, pageSize+1)
@@ -1258,16 +966,13 @@ func (b2cAPI *b2cAPIServer) ListDailyStats(
 		}
 
 		dailyStatsPB = append(dailyStatsPB, statPB)
-		statID = stat.ID
+		ID = stat.ID
 	}
 
 	var token string
 	if len(stats) > int(pageSize) {
 		// Next page token
-		token, err = b2cAPI.PaginationHasher.EncodeInt64([]int64{int64(statID)})
-		if err != nil {
-			return nil, errs.WrapErrorWithCodeAndMsg(codes.InvalidArgument, err, "failed to generate next page token")
-		}
+		token = base64.StdEncoding.EncodeToString([]byte(fmt.Sprint(ID)))
 	}
 
 	return &b2c.StatsResponse{

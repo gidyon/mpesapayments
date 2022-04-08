@@ -18,14 +18,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type B2CAPIClient interface {
-	// Initiates a b2c transaction
-	InitiateTransaction(ctx context.Context, in *InitiateTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	// Transfer funds from business to customer or another business
+	TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*TransferFundsResponse, error)
 	// Queries for query transaction
 	QueryTransactionStatus(ctx context.Context, in *QueryTransactionStatusRequest, opts ...grpc.CallOption) (*QueryResponse, error)
 	// Queries for account balance
 	QueryAccountBalance(ctx context.Context, in *QueryAccountBalanceRequest, opts ...grpc.CallOption) (*QueryAccountBalanceResponse, error)
-	// Transfer funds from business to customer or another business
-	TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Reverses an mpesa transaction
 	ReverseTransaction(ctx context.Context, in *ReverseTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Creates a record of b2c payment
@@ -38,8 +36,6 @@ type B2CAPIClient interface {
 	ProcessB2CPayment(ctx context.Context, in *ProcessB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Publishes b2c payment to consumers
 	PublishB2CPayment(ctx context.Context, in *PublishB2CPaymentRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	// Publihses all b2c payments to consumers
-	PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Retrieves a collection of statistics
 	ListDailyStats(ctx context.Context, in *ListDailyStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error)
 }
@@ -52,9 +48,9 @@ func NewB2CAPIClient(cc grpc.ClientConnInterface) B2CAPIClient {
 	return &b2CAPIClient{cc}
 }
 
-func (c *b2CAPIClient) InitiateTransaction(ctx context.Context, in *InitiateTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction", in, out, opts...)
+func (c *b2CAPIClient) TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*TransferFundsResponse, error) {
+	out := new(TransferFundsResponse)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/TransferFunds", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -73,15 +69,6 @@ func (c *b2CAPIClient) QueryTransactionStatus(ctx context.Context, in *QueryTran
 func (c *b2CAPIClient) QueryAccountBalance(ctx context.Context, in *QueryAccountBalanceRequest, opts ...grpc.CallOption) (*QueryAccountBalanceResponse, error) {
 	out := new(QueryAccountBalanceResponse)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/QueryAccountBalance", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *b2CAPIClient) TransferFunds(ctx context.Context, in *TransferFundsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/TransferFunds", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -142,15 +129,6 @@ func (c *b2CAPIClient) PublishB2CPayment(ctx context.Context, in *PublishB2CPaym
 	return out, nil
 }
 
-func (c *b2CAPIClient) PublishAllB2CPayments(ctx context.Context, in *PublishAllB2CPaymentsRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *b2CAPIClient) ListDailyStats(ctx context.Context, in *ListDailyStatsRequest, opts ...grpc.CallOption) (*StatsResponse, error) {
 	out := new(StatsResponse)
 	err := c.cc.Invoke(ctx, "/gidyon.mpesa.b2c.B2CAPI/ListDailyStats", in, out, opts...)
@@ -164,14 +142,12 @@ func (c *b2CAPIClient) ListDailyStats(ctx context.Context, in *ListDailyStatsReq
 // All implementations must embed UnimplementedB2CAPIServer
 // for forward compatibility
 type B2CAPIServer interface {
-	// Initiates a b2c transaction
-	InitiateTransaction(context.Context, *InitiateTransactionRequest) (*emptypb.Empty, error)
+	// Transfer funds from business to customer or another business
+	TransferFunds(context.Context, *TransferFundsRequest) (*TransferFundsResponse, error)
 	// Queries for query transaction
 	QueryTransactionStatus(context.Context, *QueryTransactionStatusRequest) (*QueryResponse, error)
 	// Queries for account balance
 	QueryAccountBalance(context.Context, *QueryAccountBalanceRequest) (*QueryAccountBalanceResponse, error)
-	// Transfer funds from business to customer or another business
-	TransferFunds(context.Context, *TransferFundsRequest) (*emptypb.Empty, error)
 	// Reverses an mpesa transaction
 	ReverseTransaction(context.Context, *ReverseTransactionRequest) (*emptypb.Empty, error)
 	// Creates a record of b2c payment
@@ -184,8 +160,6 @@ type B2CAPIServer interface {
 	ProcessB2CPayment(context.Context, *ProcessB2CPaymentRequest) (*emptypb.Empty, error)
 	// Publishes b2c payment to consumers
 	PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error)
-	// Publihses all b2c payments to consumers
-	PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error)
 	// Retrieves a collection of statistics
 	ListDailyStats(context.Context, *ListDailyStatsRequest) (*StatsResponse, error)
 	mustEmbedUnimplementedB2CAPIServer()
@@ -195,17 +169,14 @@ type B2CAPIServer interface {
 type UnimplementedB2CAPIServer struct {
 }
 
-func (UnimplementedB2CAPIServer) InitiateTransaction(context.Context, *InitiateTransactionRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InitiateTransaction not implemented")
+func (UnimplementedB2CAPIServer) TransferFunds(context.Context, *TransferFundsRequest) (*TransferFundsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method TransferFunds not implemented")
 }
 func (UnimplementedB2CAPIServer) QueryTransactionStatus(context.Context, *QueryTransactionStatusRequest) (*QueryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryTransactionStatus not implemented")
 }
 func (UnimplementedB2CAPIServer) QueryAccountBalance(context.Context, *QueryAccountBalanceRequest) (*QueryAccountBalanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method QueryAccountBalance not implemented")
-}
-func (UnimplementedB2CAPIServer) TransferFunds(context.Context, *TransferFundsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method TransferFunds not implemented")
 }
 func (UnimplementedB2CAPIServer) ReverseTransaction(context.Context, *ReverseTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReverseTransaction not implemented")
@@ -225,9 +196,6 @@ func (UnimplementedB2CAPIServer) ProcessB2CPayment(context.Context, *ProcessB2CP
 func (UnimplementedB2CAPIServer) PublishB2CPayment(context.Context, *PublishB2CPaymentRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishB2CPayment not implemented")
 }
-func (UnimplementedB2CAPIServer) PublishAllB2CPayments(context.Context, *PublishAllB2CPaymentsRequest) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method PublishAllB2CPayments not implemented")
-}
 func (UnimplementedB2CAPIServer) ListDailyStats(context.Context, *ListDailyStatsRequest) (*StatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListDailyStats not implemented")
 }
@@ -244,20 +212,20 @@ func RegisterB2CAPIServer(s grpc.ServiceRegistrar, srv B2CAPIServer) {
 	s.RegisterService(&_B2CAPI_serviceDesc, srv)
 }
 
-func _B2CAPI_InitiateTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InitiateTransactionRequest)
+func _B2CAPI_TransferFunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferFundsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(B2CAPIServer).InitiateTransaction(ctx, in)
+		return srv.(B2CAPIServer).TransferFunds(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/InitiateTransaction",
+		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/TransferFunds",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(B2CAPIServer).InitiateTransaction(ctx, req.(*InitiateTransactionRequest))
+		return srv.(B2CAPIServer).TransferFunds(ctx, req.(*TransferFundsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -294,24 +262,6 @@ func _B2CAPI_QueryAccountBalance_Handler(srv interface{}, ctx context.Context, d
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(B2CAPIServer).QueryAccountBalance(ctx, req.(*QueryAccountBalanceRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _B2CAPI_TransferFunds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(TransferFundsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(B2CAPIServer).TransferFunds(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/TransferFunds",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(B2CAPIServer).TransferFunds(ctx, req.(*TransferFundsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -424,24 +374,6 @@ func _B2CAPI_PublishB2CPayment_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
-func _B2CAPI_PublishAllB2CPayments_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PublishAllB2CPaymentsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(B2CAPIServer).PublishAllB2CPayments(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/gidyon.mpesa.b2c.B2CAPI/PublishAllB2CPayments",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(B2CAPIServer).PublishAllB2CPayments(ctx, req.(*PublishAllB2CPaymentsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _B2CAPI_ListDailyStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListDailyStatsRequest)
 	if err := dec(in); err != nil {
@@ -465,8 +397,8 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*B2CAPIServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InitiateTransaction",
-			Handler:    _B2CAPI_InitiateTransaction_Handler,
+			MethodName: "TransferFunds",
+			Handler:    _B2CAPI_TransferFunds_Handler,
 		},
 		{
 			MethodName: "QueryTransactionStatus",
@@ -475,10 +407,6 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "QueryAccountBalance",
 			Handler:    _B2CAPI_QueryAccountBalance_Handler,
-		},
-		{
-			MethodName: "TransferFunds",
-			Handler:    _B2CAPI_TransferFunds_Handler,
 		},
 		{
 			MethodName: "ReverseTransaction",
@@ -503,10 +431,6 @@ var _B2CAPI_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "PublishB2CPayment",
 			Handler:    _B2CAPI_PublishB2CPayment_Handler,
-		},
-		{
-			MethodName: "PublishAllB2CPayments",
-			Handler:    _B2CAPI_PublishAllB2CPayments_Handler,
 		},
 		{
 			MethodName: "ListDailyStats",

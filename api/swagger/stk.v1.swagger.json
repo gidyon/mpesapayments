@@ -98,6 +98,17 @@
             "required": false,
             "type": "string",
             "format": "int64"
+          },
+          {
+            "name": "filter.orderField",
+            "in": "query",
+            "required": false,
+            "type": "string",
+            "enum": [
+              "PAYMENT_ID",
+              "TRANSACTION_TIMESTAMP"
+            ],
+            "default": "PAYMENT_ID"
           }
         ],
         "tags": [
@@ -274,6 +285,56 @@
     }
   },
   "definitions": {
+    "b2cOrderField": {
+      "type": "string",
+      "enum": [
+        "PAYMENT_ID",
+        "TRANSACTION_TIMESTAMP"
+      ],
+      "default": "PAYMENT_ID"
+    },
+    "gidyonmpesaPublishInfo": {
+      "type": "object",
+      "properties": {
+        "onlyOnSuccess": {
+          "type": "boolean"
+        },
+        "channelName": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "gidyonmpesaPublishMessage": {
+      "type": "object",
+      "properties": {
+        "initiatorId": {
+          "type": "string"
+        },
+        "transactionId": {
+          "type": "string"
+        },
+        "mpesaReceiptId": {
+          "type": "string"
+        },
+        "phoneNumber": {
+          "type": "string"
+        },
+        "publishInfo": {
+          "$ref": "#/definitions/gidyonmpesaPublishInfo"
+        },
+        "transactionInfo": {
+          "$ref": "#/definitions/mpesaStkTransaction"
+        }
+      },
+      "description": "Published stk message to consumers",
+      "title": "PublishMessage"
+    },
     "mpesaCreateStkTransactionRequest": {
       "type": "object",
       "properties": {
@@ -313,7 +374,7 @@
           "type": "boolean"
         },
         "publishMessage": {
-          "$ref": "#/definitions/mpesaPublishInfo"
+          "$ref": "#/definitions/gidyonmpesaPublishInfo"
         }
       },
       "description": "Initiates a STK push payment to the specified phone number",
@@ -358,6 +419,9 @@
         "endTimestamp": {
           "type": "string",
           "format": "int64"
+        },
+        "orderField": {
+          "$ref": "#/definitions/b2cOrderField"
         }
       },
       "description": "Filter payload for querying stk payloads",
@@ -374,6 +438,10 @@
           "items": {
             "$ref": "#/definitions/mpesaStkTransaction"
           }
+        },
+        "collectionCount": {
+          "type": "string",
+          "format": "int64"
         }
       },
       "description": "Reponse containing a collection of stk push payloads",
@@ -404,53 +472,11 @@
       ],
       "default": "PROCESS_STATE_UNSPECIFIED"
     },
-    "mpesaPublishInfo": {
-      "type": "object",
-      "properties": {
-        "onlyOnSuccess": {
-          "type": "boolean"
-        },
-        "channelName": {
-          "type": "string"
-        },
-        "payload": {
-          "type": "object",
-          "additionalProperties": {
-            "type": "string"
-          }
-        }
-      }
-    },
-    "mpesaPublishMessage": {
-      "type": "object",
-      "properties": {
-        "initiatorId": {
-          "type": "string"
-        },
-        "transactionId": {
-          "type": "string"
-        },
-        "mpesaReceiptId": {
-          "type": "string"
-        },
-        "phoneNumber": {
-          "type": "string"
-        },
-        "publishInfo": {
-          "$ref": "#/definitions/mpesaPublishInfo"
-        },
-        "transactionInfo": {
-          "$ref": "#/definitions/mpesaStkTransaction"
-        }
-      },
-      "description": "Published stk message to consumers",
-      "title": "PublishMessage"
-    },
     "mpesaPublishStkTransactionRequest": {
       "type": "object",
       "properties": {
         "publishMessage": {
-          "$ref": "#/definitions/mpesaPublishMessage"
+          "$ref": "#/definitions/gidyonmpesaPublishMessage"
         },
         "processedState": {
           "$ref": "#/definitions/mpesaProcessedState"

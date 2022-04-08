@@ -58,18 +58,3 @@ func (b2cAPI *b2cAPIServer) updateAccessToken() error {
 
 	return nil
 }
-
-func (b2cAPI *b2cAPIServer) subscriptionsWorker(ctx context.Context) {
-	ch := b2cAPI.RedisDB.Subscribe(ctx, AddPrefix(b2cAPI.Options.B2CLocalTopic, b2cAPI.RedisKeyPrefix)).Channel()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case msg := <-ch:
-			// We want to get the request id and unsubscribe the goroutine
-			requestID := msg.Payload
-			b2cAPI.unsubcribe(requestID)
-		}
-	}
-}
