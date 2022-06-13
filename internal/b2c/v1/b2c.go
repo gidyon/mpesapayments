@@ -256,7 +256,7 @@ func (b2cAPI *b2cAPIServer) GetB2CPayment(
 
 	db := &Payment{}
 
-	if key != 0 {
+	if !req.IsTransactionId {
 		err = b2cAPI.SQLDB.First(db, "id=?", key).Error
 	} else {
 		err = b2cAPI.SQLDB.First(db, "transaction_id=?", req.PaymentId).Error
@@ -711,6 +711,10 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 			} else {
 				db = db.Where("initiator_id = ?", req.Filter.InitiatorId)
 			}
+		}
+
+		if req.Filter.CustomerReference != "" {
+			db = db.Where("customer_reference = ?", req.Filter.CustomerReference)
 		}
 
 		if len(req.Filter.Msisdns) > 0 {

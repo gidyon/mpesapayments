@@ -201,6 +201,10 @@ func local_request_B2CAPI_CreateB2CPayment_0(ctx context.Context, marshaler runt
 
 }
 
+var (
+	filter_B2CAPI_GetB2CPayment_0 = &utilities.DoubleArray{Encoding: map[string]int{"payment_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+)
+
 func request_B2CAPI_GetB2CPayment_0(ctx context.Context, marshaler runtime.Marshaler, client B2CAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetB2CPaymentRequest
 	var metadata runtime.ServerMetadata
@@ -220,6 +224,13 @@ func request_B2CAPI_GetB2CPayment_0(ctx context.Context, marshaler runtime.Marsh
 	protoReq.PaymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "payment_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_B2CAPI_GetB2CPayment_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := client.GetB2CPayment(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
@@ -246,6 +257,13 @@ func local_request_B2CAPI_GetB2CPayment_0(ctx context.Context, marshaler runtime
 	protoReq.PaymentId, err = runtime.String(val)
 	if err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "type mismatch, parameter: %s, error: %v", "payment_id", err)
+	}
+
+	if err := req.ParseForm(); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
+	}
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_B2CAPI_GetB2CPayment_0); err != nil {
+		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
 	msg, err := server.GetB2CPayment(ctx, &protoReq)

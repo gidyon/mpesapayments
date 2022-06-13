@@ -224,6 +224,7 @@ message GetB2CPaymentRequest {
   };
 
   string payment_id = 1 [ (google.api.field_behavior) = REQUIRED ];
+  bool is_transaction_id = 2;
 }
 
 enum OrderField {
@@ -247,6 +248,7 @@ message ListB2CPaymentFilter {
   int64 end_timestamp = 6;
   bool use_like_initiator = 7;
   OrderField order_field = 8;
+  string customer_reference = 9;
 }
 
 message ListB2CPaymentsRequest {

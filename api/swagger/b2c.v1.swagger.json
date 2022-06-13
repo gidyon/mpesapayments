@@ -121,6 +121,12 @@
               "TRANSACTION_TIMESTAMP"
             ],
             "default": "PAYMENT_ID"
+          },
+          {
+            "name": "filter.customerReference",
+            "in": "query",
+            "required": false,
+            "type": "string"
           }
         ],
         "tags": [
@@ -183,6 +189,12 @@
             "in": "path",
             "required": true,
             "type": "string"
+          },
+          {
+            "name": "isTransactionId",
+            "in": "query",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "tags": [
@@ -606,6 +618,9 @@
         },
         "orderField": {
           "$ref": "#/definitions/b2cOrderField"
+        },
+        "customerReference": {
+          "type": "string"
         }
       },
       "description": "Filter payment for querying stk payments",
