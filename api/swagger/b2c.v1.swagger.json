@@ -448,6 +448,15 @@
         "msisdn": {
           "type": "string"
         },
+        "transactionReference": {
+          "type": "string"
+        },
+        "customerReference": {
+          "type": "string"
+        },
+        "customerNames": {
+          "type": "string"
+        },
         "receiverPartyPublicName": {
           "type": "string"
         },
@@ -893,6 +902,15 @@
         "msisdn": {
           "type": "string",
           "format": "int64"
+        },
+        "transactionReference": {
+          "type": "string"
+        },
+        "customerReference": {
+          "type": "string"
+        },
+        "customerNames": {
+          "type": "string"
         },
         "shortCode": {
           "type": "integer",

@@ -131,9 +131,13 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 	}
 
 	pb := &b2c.B2CPayment{
+		PaymentId:                "",
 		InitiatorId:              tReq.InitiatorId,
 		OrgShortCode:             fmt.Sprint(tReq.ShortCode),
 		Msisdn:                   transaction.MSISDN(),
+		TransactionReference:     tReq.GetTransactionReference(),
+		CustomerReference:        tReq.CustomerReference,
+		CustomerNames:            tReq.CustomerNames,
 		ReceiverPartyPublicName:  transaction.ReceiverPartyPublicName(),
 		TransactionType:          tReq.CommandId.String(),
 		TransactionId:            transaction.TransactionReceipt(),
@@ -150,6 +154,7 @@ func (gw *b2cGateway) fromSaf(w http.ResponseWriter, r *http.Request) (int, erro
 		RecipientRegistered:      transaction.B2CRecipientIsRegisteredCustomer(),
 		Succeeded:                transaction.Succeeded(),
 		Processed:                false,
+		CreateDate:               "",
 	}
 
 	pb, err = gw.b2cAPI.CreateB2CPayment(gw.ctxExt, &b2c.CreateB2CPaymentRequest{

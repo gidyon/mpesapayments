@@ -601,14 +601,22 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 			db = db.Where("phone_number IN(?)", req.Filter.Msisdns)
 		}
 
-		if req.Filter.ProcessState != c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED {
-			switch req.Filter.ProcessState {
-			case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
-			case c2b.ProcessedState_NOT_PROCESSED:
-				db = db.Where("processed=?", "NO")
-			case c2b.ProcessedState_PROCESSED:
-				db = db.Where("processed=?", "NO")
-			}
+		switch req.Filter.ProcessState {
+		case c2b.ProcessedState_PROCESS_STATE_UNSPECIFIED:
+		case c2b.ProcessedState_NOT_PROCESSED:
+			db = db.Where("processed=?", "NO")
+		case c2b.ProcessedState_PROCESSED:
+			db = db.Where("processed=?", "YES")
+		}
+	}
+
+	var collectionCount int64
+
+	if pageToken == "" {
+		err = db.Count(&collectionCount).Error
+		if err != nil {
+			stkAPI.Logger.Errorln(err)
+			return nil, errs.WrapMessage(codes.Internal, "failed to get count of stk transactions")
 		}
 	}
 
@@ -650,6 +658,7 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 	return &stk.ListStkTransactionsResponse{
 		NextPageToken:   token,
 		StkTransactions: pbs,
+		CollectionCount: collectionCount,
 	}, nil
 }
 

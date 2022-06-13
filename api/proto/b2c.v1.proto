@@ -116,13 +116,16 @@ message TransferFundsRequest {
 
   float amount = 1 [ (google.api.field_behavior) = REQUIRED ];
   int64 msisdn = 2 [ (google.api.field_behavior) = REQUIRED ];
-  int32 short_code = 3 [ (google.api.field_behavior) = REQUIRED ];
-  string remarks = 4 [ (google.api.field_behavior) = REQUIRED ];
-  string occassion = 5;
-  CommandId command_id = 6;
-  string initiator_id = 8 [ (google.api.field_behavior) = REQUIRED ];
-  bool publish = 9;
-  PublishInfo publish_message = 7;
+  string transaction_reference = 3 [ (google.api.field_behavior) = OPTIONAL ];
+  string customer_reference = 4 [ (google.api.field_behavior) = OPTIONAL ];
+  string customer_names = 5 [ (google.api.field_behavior) = OPTIONAL ];
+  int32 short_code = 6 [ (google.api.field_behavior) = REQUIRED ];
+  string remarks = 7 [ (google.api.field_behavior) = REQUIRED ];
+  string occassion = 8;
+  CommandId command_id = 9;
+  string initiator_id = 10 [ (google.api.field_behavior) = REQUIRED ];
+  bool publish = 11;
+  PublishInfo publish_message = 12;
 }
 
 message ReverseTransactionRequest {
@@ -177,23 +180,26 @@ message B2CPayment {
   string initiator_id = 2;
   string org_short_code = 3;
   string msisdn = 4;
-  string receiver_party_public_name = 5;
-  string transaction_type = 6;
-  string transaction_id = 7;
-  string conversation_id = 8;
-  string originator_conversation_id = 9;
-  string result_code = 10;
-  string result_description = 11;
-  int64 transaction_timestamp = 12;
-  float amount = 14;
-  float working_account_funds = 15;
-  float utility_account_funds = 16;
-  float mpesa_charges = 17;
-  float onfon_charges = 18;
-  bool recipient_registered = 19;
-  bool succeeded = 20;
-  bool processed = 21;
-  string create_date = 13;
+  string transaction_reference = 5;
+  string customer_reference = 6;
+  string customer_names = 7;
+  string receiver_party_public_name = 8;
+  string transaction_type = 9;
+  string transaction_id = 10;
+  string conversation_id = 11;
+  string originator_conversation_id = 12;
+  string result_code = 13;
+  string result_description = 14;
+  int64 transaction_timestamp = 15;
+  float amount = 16;
+  float working_account_funds = 17;
+  float utility_account_funds = 18;
+  float mpesa_charges = 19;
+  float onfon_charges = 20;
+  bool recipient_registered = 21;
+  bool succeeded = 22;
+  bool processed = 23;
+  string create_date = 24;
 }
 
 message CreateB2CPaymentRequest {

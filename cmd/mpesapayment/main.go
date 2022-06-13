@@ -74,7 +74,7 @@ func main() {
 	}
 
 	// Default jwt
-	app.AddEndpointFunc("/api/mpestx/jwt/default", func(w http.ResponseWriter, r *http.Request) {
+	app.AddEndpointFunc("/api/mpestx/jwt/default", func(w http.ResponseWriter, _ *http.Request) {
 		token, err := authAPI.GenToken(ctx, &auth.Payload{Names: "TEST", ID: "0"}, time.Now().Add(time.Hour*24*365))
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -108,7 +108,7 @@ func main() {
 
 	// app.AddHTTPMiddlewares(httpmiddleware.SupportCORS)
 
-	app.AddServeMuxOptions(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+	app.AddRuntimeMuxOptions(runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
 		MarshalOptions: protojson.MarshalOptions{
 			EmitUnpopulated: true,
 		},
@@ -132,7 +132,7 @@ func main() {
 			opt := c2bapp_v1.Options{
 				PublishChannel:   os.Getenv("C2B_PUBLISH_CHANNEL"),
 				RedisKeyPrefix:   os.Getenv("REDIS_KEY_PREFIX"),
-				SQLDB:            app.GormDBByName("sqlWrites"),
+				SQLDB:            app.GormDBByName("sqlWrites").Debug(),
 				RedisDB:          app.RedisClientByName("redisWrites"),
 				Logger:           app.Logger(),
 				AuthAPI:          authAPI,
@@ -161,7 +161,7 @@ func main() {
 			}
 
 			opt := stkapp_v1.Options{
-				SQLDB:               app.GormDBByName("sqlWrites"),
+				SQLDB:               app.GormDBByName("sqlWrites").Debug(),
 				RedisDB:             app.RedisClientByName("redisWrites"),
 				Logger:              app.Logger(),
 				AuthAPI:             authAPI,
@@ -195,7 +195,7 @@ func main() {
 				QueryBalanceURL: os.Getenv("B2C_QUERY_BALANCE_URL"),
 				B2CURL:          os.Getenv("B2C_URL"),
 				ReversalURL:     os.Getenv("B2C_REVERSAL_URL"),
-				SQLDB:           app.GormDBByName("sqlWrites"),
+				SQLDB:           app.GormDBByName("sqlWrites").Debug(),
 				RedisDB:         app.RedisClientByName("redisWrites"),
 				Logger:          app.Logger(),
 				AuthAPI:         authAPI,
@@ -284,6 +284,10 @@ func main() {
 
 		// Endpoint for uploading blast file
 		app.AddEndpointFunc("/api/mpestx/uploads/blast", uploadHandler(optGateway))
+
+		// Download API
+		app.AddEndpointFunc("/api/mpestx/dowloads/stk", downloadStk(optGateway))
+		app.AddEndpointFunc("/api/mpestx/dowloads/b2c", downloadB2C(optGateway))
 
 		return nil
 	})

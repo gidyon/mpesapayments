@@ -19,13 +19,16 @@ type Payment struct {
 	ID                       uint      `gorm:"primaryKey;autoIncrement"`
 	InitiatorID              string    `gorm:"index;type:varchar(50)"`
 	Msisdn                   string    `gorm:"index;type:varchar(15)"`
+	TransactionReference     string    `gorm:"index;type:varchar(50)"`
+	CustomerReference        string    `gorm:"index;type:varchar(50)"`
+	CustomerNames            string    `gorm:"type:varchar(50)"`
 	OrgShortCode             string    `gorm:"index;type:varchar(15)"`
 	ReceiverPublicName       string    `gorm:"type:varchar(50)"`
 	TransactionType          string    `gorm:"index;type:varchar(50)"`
 	TransactionID            string    `gorm:"index;type:varchar(50);unique"`
 	ConversationID           string    `gorm:"type:varchar(50)"`
 	OriginatorConversationID string    `gorm:"type:varchar(50)"`
-	ResultCode               string    `gorm:"index;type:varchar(2)"`
+	ResultCode               string    `gorm:"index;type:varchar(5)"`
 	ResultDescription        string    `gorm:"type:varchar(100)"`
 	TransactionTime          time.Time `gorm:"index:;type:datetime(6)"`
 	Amount                   float32   `gorm:"index;type:float(10)"`
@@ -50,8 +53,12 @@ func (*Payment) TableName() string {
 // B2CPaymentDB is wrapper to converts database model to protobuf b2c payment
 func B2CPaymentDB(pb *b2c.B2CPayment) (*Payment, error) {
 	db := &Payment{
+		ID:                       0,
 		InitiatorID:              pb.InitiatorId,
 		Msisdn:                   pb.Msisdn,
+		TransactionReference:     pb.TransactionReference,
+		CustomerReference:        pb.CustomerReference,
+		CustomerNames:            pb.CustomerNames,
 		OrgShortCode:             pb.OrgShortCode,
 		ReceiverPublicName:       pb.ReceiverPartyPublicName,
 		TransactionType:          pb.TransactionType,
@@ -60,7 +67,7 @@ func B2CPaymentDB(pb *b2c.B2CPayment) (*Payment, error) {
 		OriginatorConversationID: pb.OriginatorConversationId,
 		ResultCode:               pb.ResultCode,
 		ResultDescription:        pb.ResultDescription,
-		CreatedAt:                time.Unix(pb.TransactionTimestamp, 0),
+		TransactionTime:          time.Unix(pb.TransactionTimestamp, 0),
 		Amount:                   pb.Amount,
 		WorkingAccountFunds:      pb.WorkingAccountFunds,
 		UtilityAccountFunds:      pb.UtilityAccountFunds,
@@ -69,6 +76,7 @@ func B2CPaymentDB(pb *b2c.B2CPayment) (*Payment, error) {
 		RecipientRegistered:      pb.RecipientRegistered,
 		Succeeded:                pb.Succeeded,
 		Processed:                pb.Processed,
+		CreatedAt:                time.Unix(pb.TransactionTimestamp, 0),
 	}
 	return db, nil
 }
@@ -78,8 +86,11 @@ func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
 	pb := &b2c.B2CPayment{
 		PaymentId:                fmt.Sprint(db.ID),
 		InitiatorId:              db.InitiatorID,
-		Msisdn:                   db.Msisdn,
 		OrgShortCode:             db.OrgShortCode,
+		Msisdn:                   db.Msisdn,
+		TransactionReference:     db.TransactionReference,
+		CustomerReference:        db.CustomerReference,
+		CustomerNames:            db.CustomerNames,
 		ReceiverPartyPublicName:  db.ReceiverPublicName,
 		TransactionType:          db.TransactionType,
 		TransactionId:            db.TransactionID,
@@ -88,7 +99,6 @@ func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
 		ResultCode:               db.ResultCode,
 		ResultDescription:        db.ResultDescription,
 		TransactionTimestamp:     db.TransactionTime.Unix(),
-		CreateDate:               db.CreatedAt.UTC().Format(time.RFC3339),
 		Amount:                   db.Amount,
 		WorkingAccountFunds:      db.WorkingAccountFunds,
 		UtilityAccountFunds:      db.UtilityAccountFunds,
@@ -97,6 +107,7 @@ func B2CPaymentPB(db *Payment) (*b2c.B2CPayment, error) {
 		RecipientRegistered:      db.RecipientRegistered,
 		Succeeded:                db.Succeeded,
 		Processed:                db.Processed,
+		CreateDate:               db.CreatedAt.UTC().Format(time.RFC3339),
 	}
 	return pb, nil
 }

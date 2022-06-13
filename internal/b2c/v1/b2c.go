@@ -178,12 +178,12 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 	btcStatsTable = os.Getenv("B2C_STATS_TABLE")
 
 	// Auto migration
-	if !b2cAPI.SQLDB.Migrator().HasTable(&Payment{}) {
-		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&Payment{})
-		if err != nil {
-			return nil, err
-		}
+	// if !b2cAPI.SQLDB.Migrator().HasTable(&Payment{}) {
+	err = b2cAPI.SQLDB.Migrator().AutoMigrate(&Payment{})
+	if err != nil {
+		return nil, err
 	}
+	// }
 
 	if !b2cAPI.SQLDB.Migrator().HasTable(&DailyStat{}) {
 		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&DailyStat{})
@@ -776,8 +776,9 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 	}
 
 	return &b2c.ListB2CPaymentsResponse{
-		NextPageToken: token,
-		B2CPayments:   pbs,
+		NextPageToken:   token,
+		B2CPayments:     pbs,
+		CollectionCount: collectionCount,
 	}, nil
 }
 
