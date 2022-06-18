@@ -13,10 +13,12 @@ import (
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
+	stk_model "github.com/gidyon/mpesapayments/internal/stk"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
+
 	"github.com/rs/zerolog"
 	"gorm.io/gorm"
 
@@ -69,9 +71,9 @@ var _ = BeforeSuite(func() {
 	db, err := startDB()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(db.Migrator().DropTable(StkTable)).ShouldNot(HaveOccurred())
+	Expect(db.Migrator().DropTable(stk_model.StkTable)).ShouldNot(HaveOccurred())
 
-	Expect(db.AutoMigrate(&STKTransaction{})).ShouldNot(HaveOccurred())
+	Expect(db.AutoMigrate(&stk_model.STKTransaction{})).ShouldNot(HaveOccurred())
 
 	redisDB := conn.OpenRedisConn(&redis.Options{
 		Addr: "localhost:6379",

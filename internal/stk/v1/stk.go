@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
+	stk_model "github.com/gidyon/mpesapayments/internal/stk"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
@@ -37,7 +37,7 @@ const (
 )
 
 type incomingPayment struct {
-	payment *STKTransaction
+	payment *stk_model.STKTransaction
 }
 
 // HTTPClient makes mocking test easier
@@ -214,13 +214,11 @@ func NewStkAPI(
 		ctxAdmin:      ctxAdmin,
 	}
 
-	tablePrefix = os.Getenv("STK_TABLE_PREFIX")
-
 	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.PublishChannel)
 
 	// Auto migration
-	if !stkAPI.SQLDB.Migrator().HasTable(&STKTransaction{}) {
-		err = stkAPI.SQLDB.Migrator().AutoMigrate(&STKTransaction{})
+	if !stkAPI.SQLDB.Migrator().HasTable(&stk_model.STKTransaction{}) {
+		err = stkAPI.SQLDB.Migrator().AutoMigrate(&stk_model.STKTransaction{})
 		if err != nil {
 			return nil, err
 		}
@@ -475,7 +473,7 @@ func (stkAPI *stkAPIServer) GetStkTransaction(
 		}
 	}
 
-	db := &STKTransaction{}
+	db := &stk_model.STKTransaction{}
 
 	if req.TransactionId != "" {
 		err = stkAPI.SQLDB.First(db, "id=?", key).Error
@@ -547,9 +545,9 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 		key = string(bs)
 	}
 
-	dbs := make([]*STKTransaction, 0, pageSize+1)
+	dbs := make([]*stk_model.STKTransaction, 0, pageSize+1)
 
-	db := stkAPI.SQLDB.Model(&STKTransaction{}).Limit(int(pageSize) + 1)
+	db := stkAPI.SQLDB.Model(&stk_model.STKTransaction{}).Limit(int(pageSize) + 1)
 	if key != "" {
 		switch req.GetFilter().GetOrderField() {
 		case b2c.OrderField_PAYMENT_ID:
@@ -707,10 +705,10 @@ func (stkAPI *stkAPIServer) ProcessStkTransaction(
 	}
 
 	if req.TransactionId != "" {
-		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("id=?", key).
+		err = stkAPI.SQLDB.Model(&stk_model.STKTransaction{}).Unscoped().Where("id=?", key).
 			Update("processed", processed).Error
 	} else {
-		err = stkAPI.SQLDB.Model(&STKTransaction{}).Unscoped().Where("mpesa_receipt_id=?", req.MpesaReceiptId).
+		err = stkAPI.SQLDB.Model(&stk_model.STKTransaction{}).Unscoped().Where("mpesa_receipt_id=?", req.MpesaReceiptId).
 			Update("processed", processed).Error
 	}
 	switch {

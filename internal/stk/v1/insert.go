@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 	"time"
+
+	stk_model "github.com/gidyon/mpesapayments/internal/stk"
 )
 
 func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
@@ -12,8 +14,8 @@ func (stkAPI *stkAPIServer) insertWorker(ctx context.Context) {
 
 	incomingPayments := make([]*incomingPayment, 0, bulkInsertSize)
 
-	createFn := func() []*STKTransaction {
-		txs := make([]*STKTransaction, 0, len(incomingPayments))
+	createFn := func() []*stk_model.STKTransaction {
+		txs := make([]*stk_model.STKTransaction, 0, len(incomingPayments))
 		for _, incomingPayment := range incomingPayments {
 			txs = append(txs, incomingPayment.payment)
 		}
