@@ -263,11 +263,15 @@ func main() {
 			stkGateway, err := NewSTKGateway(ctx, optGateway)
 			errs.Panic(err)
 
+			// V1 endpoint
 			stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/stkpush/incoming")
-
-			app.AddEndpoint(stkCallback, stkGateway)
-
+			app.AddEndpointFunc(stkCallback, stkGateway.ServeStk)
 			app.Logger().Infof("STK callback path: %v", stkCallback)
+
+			// V2 endpoint
+			stkCallback2 := firstVal(os.Getenv("STK_CALLBACK_URL_PATH_V2"), "/api/mpestx/stkpush/incoming/v2")
+			app.AddEndpointFunc(stkCallback2, stkGateway.ServeStkV2)
+			app.Logger().Infof("STK v2 callback path: %v", stkCallback2)
 		}
 
 		if !disableB2CAPI {
