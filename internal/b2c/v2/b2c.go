@@ -802,19 +802,6 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 
 	pb := req.GetPublishMessage().GetPayment()
 
-	// Get payment if missing
-	if req.GetPublishMessage().GetPaymentId() != "" {
-		pb, err = b2cAPI.GetB2CPayment(ctx, &b2c.GetB2CPaymentRequest{
-			PaymentId: req.GetPublishMessage().GetPaymentId(),
-		})
-		if err != nil {
-			b2cAPI.Logger.Errorln(err)
-		}
-	}
-
-	// Update payment value
-	req.PublishMessage.Payment = pb
-
 	// Marshal publish message
 	bs, err := proto.Marshal(req.PublishMessage)
 	if err != nil {
@@ -836,7 +823,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 		}
 	case b2c.B2CProcessedState_B2C_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !pb.Processed {
+		if !pb.GetProcessed() {
 			err = b2cAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -844,7 +831,7 @@ func (b2cAPI *b2cAPIServer) PublishB2CPayment(
 		}
 	case b2c.B2CProcessedState_B2C_PROCESSED:
 		// Publish only if the processed state is true
-		if pb.Processed {
+		if pb.GetProcessed() {
 			err = b2cAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")

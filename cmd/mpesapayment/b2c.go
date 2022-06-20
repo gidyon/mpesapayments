@@ -356,19 +356,21 @@ func (gw *b2cGateway) fromSafV2(w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusInternalServerError, errors.New("failed to create b2c b2cPayload")
 	}
 
+	fmt.Printf("%+v\n", db)
 	pb, err := b2capp_v2.B2CPaymentPB(db)
 	if err != nil {
 		gw.Logger.Errorln(err)
 		return http.StatusInternalServerError, errors.New("failed to get b2c proto")
 	}
+	fmt.Printf("%+v\n", db)
 
 	if tReq.Publish {
 		publish := func() {
 			_, err = gw.B2CV2API.PublishB2CPayment(gw.ctxExt, &b2c_v2.PublishB2CPaymentRequest{
 				PublishMessage: &b2c_v2.PublishMessage{
 					InitiatorId:    tReq.InitiatorId,
-					PaymentId:      pb.MpesaReceiptId,
-					MpesaReceiptId: pb.TransactionId,
+					TransactionId:  pb.TransactionId,
+					MpesaReceiptId: pb.MpesaReceiptId,
 					Msisdn:         b2cPayload.MSISDN(),
 					PublishInfo:    tReq.PublishMessage,
 					Payment:        pb,
@@ -376,6 +378,8 @@ func (gw *b2cGateway) fromSafV2(w http.ResponseWriter, r *http.Request) (int, er
 			})
 			if err != nil {
 				gw.Logger.Warningf("failed to publish message: %v", err)
+			} else {
+				gw.Logger.Infoln("B2C has been published on channel ", tReq.GetPublishMessage().GetChannelName())
 			}
 		}
 		if tReq.GetPublishMessage().GetOnlyOnSuccess() {
