@@ -345,7 +345,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 			if err != nil {
 				gw.Logger.Warningf("failed to publish message: %v", err)
 			} else {
-				gw.Logger.Infoln("stk has been published on channel ", initReq.GetPublishMessage().GetChannelName())
+				gw.Logger.Infoln("STK has been published on channel ", initReq.GetPublishMessage().GetChannelName())
 			}
 		}
 		if initReq.GetPublishMessage().GetOnlyOnSuccess() {

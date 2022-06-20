@@ -356,13 +356,11 @@ func (gw *b2cGateway) fromSafV2(w http.ResponseWriter, r *http.Request) (int, er
 		return http.StatusInternalServerError, errors.New("failed to create b2c b2cPayload")
 	}
 
-	fmt.Printf("%+v\n", db)
 	pb, err := b2capp_v2.B2CPaymentPB(db)
 	if err != nil {
 		gw.Logger.Errorln(err)
 		return http.StatusInternalServerError, errors.New("failed to get b2c proto")
 	}
-	fmt.Printf("%+v\n", db)
 
 	if tReq.Publish {
 		publish := func() {
