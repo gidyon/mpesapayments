@@ -236,7 +236,8 @@ message B2CPayment {
   string tag = 26;
   bool succeeded = 27;
   bool processed = 28;
-  string create_date = 29;
+  int64 transaction_timestamp = 29;
+  string create_date = 30;
 }
 
 message GetB2CPaymentRequest {

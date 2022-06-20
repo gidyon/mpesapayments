@@ -552,6 +552,10 @@
         "processed": {
           "type": "boolean"
         },
+        "transactionTimestamp": {
+          "type": "string",
+          "format": "int64"
+        },
         "createDate": {
           "type": "string"
         }

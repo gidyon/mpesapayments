@@ -38,6 +38,7 @@ func B2CPaymentPB(db *b2c_model.Payment) (*b2c.B2CPayment, error) {
 		Tag:                           db.Tag,
 		Succeeded:                     db.Succeeded == "YES",
 		Processed:                     db.Processed == "YES",
+		TransactionTimestamp:          db.TransactionTime.Time.UTC().Unix(),
 		CreateDate:                    db.CreatedAt.UTC().Format(time.RFC3339),
 	}
 	return pb, nil
