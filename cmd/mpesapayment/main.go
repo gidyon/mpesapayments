@@ -16,11 +16,15 @@ import (
 	"github.com/gidyon/micro/v2/utils/encryption"
 	"github.com/gidyon/micro/v2/utils/errs"
 	b2capp_v1 "github.com/gidyon/mpesapayments/internal/b2c/v1"
+	b2capp_v2 "github.com/gidyon/mpesapayments/internal/b2c/v2"
 	c2bapp_v1 "github.com/gidyon/mpesapayments/internal/c2b/v1"
 	stkapp_v1 "github.com/gidyon/mpesapayments/internal/stk/v1"
+	stkapp_v2 "github.com/gidyon/mpesapayments/internal/stk/v2"
 	b2c_v1 "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
+	b2c_v2 "github.com/gidyon/mpesapayments/pkg/api/b2c/v2"
 	c2b_v1 "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk_v1 "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
+	stk_v2 "github.com/gidyon/mpesapayments/pkg/api/stk/v2"
 	"go.uber.org/zap"
 	"google.golang.org/protobuf/encoding/protojson"
 
@@ -125,7 +129,13 @@ func main() {
 			disableB2CAPI = os.Getenv("DISABLE_B2C_SERVICE") != ""
 			mpesaAPI      c2b_v1.LipaNaMPESAServer
 			stkAPI        stk_v1.StkPushAPIServer
+			stkCallback1  = os.Getenv("STK_RESULT_URL")
+			stkAPIV2      stk_v2.StkPushV2Server
+			stkCallback2  = os.Getenv("STK_RESULT_URL_V2")
 			b2cAPI        b2c_v1.B2CAPIServer
+			b2cCallback1  = os.Getenv("B2C_RESULT_URL")
+			b2cAPIV2      b2c_v2.B2CV2Server
+			b2cCallbackV2 = os.Getenv("B2C_RESULT_URL_V2")
 		)
 
 		if !disableC2BAPI {
@@ -147,50 +157,66 @@ func main() {
 		}
 
 		if !disableSTKAPI {
-			stkOption := &stkapp_v1.OptionsSTK{
-				AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-				ConsumerKey:       firstVal(os.Getenv("STK_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
-				ConsumerSecret:    firstVal(os.Getenv("STK_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
-				BusinessShortCode: os.Getenv("STK_BUSINESS_SHORT_CODE"),
-				AccountReference:  os.Getenv("STK_MPESA_ACCOUNT_REFERENCE"),
-				Timestamp:         os.Getenv("STK_MPESA_ACCESS_TIMESTAMP"),
-				PassKey:           os.Getenv("STK_LNM_PASSKEY"),
-				CallBackURL:       os.Getenv("STK_MPESA_CALLBACK_URL"),
-				PostURL:           os.Getenv("STK_MPESA_POST_URL"),
-				QueryURL:          os.Getenv("STK_MPESA_QUERY_URL"),
-			}
-
-			opt := stkapp_v1.Options{
-				SQLDB:               app.GormDBByName("sqlWrites").Debug(),
-				RedisDB:             app.RedisClientByName("redisWrites"),
-				Logger:              app.Logger(),
-				AuthAPI:             authAPI,
-				HTTPClient:          http.DefaultClient,
-				OptionsSTK:          stkOption,
-				PublishChannel:      os.Getenv("STK_PUBLISH_CHANNEL"),
-				DisableMpesaService: disableC2BAPI,
-			}
-
-			stkAPI, err = stkapp_v1.NewStkAPI(ctx, &opt, mpesaAPI)
+			// V1
+			stkAPI, err = stkapp_v1.NewStkAPI(ctx, &stkapp_v1.Options{
+				SQLDB:   app.GormDBByName("sqlWrites").Debug(),
+				RedisDB: app.RedisClientByName("redisWrites"),
+				Logger:  app.Logger(),
+				AuthAPI: authAPI,
+				OptionsSTK: &stkapp_v1.OptionsSTK{
+					AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+					ConsumerKey:       firstVal(os.Getenv("STK_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+					ConsumerSecret:    firstVal(os.Getenv("STK_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
+					BusinessShortCode: os.Getenv("STK_BUSINESS_SHORT_CODE"),
+					AccountReference:  os.Getenv("STK_MPESA_ACCOUNT_REFERENCE"),
+					Timestamp:         os.Getenv("STK_MPESA_ACCESS_TIMESTAMP"),
+					PassKey:           os.Getenv("STK_LNM_PASSKEY"),
+					CallBackURL:       stkCallback1,
+					PostURL:           os.Getenv("STK_MPESA_POST_URL"),
+					QueryURL:          os.Getenv("STK_MPESA_QUERY_URL"),
+				},
+				HTTPClient:                http.DefaultClient,
+				UpdateAccessTokenDuration: 0,
+				WorkerDuration:            0,
+				InitiatorExpireDuration:   0,
+				PublishChannel:            os.Getenv("STK_PUBLISH_CHANNEL"),
+				DisableMpesaService:       disableC2BAPI,
+			}, mpesaAPI)
 			errs.Panic(err)
 
 			stk_v1.RegisterStkPushAPIServer(app.GRPCServer(), stkAPI)
 			errs.Panic(stk_v1.RegisterStkPushAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+
+			// V2
+			stkAPIV2, err = stkapp_v2.NewStkAPI(ctx, &stkapp_v2.Options{
+				SQLDB:   app.GormDBByName("sqlWrites").Debug(),
+				RedisDB: app.RedisClientByName("redisWrites"),
+				Logger:  app.Logger(),
+				AuthAPI: authAPI,
+				OptionSTK: &stkapp_v2.OptionSTK{
+					AccessTokenURL:    os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+					ConsumerKey:       firstVal(os.Getenv("STK_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+					ConsumerSecret:    firstVal(os.Getenv("STK_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
+					BusinessShortCode: os.Getenv("STK_BUSINESS_SHORT_CODE"),
+					AccountReference:  os.Getenv("STK_MPESA_ACCOUNT_REFERENCE"),
+					Timestamp:         os.Getenv("STK_MPESA_ACCESS_TIMESTAMP"),
+					PassKey:           os.Getenv("STK_LNM_PASSKEY"),
+					CallBackURL:       stkCallback2,
+					PostURL:           os.Getenv("STK_MPESA_POST_URL"),
+					QueryURL:          os.Getenv("STK_MPESA_QUERY_URL"),
+				},
+				HTTPClient:                http.DefaultClient,
+				UpdateAccessTokenDuration: 0,
+			})
+			errs.Panic(err)
+
+			stk_v2.RegisterStkPushV2Server(app.GRPCServer(), stkAPIV2)
+			errs.Panic(stk_v2.RegisterStkPushV2Handler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		if !disableB2CAPI {
-			optB2C := &b2capp_v1.OptionsB2C{
-				AccessTokenURL:             os.Getenv("MPESA_ACCESS_TOKEN_URL"),
-				ConsumerKey:                firstVal(os.Getenv("B2C_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
-				ConsumerSecret:             firstVal(os.Getenv("B2C_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
-				QueueTimeOutURL:            os.Getenv("B2C_QUEUE_TIMEOUT_URL"),
-				ResultURL:                  os.Getenv("B2C_RESULT_URL"),
-				InitiatorUsername:          os.Getenv("B2C_INITIATOR_USERNAME"),
-				InitiatorPassword:          os.Getenv("B2C_INITIATOR_PASSWORD"),
-				InitiatorEncryptedPassword: os.Getenv("B2C_INITIATOR_ENCRYPTED_PASSWORD"),
-			}
-
-			opt := &b2capp_v1.Options{
+			// V1
+			b2cAPI, err = b2capp_v1.NewB2CAPI(ctx, &b2capp_v1.Options{
 				PublishChannel:  os.Getenv("B2C_PUBLISH_CHANNEL"),
 				QueryBalanceURL: os.Getenv("B2C_QUERY_BALANCE_URL"),
 				B2CURL:          os.Getenv("B2C_URL"),
@@ -200,13 +226,51 @@ func main() {
 				Logger:          app.Logger(),
 				AuthAPI:         authAPI,
 				HTTPClient:      http.DefaultClient,
-				OptionsB2C:      optB2C,
-			}
-			b2cAPI, err = b2capp_v1.NewB2CAPI(ctx, opt)
+				OptionB2C: &b2capp_v1.OptionB2C{
+					ConsumerKey:                firstVal(os.Getenv("B2C_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+					ConsumerSecret:             firstVal(os.Getenv("B2C_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
+					AccessTokenURL:             os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+					QueueTimeOutURL:            os.Getenv("B2C_QUEUE_TIMEOUT_URL"),
+					ResultURL:                  b2cCallback1,
+					InitiatorUsername:          os.Getenv("B2C_INITIATOR_USERNAME"),
+					InitiatorPassword:          os.Getenv("B2C_INITIATOR_PASSWORD"),
+					InitiatorEncryptedPassword: os.Getenv("B2C_INITIATOR_ENCRYPTED_PASSWORD"),
+					PublicKeyCertificateFile:   "",
+				},
+				TransactionCharges: 0,
+			})
 			errs.Panic(err)
 
 			b2c_v1.RegisterB2CAPIServer(app.GRPCServer(), b2cAPI)
 			errs.Panic(b2c_v1.RegisterB2CAPIHandler(ctx, app.RuntimeMux(), app.ClientConn()))
+
+			// V2
+			b2cAPIV2, err = b2capp_v2.NewB2CAPI(ctx, &b2capp_v2.Options{
+				QueryBalanceURL: os.Getenv("B2C_QUERY_BALANCE_URL"),
+				B2CURL:          os.Getenv("B2C_URL"),
+				ReversalURL:     os.Getenv("B2C_REVERSAL_URL"),
+				SQLDB:           app.GormDBByName("sqlWrites").Debug(),
+				RedisDB:         app.RedisClientByName("redisWrites"),
+				Logger:          app.Logger(),
+				AuthAPI:         authAPI,
+				HTTPClient:      http.DefaultClient,
+				OptionB2C: &b2capp_v2.OptionB2C{
+					ConsumerKey:                firstVal(os.Getenv("B2C_CONSUMER_KEY"), os.Getenv("SAF_CONSUMER_KEY")),
+					ConsumerSecret:             firstVal(os.Getenv("B2C_CONSUMER_SECRET"), os.Getenv("SAF_CONSUMER_SECRET")),
+					AccessTokenURL:             os.Getenv("MPESA_ACCESS_TOKEN_URL"),
+					QueueTimeOutURL:            os.Getenv("B2C_QUEUE_TIMEOUT_URL"),
+					ResultURL:                  b2cCallbackV2,
+					InitiatorUsername:          os.Getenv("B2C_INITIATOR_USERNAME"),
+					InitiatorPassword:          os.Getenv("B2C_INITIATOR_PASSWORD"),
+					InitiatorEncryptedPassword: os.Getenv("B2C_INITIATOR_ENCRYPTED_PASSWORD"),
+					PublicKeyCertificateFile:   "",
+				},
+				TransactionCharges: 0,
+			})
+			errs.Panic(err)
+
+			b2c_v2.RegisterB2CV2Server(app.GRPCServer(), b2cAPIV2)
+			errs.Panic(b2c_v2.RegisterB2CV2Handler(ctx, app.RuntimeMux(), app.ClientConn()))
 		}
 
 		b2cTxCost, _ := strconv.ParseFloat(os.Getenv("B2C_TRANSACTION_CHARGES"), 32)
@@ -219,7 +283,9 @@ func main() {
 			AuthAPI:               authAPI,
 			MpesaAPI:              mpesaAPI,
 			StkAPI:                stkAPI,
+			StkV2API:              stkAPIV2,
 			B2CAPI:                b2cAPI,
+			B2CV2API:              b2cAPIV2,
 			DisableMpesaService:   disableC2BAPI,
 			DisableSTKService:     disableSTKAPI,
 			DisableB2CService:     disableB2CAPI,
@@ -264,14 +330,12 @@ func main() {
 			errs.Panic(err)
 
 			// V1 endpoint
-			stkCallback := firstVal(os.Getenv("STK_CALLBACK_URL_PATH"), "/api/mpestx/stkpush/incoming")
-			app.AddEndpointFunc(stkCallback, stkGateway.ServeStk)
-			app.Logger().Infof("STK callback path: %v", stkCallback)
+			app.AddEndpointFunc("/api/mpestx/stkpush/incoming/v1", stkGateway.ServeStk)
+			app.Logger().Infof("STK callback path: %v", stkCallback1)
 
 			// V2 endpoint
-			stkCallback2 := firstVal(os.Getenv("STK_CALLBACK_URL_PATH_V2"), "/api/mpestx/stkpush/incoming/v2")
-			app.AddEndpointFunc(stkCallback2, stkGateway.ServeStkV2)
-			app.Logger().Infof("STK v2 callback path: %v", stkCallback2)
+			app.AddEndpointFunc("/api/mpestx/stkpush/incoming/v2", stkGateway.ServeStkV2)
+			app.Logger().Infof("STK V2 callback path: %v", stkCallback2)
 		}
 
 		if !disableB2CAPI {
@@ -279,11 +343,13 @@ func main() {
 			b2cGateway, err := NewB2CGateway(ctx, optGateway)
 			errs.Panic(err)
 
-			b2cCallback := firstVal(os.Getenv("B2C_CALLBACK_URL_PATH"), "/api/mpestx/b2c/incoming")
+			// V1 endpoint
+			app.AddEndpointFunc("/api/mpestx/b2c/incoming/v1", b2cGateway.ServeHTTP)
+			app.Logger().Infof("B2C callback path: %v", b2cCallback1)
 
-			app.AddEndpoint(b2cCallback, b2cGateway)
-
-			app.Logger().Infof("B2C callback path: %v", b2cCallback)
+			// V2 Endpoint
+			app.AddEndpointFunc("/api/mpestx/b2c/incoming/v2", b2cGateway.ServeHttpV2)
+			app.Logger().Infof("B2C V2 callback path: %v", b2cCallbackV2)
 		}
 
 		// Endpoint for uploading blast file

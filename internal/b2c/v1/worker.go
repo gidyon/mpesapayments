@@ -32,12 +32,12 @@ func (b2cAPI *b2cAPIServer) updateAccessTokenWorker(ctx context.Context, dur tim
 }
 
 func (b2cAPI *b2cAPIServer) updateAccessToken() error {
-	req, err := http.NewRequest(http.MethodGet, b2cAPI.OptionsB2C.AccessTokenURL, nil)
+	req, err := http.NewRequest(http.MethodGet, b2cAPI.OptionB2C.AccessTokenURL, nil)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %v", err)
 	}
 
-	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", b2cAPI.OptionsB2C.basicToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Basic %s", b2cAPI.OptionB2C.basicToken))
 
 	httputils.DumpRequest(req, "B2C ACCESS TOKEN REQUEST")
 
@@ -54,7 +54,7 @@ func (b2cAPI *b2cAPIServer) updateAccessToken() error {
 		return fmt.Errorf("failed to json decode response: %v", err)
 	}
 
-	b2cAPI.OptionsB2C.accessToken = fmt.Sprint(resTo["access_token"])
+	b2cAPI.OptionB2C.accessToken = fmt.Sprint(resTo["access_token"])
 
 	return nil
 }

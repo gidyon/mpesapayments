@@ -34,6 +34,7 @@ run:
 	TABLE_PREFIX="test" \
 	B2C_QUEUE_TIMEOUT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
 	B2C_RESULT_URL=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
+	B2C_RESULT_URL_V2=https://b599a397bfc2.ngrok.io/api/mpestx/incoming/b2c \
 	B2C_QUERY_BALANCE_URL=https://api.safaricom.co.ke/mpesa/accountbalance/v1/query \
 	B2C_URL=https://api.safaricom.co.ke/mpesa/b2c/v1/paymentrequest \
 	B2C_REVERSAL_URL=https://api.safaricom.co.ke/mpesa/reversal/v1/request \
@@ -45,11 +46,14 @@ run:
 	STK_MPESA_ACCOUNT_REFERENCE='mpesa stk test' \
 	STK_MPESA_ACCESS_TIMESTAMP=20171121160303 \
 	STK_LNM_PASSKEY=bfb279f9aa9bdbcf158e97dd71a467cd2e0c893059b10f78e6b72ada1ed2c919 \
-	STK_MPESA_CALLBACK_URL=https://onfon.gidyon.jessegitaka.org/api/mpesa/incoming/stkpush \
+	STK_RESULT_URL=https://onfon.gidyon.jessegitaka.org/api/mpesa/incoming/stkpush \
+	STK_RESULT_URL_V2=https://onfon.gidyon.jessegitaka.org/api/mpesa/incoming/stkpush \
 	STK_MPESA_POST_URL=https://api.safaricom.co.ke/mpesa/stkpush/v1/processrequest \
 	STK_MPESA_QUERY_URL=https://api.safaricom.co.ke/mpesa/stkpushquery/v1/query \
 	STK_PUBLISH_CHANNEL=mpesa:stk:pub \
 	C2B_PUBLISH_CHANNEL=mpesa:paybill:pubsub \
+	B2C_STATS_TABLE=ofoefef \
+	B2C_TRANSACTIONS_TABLE=ooefoe \
 	./service -config-file=./config.yaml
 
 gotest:

@@ -9,13 +9,13 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
+	b2c_model "github.com/gidyon/mpesapayments/internal/b2c"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	"github.com/gidyon/mpesapayments/pkg/payload"
@@ -23,7 +23,6 @@ import (
 	"github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/grpclog"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
@@ -37,7 +36,6 @@ type httpClient interface {
 
 type b2cAPIServer struct {
 	b2c.UnimplementedB2CAPIServer
-	ctxAdmin context.Context
 	*Options
 }
 
@@ -52,7 +50,7 @@ type Options struct {
 	Logger             grpclog.LoggerV2
 	AuthAPI            auth.API
 	HTTPClient         httpClient
-	OptionsB2C         *OptionsB2C
+	OptionB2C          *OptionB2C
 	TransactionCharges float32
 }
 
@@ -72,7 +70,7 @@ func ValidateOptions(opt *Options) error {
 		err = errs.NilObject("auth API")
 	case opt.HTTPClient == nil:
 		err = errs.NilObject("http client")
-	case opt.OptionsB2C == nil:
+	case opt.OptionB2C == nil:
 		err = errs.NilObject("b2c options")
 	case opt.PublishChannel == "":
 		err = errs.MissingField("publish channel")
@@ -87,8 +85,8 @@ func ValidateOptions(opt *Options) error {
 	return err
 }
 
-// OptionsB2C contains options for doing b2c with mpesa
-type OptionsB2C struct {
+// OptionB2C contains options for doing b2c with mpesa
+type OptionB2C struct {
 	ConsumerKey                string
 	ConsumerSecret             string
 	AccessTokenURL             string
@@ -102,8 +100,8 @@ type OptionsB2C struct {
 	basicToken                 string
 }
 
-// ValidateOptionsB2C validates b2c options
-func ValidateOptionsB2C(opt *OptionsB2C) error {
+// ValidateOptionB2C validates b2c options
+func ValidateOptionB2C(opt *OptionB2C) error {
 	var err error
 	switch {
 	case opt == nil:
@@ -138,55 +136,33 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CAPIServer, error) {
 		if err != nil {
 			return nil, err
 		}
-		err = ValidateOptionsB2C(opt.OptionsB2C)
+		err = ValidateOptionB2C(opt.OptionB2C)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	// Update Basic Token
-	opt.OptionsB2C.basicToken = base64.StdEncoding.EncodeToString([]byte(
-		opt.OptionsB2C.ConsumerKey + ":" + opt.OptionsB2C.ConsumerSecret,
+	opt.OptionB2C.basicToken = base64.StdEncoding.EncodeToString([]byte(
+		opt.OptionB2C.ConsumerKey + ":" + opt.OptionB2C.ConsumerSecret,
 	))
 
-	// Generate jwt for API
-	token, err := opt.AuthAPI.GenToken(
-		ctx, &auth.Payload{Group: auth.DefaultAdminGroup()}, time.Now().Add(10*365*24*time.Hour))
-	if err != nil {
-		return nil, fmt.Errorf("failed to generate auth token: %v", err)
-	}
-
-	md := metadata.Pairs(auth.Header(), fmt.Sprintf("%s %s", auth.Scheme(), token))
-
-	ctxAdmin := metadata.NewIncomingContext(ctx, md)
-
-	// Authorize the jwt
-	ctxAdmin, err = opt.AuthAPI.AuthorizeFunc(ctxAdmin)
-	if err != nil {
-		return nil, err
-	}
-
 	b2cAPI := &b2cAPIServer{
-		Options:  opt,
-		ctxAdmin: ctxAdmin,
+		Options: opt,
 	}
 
 	b2cAPI.Logger.Infof("Publishing to b2c consumers on channel: %v", b2cAPI.PublishChannel)
 
-	b2cTable = os.Getenv("B2C_TRANSACTIONS_TABLE")
-
-	btcStatsTable = os.Getenv("B2C_STATS_TABLE")
-
 	// Auto migration
-	// if !b2cAPI.SQLDB.Migrator().HasTable(&Payment{}) {
-	err = b2cAPI.SQLDB.Migrator().AutoMigrate(&Payment{})
-	if err != nil {
-		return nil, err
+	if !b2cAPI.SQLDB.Migrator().HasTable(&b2c_model.Payment{}) {
+		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&b2c_model.Payment{})
+		if err != nil {
+			return nil, err
+		}
 	}
-	// }
 
-	if !b2cAPI.SQLDB.Migrator().HasTable(&DailyStat{}) {
-		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&DailyStat{})
+	if !b2cAPI.SQLDB.Migrator().HasTable(&b2c_model.DailyStat{}) {
+		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&b2c_model.DailyStat{})
 		if err != nil {
 			return nil, err
 		}
@@ -254,7 +230,7 @@ func (b2cAPI *b2cAPIServer) GetB2CPayment(
 		key, _ = strconv.Atoi(req.PaymentId)
 	}
 
-	db := &Payment{}
+	db := &b2c_model.Payment{}
 
 	if !req.IsTransactionId {
 		err = b2cAPI.SQLDB.First(db, "id=?", key).Error
@@ -348,15 +324,15 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 
 	// Transfer funds payload
 	queryBalPayload := &payload.B2CRequest{
-		InitiatorName:      b2cAPI.Options.OptionsB2C.InitiatorUsername,
-		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
+		InitiatorName:      b2cAPI.Options.OptionB2C.InitiatorUsername,
+		SecurityCredential: b2cAPI.OptionB2C.InitiatorEncryptedPassword,
 		CommandID:          commandID,
 		Amount:             fmt.Sprint(req.Amount),
 		PartyA:             fmt.Sprint(req.ShortCode),
 		PartyB:             req.Msisdn,
 		Remarks:            req.Remarks,
-		QueueTimeOutURL:    fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionsB2C.QueueTimeOutURL, SourceKey),
-		ResultURL:          fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionsB2C.ResultURL, SourceKey),
+		QueueTimeOutURL:    fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionB2C.QueueTimeOutURL, SourceKey),
+		ResultURL:          fmt.Sprintf("%s?%s=DARAJA", b2cAPI.OptionB2C.ResultURL, SourceKey),
 		Occassion:          req.Occassion,
 	}
 
@@ -379,7 +355,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 		return nil, errs.WrapMessage(codes.Internal, "failed to create transfer funds request")
 	}
 
-	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
+	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionB2C.accessToken))
 	hReq.Header.Set("Content-Type", "application/json")
 
 	httputils.DumpRequest(hReq, "TransferFunds Request")
@@ -467,10 +443,10 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 		PartyA:             int32(req.PartyA),
 		IdentifierType:     int32(req.IdentifierType),
 		Remarks:            req.Remarks,
-		Initiator:          b2cAPI.OptionsB2C.InitiatorUsername,
-		SecurityCredential: b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
-		QueueTimeOutURL:    b2cAPI.OptionsB2C.QueueTimeOutURL,
-		ResultURL:          b2cAPI.OptionsB2C.ResultURL,
+		Initiator:          b2cAPI.OptionB2C.InitiatorUsername,
+		SecurityCredential: b2cAPI.OptionB2C.InitiatorEncryptedPassword,
+		QueueTimeOutURL:    b2cAPI.OptionB2C.QueueTimeOutURL,
+		ResultURL:          b2cAPI.OptionB2C.ResultURL,
 	}
 
 	// Json Marshal
@@ -486,7 +462,7 @@ func (b2cAPI *b2cAPIServer) QueryAccountBalance(
 	}
 
 	// Update headers
-	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
+	hReq.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionB2C.accessToken))
 	hReq.Header.Set("Content-Type", "application/json")
 
 	httputils.DumpRequest(hReq, "QueryAccountBalance Request")
@@ -548,8 +524,8 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 		ReceiverParty:          reverseReq.ShortCode,
 		ReceiverIdentifierType: reverseReq.ReceiverType,
 		Remarks:                reverseReq.Remarks,
-		Initiator:              b2cAPI.Options.OptionsB2C.InitiatorUsername,
-		SecurityCredential:     b2cAPI.OptionsB2C.InitiatorEncryptedPassword,
+		Initiator:              b2cAPI.Options.OptionB2C.InitiatorUsername,
+		SecurityCredential:     b2cAPI.OptionB2C.InitiatorEncryptedPassword,
 		TransactionID:          reverseReq.TransactionId,
 		Occassion:              reverseReq.Occassion,
 	}
@@ -567,7 +543,7 @@ func (b2cAPI *b2cAPIServer) ReverseTransaction(
 	}
 
 	// Update headers
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionsB2C.accessToken))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", b2cAPI.OptionB2C.accessToken))
 	req.Header.Set("Content-Type", "application/json")
 
 	httputils.DumpRequest(req, "ReverseTransaction Request")
@@ -663,7 +639,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		key = string(bs)
 	}
 
-	db := b2cAPI.SQLDB.Model(&Payment{}).Limit(int(pageSize + 1))
+	db := b2cAPI.SQLDB.Model(&b2c_model.Payment{}).Limit(int(pageSize + 1))
 	if key != "" {
 		switch req.GetFilter().GetOrderField() {
 		case b2c.OrderField_PAYMENT_ID:
@@ -742,7 +718,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		}
 	}
 
-	txs := make([]*Payment, 0, pageSize+1)
+	txs := make([]*b2c_model.Payment, 0, pageSize+1)
 
 	err = db.Find(&txs).Error
 	switch {
@@ -769,7 +745,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		case b2c.OrderField_PAYMENT_ID:
 			key = fmt.Sprint(db.ID)
 		case b2c.OrderField_TRANSACTION_TIMESTAMP:
-			key = db.TransactionTime.UTC().Format(time.RFC3339)
+			key = db.TransactionTime.Time.UTC().Format(time.RFC3339)
 		}
 	}
 
@@ -807,10 +783,10 @@ func (b2cAPI *b2cAPIServer) ProcessB2CPayment(
 	}
 
 	if key != 0 {
-		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("id=?", key).
+		err = b2cAPI.SQLDB.Model(&b2c_model.Payment{}).Unscoped().Where("id=?", key).
 			Update("processed", req.Processed).Error
 	} else {
-		err = b2cAPI.SQLDB.Model(&Payment{}).Unscoped().Where("transaction_id=?", req.PaymentId).
+		err = b2cAPI.SQLDB.Model(&b2c_model.Payment{}).Unscoped().Where("transaction_id=?", req.PaymentId).
 			Update("processed", req.Processed).Error
 	}
 	switch {
@@ -948,7 +924,7 @@ func (b2cAPI *b2cAPIServer) ListDailyStats(
 		db = db.Where("date IN (?)", req.GetFilter().GetTxDates())
 	}
 
-	stats := make([]*DailyStat, 0, pageSize+1)
+	stats := make([]*b2c_model.DailyStat, 0, pageSize+1)
 
 	err = db.Find(&stats).Error
 	switch {

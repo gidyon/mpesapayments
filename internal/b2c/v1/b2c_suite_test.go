@@ -12,6 +12,7 @@ import (
 	"github.com/gidyon/micro/v2"
 	"github.com/gidyon/micro/v2/pkg/conn"
 	"github.com/gidyon/micro/v2/pkg/mocks/mocks"
+	b2c_model "github.com/gidyon/mpesapayments/internal/b2c"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	redis "github.com/go-redis/redis/v8"
 	_ "github.com/go-sql-driver/mysql"
@@ -65,9 +66,7 @@ var _ = BeforeSuite(func() {
 	db, err := startDB()
 	Expect(err).ShouldNot(HaveOccurred())
 
-	Expect(db.Migrator().DropTable(B2CTable)).ShouldNot(HaveOccurred())
-
-	Expect(db.AutoMigrate(&Payment{})).ShouldNot(HaveOccurred())
+	Expect(db.AutoMigrate(&b2c_model.Payment{})).ShouldNot(HaveOccurred())
 
 	redisDB := conn.OpenRedisConn(&redis.Options{
 		Addr: "localhost:6379",
@@ -79,7 +78,7 @@ var _ = BeforeSuite(func() {
 
 	Expect(err).ShouldNot(HaveOccurred())
 
-	optB2C := &OptionsB2C{
+	optB2C := &OptionB2C{
 		ConsumerKey:                randomdata.RandStringRunes(32),
 		ConsumerSecret:             randomdata.RandStringRunes(32),
 		AccessTokenURL:             "https://sandbox.safaricom.co.ke/oauth/v1/generate",
@@ -101,7 +100,7 @@ var _ = BeforeSuite(func() {
 		Logger:          logger,
 		AuthAPI:         authAPI,
 		HTTPClient:      client(1),
-		OptionsB2C:      optB2C,
+		OptionB2C:       optB2C,
 	}
 
 	// Create MPESA payments API
@@ -116,47 +115,47 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	// Validate options for btc
-	opt.OptionsB2C = nil
+	opt.OptionB2C = nil
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C = optB2C
-	opt.OptionsB2C.AccessTokenURL = ""
+	opt.OptionB2C = optB2C
+	opt.OptionB2C.AccessTokenURL = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.AccessTokenURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
-	opt.OptionsB2C.ConsumerKey = ""
+	opt.OptionB2C.AccessTokenURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
+	opt.OptionB2C.ConsumerKey = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.ConsumerKey = randomdata.RandStringRunes(32)
-	opt.OptionsB2C.ConsumerSecret = ""
+	opt.OptionB2C.ConsumerKey = randomdata.RandStringRunes(32)
+	opt.OptionB2C.ConsumerSecret = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.ConsumerSecret = randomdata.RandStringRunes(32)
-	opt.OptionsB2C.InitiatorEncryptedPassword = ""
-	opt.OptionsB2C.InitiatorPassword = ""
+	opt.OptionB2C.ConsumerSecret = randomdata.RandStringRunes(32)
+	opt.OptionB2C.InitiatorEncryptedPassword = ""
+	opt.OptionB2C.InitiatorPassword = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.InitiatorEncryptedPassword = randomdata.RandStringRunes(96)
-	opt.OptionsB2C.InitiatorPassword = randomdata.RandStringRunes(32)
-	opt.OptionsB2C.PublicKeyCertificateFile = ""
+	opt.OptionB2C.InitiatorEncryptedPassword = randomdata.RandStringRunes(96)
+	opt.OptionB2C.InitiatorPassword = randomdata.RandStringRunes(32)
+	opt.OptionB2C.PublicKeyCertificateFile = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).ShouldNot(HaveOccurred())
 
-	opt.OptionsB2C.QueueTimeOutURL = ""
+	opt.OptionB2C.QueueTimeOutURL = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.QueueTimeOutURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
-	opt.OptionsB2C.ResultURL = ""
+	opt.OptionB2C.QueueTimeOutURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
+	opt.OptionB2C.ResultURL = ""
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C.ResultURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
+	opt.OptionB2C.ResultURL = "https://sandbox.safaricom.co.ke/oauth/v1/generate"
 
 	// Validate options for service
 	opt.PublishChannel = ""
@@ -204,11 +203,11 @@ var _ = BeforeSuite(func() {
 	Expect(err).Should(HaveOccurred())
 
 	opt.HTTPClient = client(1)
-	opt.OptionsB2C = nil
+	opt.OptionB2C = nil
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).Should(HaveOccurred())
 
-	opt.OptionsB2C = optB2C
+	opt.OptionB2C = optB2C
 	_, err = NewB2CAPI(ctx, opt)
 	Expect(err).ShouldNot(HaveOccurred())
 })

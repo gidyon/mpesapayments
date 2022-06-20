@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	b2c_model "github.com/gidyon/mpesapayments/internal/b2c"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +39,7 @@ var _ = Describe("Listing transaction stats @liststat", func() {
 		Context("We create some random transactions", func() {
 			It("should always succeed", func() {
 				var err error
-				payments := make([]*Payment, 0, 50)
+				payments := make([]*b2c_model.Payment, 0, 50)
 				for i := 0; i < 100; i++ {
 					paymentDB, err := B2CPaymentDB(fakeB2CPayment())
 					Expect(err).ShouldNot(HaveOccurred())

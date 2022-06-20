@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	b2c_model "github.com/gidyon/mpesapayments/internal/b2c"
 	"github.com/gidyon/mpesapayments/pkg/utils/timeutil"
 	"gorm.io/gorm"
 )
@@ -75,7 +76,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 
 	// Get all unique org_short_code
 	shortCodes := make([]*shortCode, 0)
-	err := b2cAPI.SQLDB.Table((&Payment{}).TableName()).
+	err := b2cAPI.SQLDB.Table((&b2c_model.Payment{}).TableName()).
 		Where("transaction_time BETWEEN ? AND ?", startTime, endTime).
 		Distinct("org_short_code").
 		Select("org_short_code").
@@ -88,7 +89,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 	// Generate report
 	for _, shortCode := range shortCodes {
 
-		db := b2cAPI.SQLDB.Model(&Payment{}).
+		db := b2cAPI.SQLDB.Model(&b2c_model.Payment{}).
 			Where("transaction_time BETWEEN ? AND ?", startTime, endTime).
 			Where("org_short_code = ?", shortCode.OrgShortCode)
 
@@ -121,7 +122,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 		var totalAmount sql.NullFloat64
 
 		// Get total amount transacted
-		err = db.Model(&Payment{}).Select("sum(amount) as total").Row().Scan(&totalAmount)
+		err = db.Model(&b2c_model.Payment{}).Select("sum(amount) as total").Row().Scan(&totalAmount)
 		if err != nil {
 			b2cAPI.Logger.Errorf(
 				"WORKER: failed to get sum of transactions for day [%]s org_short_code [%s]: %v",
@@ -133,7 +134,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 		var totalCharges sql.NullFloat64
 
 		// Get total charges
-		err = db.Model(&Payment{}).Select("sum(transaction_charge) as total").Row().Scan(&totalCharges)
+		err = db.Model(&b2c_model.Payment{}).Select("sum(transaction_charge) as total").Row().Scan(&totalCharges)
 		if err != nil {
 			b2cAPI.Logger.Errorf(
 				"WORKER: failed to get sum of transactions for day %s org_short_code %s: %v",
@@ -152,7 +153,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 		}
 
 		// Create stat
-		statDB := &DailyStat{
+		statDB := &b2c_model.DailyStat{
 			OrgShortCode:           shortCode.OrgShortCode,
 			Date:                   date,
 			TotalTransactions:      int32(transactions),
@@ -162,7 +163,7 @@ func (b2cAPI *b2cAPIServer) generateDailyStatistics(ctx context.Context, startTi
 			TotalCharges:           totalChargesF,
 		}
 
-		statDB2 := &DailyStat{}
+		statDB2 := &b2c_model.DailyStat{}
 
 		// Save statistics
 		err = b2cAPI.SQLDB.First(statDB2, "org_short_code = ? AND date = ?", shortCode.OrgShortCode, date).Error

@@ -23,9 +23,7 @@ import (
 )
 
 type stkGateway struct {
-	stkAPI   stk.StkPushAPIServer
-	stkAPIV2 stk_v2.StkPushAPIServer
-	ctxExt   context.Context
+	ctxExt context.Context
 	*Options
 }
 
@@ -37,7 +35,6 @@ func NewSTKGateway(ctx context.Context, opt *Options) (*stkGateway, error) {
 	}
 
 	gw := &stkGateway{
-		stkAPI:  opt.StkAPI,
 		Options: opt,
 	}
 
@@ -75,7 +72,7 @@ func (gw *stkGateway) serveStk(w http.ResponseWriter, r *http.Request) (int, err
 		return http.StatusServiceUnavailable, errors.New("receiving stk transactions disabled")
 	}
 
-	httputils.DumpRequest(r, "Incoming Mpesa STK Payload")
+	httputils.DumpRequest(r, "Incoming Mpesa STK V1 Payload")
 
 	if r.Method != http.MethodPost {
 		return http.StatusBadRequest, fmt.Errorf("bad method; only POST allowed; received %v method", r.Method)
@@ -150,7 +147,7 @@ func (gw *stkGateway) serveStk(w http.ResponseWriter, r *http.Request) (int, err
 		pb.Amount = firstVal(pb.Amount, fmt.Sprint(initReq.GetAmount()))
 	}
 
-	res, err := gw.stkAPI.CreateStkTransaction(
+	res, err := gw.StkAPI.CreateStkTransaction(
 		gw.ctxExt, &stk.CreateStkTransactionRequest{Payload: pb},
 	)
 	if err != nil {
@@ -159,7 +156,7 @@ func (gw *stkGateway) serveStk(w http.ResponseWriter, r *http.Request) (int, err
 
 	if initReq.Publish {
 		publish := func() {
-			_, err = gw.stkAPI.PublishStkTransaction(gw.ctxExt, &stk.PublishStkTransactionRequest{
+			_, err = gw.StkAPI.PublishStkTransaction(gw.ctxExt, &stk.PublishStkTransactionRequest{
 				PublishMessage: &stk.PublishMessage{
 					InitiatorId:     initReq.InitiatorId,
 					TransactionId:   res.TransactionId,
@@ -206,7 +203,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 		return http.StatusServiceUnavailable, errors.New("receiving stk transactions disabled")
 	}
 
-	httputils.DumpRequest(r, "Incoming Mpesa STK Payload")
+	httputils.DumpRequest(r, "Incoming Mpesa STK V2 Payload")
 
 	if r.Method != http.MethodPost {
 		return http.StatusBadRequest, fmt.Errorf("bad method; only POST allowed; received %v method", r.Method)
@@ -251,7 +248,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 		}
 	}
 
-	if stkPayload.Body.STKCallback.ResultCode == 0 {
+	if stkPayload.Body.STKCallback.ResultCode != 0 {
 		succeeded = "NO"
 		status = stk_v2.StkStatus_STK_FAILED.String()
 	}
@@ -275,15 +272,15 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 	case err == nil:
 		// Update STK transaction
 		{
-			db.StkResultCode = fmt.Sprint(stkPayload.Body.STKCallback.ResultCode)
-			db.StkResultDesc = stkPayload.Body.STKCallback.ResultDesc
-			db.MpesaReceiptId = stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber()
-			db.StkStatus = status
-			db.Succeeded = succeeded
-			err = gw.SQLDB.Model(db).Select("stk_result_code,stk_result_description,mpesa_receipt_id,stk_status,succeeded").
-				Updates(db).Error
+			err = gw.SQLDB.Model(db).Updates(map[string]interface{}{
+				"result_code":        fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
+				"result_description": stkPayload.Body.STKCallback.ResultDesc,
+				"mpesa_receipt_id":   stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
+				"stk_status":         status,
+				"succeeded":          succeeded,
+			}).Error
 			if err != nil {
-				return http.StatusInternalServerError, fmt.Errorf("failed to update stk transaction: %v", err)
+				return http.StatusInternalServerError, fmt.Errorf("failed to update stk: %v", err)
 			}
 		}
 	case errors.Is(err, gorm.ErrRecordNotFound):
@@ -305,10 +302,8 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 				StkResponseDescription:        "",
 				StkResponseCustomerMessage:    "",
 				StkResponseCode:               "",
-				ResultCode:                    "",
-				StkResultCode:                 fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
-				StkResultDesc:                 stkPayload.Body.STKCallback.ResultDesc,
-				ResultDesc:                    "",
+				ResultCode:                    fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
+				ResultDescription:             stkPayload.Body.STKCallback.ResultDesc,
 				MpesaReceiptId:                stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
 				StkStatus:                     status,
 				Source:                        "",
@@ -336,7 +331,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 
 	if initReq.GetPublish() {
 		publish := func() {
-			_, err = gw.stkAPIV2.PublishStkTransaction(gw.ctxExt, &stk_v2.PublishStkTransactionRequest{
+			_, err = gw.StkV2API.PublishStkTransaction(gw.ctxExt, &stk_v2.PublishStkTransactionRequest{
 				PublishMessage: &stk_v2.PublishMessage{
 					InitiatorId:     initReq.InitiatorId,
 					TransactionId:   pb.TransactionId,
@@ -349,7 +344,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 			if err != nil {
 				gw.Logger.Warningf("failed to publish message: %v", err)
 			} else {
-				gw.Logger.Infoln("stk published ", firstVal(initReq.GetPublishMessage().GetChannelName()))
+				gw.Logger.Infoln("stk has been published on channel ", initReq.GetPublishMessage().GetChannelName())
 			}
 		}
 		if initReq.GetPublishMessage().GetOnlyOnSuccess() {

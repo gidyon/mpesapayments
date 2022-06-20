@@ -3,64 +3,64 @@
 <html lang="en">
 
 <head>
-  <meta charset="UTF-8">
-  <title>Swagger UI</title>
-  <link rel="stylesheet" type="text/css" href="/documentation/assets/swagger-ui.css">
-  <link rel="icon" type="image/png" href="/documentation/assets/favicon-32x32.png" sizes="32x32" />
-  <link rel="icon" type="image/png" href="/documentation/assets/favicon-16x16.png" sizes="16x16" />
-  <style>
-    html {
-      box-sizing: border-box;
-      overflow: -moz-scrollbars-vertical;
-      overflow-y: scroll;
-    }
+    <meta charset="UTF-8">
+    <title>Swagger UI</title>
+    <link rel="stylesheet" type="text/css" href="/documentation/assets/swagger-ui.css">
+    <link rel="icon" type="image/png" href="/documentation/assets/favicon-32x32.png" sizes="32x32" />
+    <link rel="icon" type="image/png" href="/documentation/assets/favicon-16x16.png" sizes="16x16" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
 
-    *,
-    *:before,
-    *:after {
-      box-sizing: inherit;
-    }
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
 
-    body {
-      margin: 0;
-      background: #fafafa;
-    }
-  </style>
+        body {
+            margin: 0;
+            background: #fafafa;
+        }
+    </style>
 </head>
 
 <body>
-  <div id="swagger-ui"></div>
+    <div id="swagger-ui"></div>
 
-  <script src="/documentation/assets/swagger-ui-bundle.js"> </script>
-  <script src="/documentation/assets/swagger-ui-standalone-preset.js"> </script>
-  <script>
-    window.onload = function () {
-      // Begin Swagger UI call region
-      const ui = SwaggerUIBundle({
-        urls: [
-          { url: "/documentation/swagger/account.swagger.json", name: "Accounts Service" },
-          { url: "/documentation/swagger/messaging.swagger.json", name: "Messaging Service" },
-          { url: "/documentation/swagger/b2c.swagger.json", name: "MPESA B2C Service" },
-          { url: "/documentation/swagger/stk.swagger.json", name: "MPESA STK Service" },
-          { url: "/documentation/swagger/c2b.swagger.json", name: "MPESA C2B Service" },
-        ],
-        "urls.primaryName": "MPESA Payments Service",
-        dom_id: '#swagger-ui',
-        deepLinking: true,
-        presets: [
-          SwaggerUIBundle.presets.apis,
-          SwaggerUIStandalonePreset
-        ],
-        plugins: [
-          SwaggerUIBundle.plugins.DownloadUrl
-        ],
-        layout: "StandaloneLayout"
-      })
-      // End Swagger UI call region
+    <script src="/documentation/assets/swagger-ui-bundle.js"> </script>
+    <script src="/documentation/assets/swagger-ui-standalone-preset.js"> </script>
+    <script>
+        window.onload = function () {
+            // Begin Swagger UI call region
+            const ui = SwaggerUIBundle({
+                urls: [
+                    { url: "/documentation/dist/swagger/b2c.v1.swagger.json", name: "MPESA B2C V1" },
+                    { url: "/documentation/dist/swagger/stk.v1.swagger.json", name: "MPESA STK V1" },
+                    { url: "/documentation/dist/swagger/c2b.v1.swagger.json", name: "MPESA C2B" },
+                    { url: "/documentation/dist/swagger/b2c.v2.swagger.json", name: "MPESA B2C V2" },
+                    { url: "/documentation/dist/swagger/stk.v2.swagger.json", name: "MPESA STK V2" },
+                ],
+                "urls.primaryName": "MPESA C2B",
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout"
+            })
+            // End Swagger UI call region
 
-      window.ui = ui
-    }
-  </script>
+            window.ui = ui
+        }
+    </script>
 </body>
 
 </html>

@@ -151,12 +151,12 @@ func NewB2CAPI(ctx context.Context, opt *Options) (b2c.B2CV2Server, error) {
 	}
 
 	// Auto migration
-	if !b2cAPI.SQLDB.Migrator().HasTable(&b2c_model.Payment{}) {
-		err = b2cAPI.SQLDB.Migrator().AutoMigrate(&b2c_model.Payment{})
-		if err != nil {
-			return nil, err
-		}
+	// if !b2cAPI.SQLDB.Migrator().HasTable(&b2c_model.Payment{}) {
+	err = b2cAPI.SQLDB.Migrator().AutoMigrate(&b2c_model.Payment{})
+	if err != nil {
+		return nil, err
 	}
+	// }
 
 	// if !b2cAPI.SQLDB.Migrator().HasTable(&b2c_model.DailyStat{}) {
 	err = b2cAPI.SQLDB.Migrator().AutoMigrate(&b2c_model.DailyStat{})
@@ -314,10 +314,10 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 				Amount:                        float32(req.Amount),
 				ConversationID:                convId,
 				OriginatorConversationID:      origConvId,
-				B2CResponseDescription:        fmt.Sprint(apiRes.Response["ResponseDescription"]),
-				B2CResponseCode:               fmt.Sprint(apiRes.Response["ResponseCode"]),
-				B2CResultCode:                 "",
-				B2CResultDesc:                 "",
+				ResponseDescription:           fmt.Sprint(apiRes.Response["ResponseDescription"]),
+				ResponseCode:                  fmt.Sprint(apiRes.Response["ResponseCode"]),
+				ResultCode:                    "",
+				ResultDescription:             "",
 				WorkingAccountFunds:           0,
 				UtilityAccountFunds:           0,
 				MpesaCharges:                  0,
@@ -325,7 +325,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 				RecipientRegistered:           false,
 				MpesaReceiptId:                "",
 				ReceiverPublicName:            "",
-				B2CStatus:                     b2c.B2CStatus_B2C_REQUEST_SUBMITED.String(),
+				Status:                        b2c.B2CStatus_B2C_REQUEST_SUBMITED.String(),
 				Source:                        "",
 				Tag:                           "",
 				Succeeded:                     "",

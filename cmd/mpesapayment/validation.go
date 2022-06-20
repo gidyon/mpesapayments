@@ -7,8 +7,10 @@ import (
 	"github.com/gidyon/micro/v2/pkg/middleware/grpc/auth"
 	"github.com/gidyon/micro/v2/utils/errs"
 	b2c "github.com/gidyon/mpesapayments/pkg/api/b2c/v1"
+	b2c_v2 "github.com/gidyon/mpesapayments/pkg/api/b2c/v2"
 	c2b "github.com/gidyon/mpesapayments/pkg/api/c2b/v1"
 	stk "github.com/gidyon/mpesapayments/pkg/api/stk/v1"
+	stk_v2 "github.com/gidyon/mpesapayments/pkg/api/stk/v2"
 	redis "github.com/go-redis/redis/v8"
 	"google.golang.org/grpc/grpclog"
 	"gorm.io/gorm"
@@ -22,7 +24,9 @@ type Options struct {
 	AuthAPI               auth.API
 	MpesaAPI              c2b.LipaNaMPESAServer
 	StkAPI                stk.StkPushAPIServer
+	StkV2API              stk_v2.StkPushV2Server
 	B2CAPI                b2c.B2CAPIServer
+	B2CV2API              b2c_v2.B2CV2Server
 	DisableMpesaService   bool
 	DisableSTKService     bool
 	DisableB2CService     bool

@@ -30,7 +30,7 @@ func STKTransactionPB(db *stk_model.STKTransaction) (*stk.StkTransaction, error)
 		StkResponseDescription:        db.StkResponseDescription,
 		StkResponseCode:               db.StkResponseCode,
 		StkResultCode:                 db.ResultCode,
-		StkResultDesc:                 db.ResultDesc,
+		StkResultDesc:                 db.ResultDescription,
 		MpesaReceiptId:                db.MpesaReceiptId,
 		Balance:                       "",
 		Status:                        stk.StkStatus(stk.StkStatus_value[db.StkStatus]),

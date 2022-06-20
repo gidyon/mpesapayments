@@ -308,7 +308,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 				StkResponseCustomerMessage:    fmt.Sprint(resData["CustomerMessage"]),
 				StkResponseCode:               fmt.Sprint(resData["ResponseCode"]),
 				ResultCode:                    "",
-				ResultDesc:                    "",
+				ResultDescription:             "",
 				MpesaReceiptId:                "",
 				StkStatus:                     stk.StkStatus_STK_REQUEST_SUBMITED.String(),
 				Source:                        "",
