@@ -37,8 +37,8 @@ type STKTransaction struct {
 	Succeeded                     string       `gorm:"index;type:enum('YES','NO');default:NO"`
 	Processed                     string       `gorm:"index;type:enum('YES','NO');default:NO"`
 	TransactionTime               sql.NullTime `gorm:"index;type:datetime(6)"`
-	UpdatedAt                     time.Time    `gorm:"autoUpdateTime:nano;type:datetime(6)"`
-	CreatedAt                     time.Time    `gorm:"index;autoCreateTime:nano;type:datetime(6);not null"`
+	UpdatedAt                     time.Time    `gorm:"autoUpdateTime;type:datetime(6)"`
+	CreatedAt                     time.Time    `gorm:"index;autoCreateTime;type:datetime(6);not null"`
 }
 
 // StkTable is table for mpesa payments
