@@ -303,6 +303,7 @@ func (gw *b2cGateway) fromSafV2(w http.ResponseWriter, r *http.Request) (int, er
 					"mpesa_charges":         float32(b2cPayload.B2CChargesPaidAccountAvailableFunds()),
 					"recipient_registered":  b2cPayload.B2CRecipientIsRegisteredCustomer(),
 					"mpesa_receipt_id":      b2cPayload.TransactionReceipt(),
+					"transaction_time":      sql.NullTime{Valid: true, Time: b2cPayload.TransactionCompletedDateTime().UTC()},
 					"receiver_public_name":  b2cPayload.ReceiverPartyPublicName(),
 					"status":                status,
 					"succeeded":             succeeded,
@@ -342,7 +343,7 @@ func (gw *b2cGateway) fromSafV2(w http.ResponseWriter, r *http.Request) (int, er
 				Tag:                           "",
 				Succeeded:                     succeeded,
 				Processed:                     "NO",
-				TransactionTime:               sql.NullTime{Valid: true, Time: db.TransactionTime.Time},
+				TransactionTime:               sql.NullTime{Valid: true, Time: b2cPayload.TransactionCompletedDateTime().UTC()},
 				CreatedAt:                     time.Time{},
 			}
 			err = gw.SQLDB.Create(db).Error

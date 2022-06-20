@@ -276,6 +276,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 				"result_code":        fmt.Sprint(stkPayload.Body.STKCallback.ResultCode),
 				"result_description": stkPayload.Body.STKCallback.ResultDesc,
 				"mpesa_receipt_id":   stkPayload.Body.STKCallback.CallbackMetadata.MpesaReceiptNumber(),
+				"transaction_time":   sql.NullTime{Valid: true, Time: stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime()},
 				"stk_status":         status,
 				"succeeded":          succeeded,
 			}).Error
@@ -310,7 +311,7 @@ func (gw *stkGateway) serveStkV2(w http.ResponseWriter, r *http.Request) (int, e
 				Tag:                           "",
 				Succeeded:                     succeeded,
 				Processed:                     "NO",
-				TransactionTime:               sql.NullTime{Valid: true, Time: db.TransactionTime.Time},
+				TransactionTime:               sql.NullTime{Valid: true, Time: stkPayload.Body.STKCallback.CallbackMetadata.GetTransTime()},
 				CreatedAt:                     time.Time{},
 			}
 			err = gw.SQLDB.Create(db).Error

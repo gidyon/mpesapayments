@@ -315,7 +315,7 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 				Tag:                           "",
 				Succeeded:                     "",
 				Processed:                     "",
-				TransactionTime:               sql.NullTime{},
+				TransactionTime:               sql.NullTime{Valid: true, Time: time.Now().UTC()},
 				CreatedAt:                     time.Time{},
 			}).Error
 			if err != nil {
