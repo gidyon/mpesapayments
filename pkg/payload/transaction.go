@@ -160,7 +160,7 @@ func (tx *Transaction) TransactionCompletedDateTime() time.Time {
 			}
 		}
 	}
-	return time.Now()
+	return time.Now().UTC()
 }
 
 // ReceiverPartyPublicName ...

@@ -74,7 +74,7 @@ func (c *CallbackMeta) Balance() string {
 func (c *CallbackMeta) GetTransTime() time.Time {
 	itemsLen := len(c.Item)
 	if itemsLen != 5 && itemsLen != 4 {
-		return time.Now()
+		return time.Now().UTC()
 	}
 
 	var (
@@ -86,12 +86,12 @@ func (c *CallbackMeta) GetTransTime() time.Time {
 	case 4:
 		t, err = getTransactionTime(fmt.Sprint(c.Item[2].Value))
 		if err != nil {
-			t = time.Now()
+			t = time.Now().UTC()
 		}
 	case 5:
 		t, err = getTransactionTime(fmt.Sprint(c.Item[3].Value))
 		if err != nil {
-			t = time.Now()
+			t = time.Now().UTC()
 		}
 	}
 

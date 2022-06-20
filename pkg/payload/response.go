@@ -28,8 +28,8 @@ func (gRes *GenericAPIResponse) Succeeded() bool {
 	if gRes.ResponseCode() == "0" || strings.Contains(gRes.ResponseDescription(), "successfully") {
 		return true
 	}
-	if (gRes.ErrorCode() != "" && strings.Contains(gRes.ErrorMessage(), "nil") == false) ||
-		(gRes.ErrorMessage() != "" && strings.Contains(gRes.ErrorMessage(), "nil") == false) {
+	if (gRes.ErrorCode() != "" && !strings.Contains(gRes.ErrorMessage(), "nil")) ||
+		(gRes.ErrorMessage() != "" && !strings.Contains(gRes.ErrorMessage(), "nil")) {
 		return false
 	}
 	return false
@@ -67,7 +67,7 @@ func (gRes *GenericAPIResponse) ErrorMessage() string {
 
 // Error returns the error
 func (gRes *GenericAPIResponse) Error() string {
-	if gRes.ErrorMessage() != "" && strings.Contains(gRes.ErrorMessage(), "nil") == false {
+	if gRes.ErrorMessage() != "" && !strings.Contains(gRes.ErrorMessage(), "nil") {
 		return gRes.ErrorMessage()
 	} else if gRes.ResponseDescription() != "" && strings.Contains(gRes.ResponseDescription(), "nil") {
 		return gRes.ResponseDescription()
