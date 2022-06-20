@@ -28,15 +28,13 @@ import (
 	"gorm.io/gorm"
 )
 
-const publishChannel = "mpesa:stk:pubsub"
-
 // HTTPClient makes mocking test easier
 type HTTPClient interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
 type stkAPIServer struct {
-	stk.UnsafeStkPushAPIServer
+	stk.UnsafeStkPushV2Server
 	*Options
 }
 
@@ -49,7 +47,7 @@ type Options struct {
 	OptionSTK                 *OptionSTK
 	HTTPClient                HTTPClient
 	UpdateAccessTokenDuration time.Duration
-	PublishChannel            string
+	// PublishChannel            string
 }
 
 // ValidateOptions validates options required by stk service
@@ -123,7 +121,7 @@ func ValidateOptionSTK(opt *OptionSTK) error {
 }
 
 // NewStkAPI creates a singleton instance of mpesa stk API
-func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushAPIServer, err error) {
+func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushV2Server, err error) {
 
 	defer func() {
 		if err != nil {
@@ -156,25 +154,18 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushAPIServer, err e
 		opt.OptionSTK.BusinessShortCode + opt.OptionSTK.PassKey + opt.OptionSTK.Timestamp,
 	))
 
-	// Update publish channel
-	if opt.PublishChannel == "" {
-		opt.PublishChannel = publishChannel
-	}
-
 	// API server
 	stkAPI := &stkAPIServer{
 		Options: opt,
 	}
 
-	stkAPI.Logger.Infof("Publishing to stk consumers on channel: %v", stkAPI.PublishChannel)
-
 	// Auto migration
-	if !stkAPI.SQLDB.Migrator().HasTable(&stk_model.STKTransaction{}) {
-		err = stkAPI.SQLDB.Migrator().AutoMigrate(&stk_model.STKTransaction{})
-		if err != nil {
-			return nil, err
-		}
+	// if !stkAPI.SQLDB.Migrator().HasTable(&stk_model.STKTransaction{}) {
+	err = stkAPI.SQLDB.Migrator().AutoMigrate(&stk_model.STKTransaction{})
+	if err != nil {
+		return nil, err
 	}
+	// }
 
 	dur := time.Minute * 45
 	if opt.UpdateAccessTokenDuration > 0 {
@@ -185,26 +176,6 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushAPIServer, err e
 	go stkAPI.updateAccessTokenWorker(ctx, dur)
 
 	return stkAPI, nil
-}
-
-// ValidateStkTransaction validates STK transaction
-func ValidateStkTransaction(payload *stk.StkTransaction) error {
-	var err error
-	switch {
-	case payload == nil:
-		err = errs.NilObject("stk payload")
-	case payload.PhoneNumber == "" || payload.PhoneNumber == "0":
-		err = errs.MissingField("phone number")
-	case payload.Amount == "":
-		err = errs.MissingField("transaction amount")
-	case payload.ResultCode == "":
-		err = errs.MissingField("result code")
-	case payload.ResultDesc == "":
-		err = errs.MissingField("result description")
-	case payload.TransactionTimestamp == 0:
-		err = errs.MissingField("transaction time")
-	}
-	return err
 }
 
 // GetMpesaSTKPushKey retrives key storing initiator key
@@ -237,12 +208,12 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		return nil, errs.MissingField("inititator id")
 	case req.Phone == "":
 		return nil, errs.MissingField("phone")
-	case req.ShortCode == "":
-		return nil, errs.MissingField("short code")
 	case req.AccountReference == "":
 		return nil, errs.MissingField("account reference")
 	case req.Amount <= 0:
 		return nil, errs.MissingField("amount")
+	case req.Publish && req.GetPublishMessage().GetChannelName() == "":
+		return nil, errs.MissingField("publisch channel")
 	}
 
 	var (
@@ -295,8 +266,6 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 		defer cancel()
 
-		_ = ctx
-
 		res, err := stkAPI.HTTPClient.Do(reqHtpp)
 		if err != nil {
 			stkAPI.Logger.Errorf("Failed to post stk request to mpesa API: %v", err)
@@ -338,10 +307,12 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 				StkResponseDescription:        fmt.Sprint(resData["ResponseDescription"]),
 				StkResponseCustomerMessage:    fmt.Sprint(resData["CustomerMessage"]),
 				StkResponseCode:               fmt.Sprint(resData["ResponseCode"]),
-				StkResultCode:                 "",
-				StkResultDesc:                 "",
+				ResultCode:                    "",
+				ResultDesc:                    "",
 				MpesaReceiptId:                "",
 				StkStatus:                     stk.StkStatus_STK_REQUEST_SUBMITED.String(),
+				Source:                        "",
+				Tag:                           "",
 				Succeeded:                     "",
 				Processed:                     "",
 				TransactionTime:               sql.NullTime{},
@@ -543,7 +514,7 @@ func (stkAPI *stkAPIServer) ListStkTransactions(
 			for _, s := range req.Filter.StkStatuses {
 				ss = append(ss, s.String())
 			}
-			db = db.Where("status IN(?)", ss)
+			db = db.Where("stk_status IN(?)", ss)
 		}
 
 		switch req.Filter.ProcessState {
@@ -705,7 +676,10 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		return nil, errs.FromProtoMarshal(err, "publish message")
 	}
 
-	channel := firstVal(req.GetPublishMessage().GetPublishInfo().GetChannelName(), stkAPI.PublishChannel)
+	channel := req.GetPublishMessage().GetPublishInfo().GetChannelName()
+	if channel == "" {
+		return &emptypb.Empty{}, nil
+	}
 
 	// Publish based on state
 	switch req.ProcessedState {

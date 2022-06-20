@@ -30,24 +30,26 @@ message StkTransaction {
   string initiator_transaction_reference = 3;
   string initiator_customer_reference = 4;
   string initiator_customer_names = 5;
-  string merchant_request_id = 6;
-  string checkout_request_id = 7;
-  string short_code = 8;
-  string account_reference = 9;
+  string short_code = 6;
+  string account_reference = 7;
+  string amount = 8;
+  string phone_number = 9;
   string transaction_desc = 10;
-  string result_code = 11;
-  string result_desc = 12;
-  string amount = 13;
-  string mpesa_receipt_id = 14;
-  string balance = 15;
-  string phone_number = 16;
-  StkStatus status = 17;
-  string source = 18;
-  string tag = 19;
-  bool succeeded = 20;
-  bool processed = 21;
-  int64 transaction_timestamp = 22;
-  int64 create_timestamp = 23;
+  string merchant_request_id = 11;
+  string checkout_request_id = 12;
+  string stk_response_description = 13;
+  string stk_response_code = 14;
+  string stk_result_code = 15;
+  string stk_result_desc = 16;
+  string mpesa_receipt_id = 17;
+  string balance = 18;
+  StkStatus status = 19;
+  string source = 20;
+  string tag = 21;
+  bool succeeded = 22;
+  bool processed = 23;
+  int64 transaction_timestamp = 24;
+  int64 create_timestamp = 25;
 }
 
 message PublishInfo {
@@ -216,7 +218,7 @@ message PublishMessage {
   StkTransaction transaction_info = 6;
 }
 
-service StkPushAPI {
+service StkPushV2 {
   // Initiates mpesa payment.
   rpc InitiateSTKPush(InitiateSTKPushRequest)
       returns (InitiateSTKPushResponse) {

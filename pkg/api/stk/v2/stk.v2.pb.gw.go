@@ -31,7 +31,7 @@ var _ = runtime.String
 var _ = utilities.NewDoubleArray
 var _ = metadata.Join
 
-func request_StkPushAPI_InitiateSTKPush_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_StkPushV2_InitiateSTKPush_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushV2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq InitiateSTKPushRequest
 	var metadata runtime.ServerMetadata
 
@@ -48,7 +48,7 @@ func request_StkPushAPI_InitiateSTKPush_0(ctx context.Context, marshaler runtime
 
 }
 
-func local_request_StkPushAPI_InitiateSTKPush_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_StkPushV2_InitiateSTKPush_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushV2Server, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq InitiateSTKPushRequest
 	var metadata runtime.ServerMetadata
 
@@ -66,10 +66,10 @@ func local_request_StkPushAPI_InitiateSTKPush_0(ctx context.Context, marshaler r
 }
 
 var (
-	filter_StkPushAPI_GetStkTransaction_0 = &utilities.DoubleArray{Encoding: map[string]int{"transaction_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
+	filter_StkPushV2_GetStkTransaction_0 = &utilities.DoubleArray{Encoding: map[string]int{"transaction_id": 0}, Base: []int{1, 1, 0}, Check: []int{0, 1, 2}}
 )
 
-func request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_StkPushV2_GetStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushV2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -93,7 +93,7 @@ func request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler runti
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushAPI_GetStkTransaction_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushV2_GetStkTransaction_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -102,7 +102,7 @@ func request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler runti
 
 }
 
-func local_request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_StkPushV2_GetStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushV2Server, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq GetStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -126,7 +126,7 @@ func local_request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushAPI_GetStkTransaction_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushV2_GetStkTransaction_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -136,17 +136,17 @@ func local_request_StkPushAPI_GetStkTransaction_0(ctx context.Context, marshaler
 }
 
 var (
-	filter_StkPushAPI_ListStkTransactions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
+	filter_StkPushV2_ListStkTransactions_0 = &utilities.DoubleArray{Encoding: map[string]int{}, Base: []int(nil), Check: []int(nil)}
 )
 
-func request_StkPushAPI_ListStkTransactions_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_StkPushV2_ListStkTransactions_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushV2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListStkTransactionsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushAPI_ListStkTransactions_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushV2_ListStkTransactions_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -155,14 +155,14 @@ func request_StkPushAPI_ListStkTransactions_0(ctx context.Context, marshaler run
 
 }
 
-func local_request_StkPushAPI_ListStkTransactions_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_StkPushV2_ListStkTransactions_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushV2Server, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ListStkTransactionsRequest
 	var metadata runtime.ServerMetadata
 
 	if err := req.ParseForm(); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
-	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushAPI_ListStkTransactions_0); err != nil {
+	if err := runtime.PopulateQueryParameters(&protoReq, req.Form, filter_StkPushV2_ListStkTransactions_0); err != nil {
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
@@ -171,7 +171,7 @@ func local_request_StkPushAPI_ListStkTransactions_0(ctx context.Context, marshal
 
 }
 
-func request_StkPushAPI_ProcessStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_StkPushV2_ProcessStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushV2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ProcessStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -188,7 +188,7 @@ func request_StkPushAPI_ProcessStkTransaction_0(ctx context.Context, marshaler r
 
 }
 
-func local_request_StkPushAPI_ProcessStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_StkPushV2_ProcessStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushV2Server, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq ProcessStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -205,7 +205,7 @@ func local_request_StkPushAPI_ProcessStkTransaction_0(ctx context.Context, marsh
 
 }
 
-func request_StkPushAPI_PublishStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushAPIClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_StkPushV2_PublishStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, client StkPushV2Client, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PublishStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -222,7 +222,7 @@ func request_StkPushAPI_PublishStkTransaction_0(ctx context.Context, marshaler r
 
 }
 
-func local_request_StkPushAPI_PublishStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushAPIServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_StkPushV2_PublishStkTransaction_0(ctx context.Context, marshaler runtime.Marshaler, server StkPushV2Server, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var protoReq PublishStkTransactionRequest
 	var metadata runtime.ServerMetadata
 
@@ -239,24 +239,24 @@ func local_request_StkPushAPI_PublishStkTransaction_0(ctx context.Context, marsh
 
 }
 
-// RegisterStkPushAPIHandlerServer registers the http handlers for service StkPushAPI to "mux".
-// UnaryRPC     :call StkPushAPIServer directly.
+// RegisterStkPushV2HandlerServer registers the http handlers for service StkPushV2 to "mux".
+// UnaryRPC     :call StkPushV2Server directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterStkPushAPIHandlerFromEndpoint instead.
-func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux, server StkPushAPIServer) error {
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterStkPushV2HandlerFromEndpoint instead.
+func RegisterStkPushV2HandlerServer(ctx context.Context, mux *runtime.ServeMux, server StkPushV2Server) error {
 
-	mux.Handle("POST", pattern_StkPushAPI_InitiateSTKPush_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_InitiateSTKPush_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/InitiateSTKPush")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/InitiateSTKPush")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_StkPushAPI_InitiateSTKPush_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_StkPushV2_InitiateSTKPush_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -264,22 +264,22 @@ func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_StkPushAPI_InitiateSTKPush_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_InitiateSTKPush_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_StkPushAPI_GetStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_StkPushV2_GetStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/GetStkTransaction")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/GetStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_StkPushAPI_GetStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_StkPushV2_GetStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -287,22 +287,22 @@ func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_StkPushAPI_GetStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_GetStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_StkPushAPI_ListStkTransactions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_StkPushV2_ListStkTransactions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/ListStkTransactions")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/ListStkTransactions")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_StkPushAPI_ListStkTransactions_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_StkPushV2_ListStkTransactions_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -310,22 +310,22 @@ func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_StkPushAPI_ListStkTransactions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_ListStkTransactions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_StkPushAPI_ProcessStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_ProcessStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/ProcessStkTransaction")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/ProcessStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_StkPushAPI_ProcessStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_StkPushV2_ProcessStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -333,22 +333,22 @@ func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_StkPushAPI_ProcessStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_ProcessStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_StkPushAPI_PublishStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_PublishStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/PublishStkTransaction")
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/PublishStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_StkPushAPI_PublishStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_StkPushV2_PublishStkTransaction_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -356,16 +356,16 @@ func RegisterStkPushAPIHandlerServer(ctx context.Context, mux *runtime.ServeMux,
 			return
 		}
 
-		forward_StkPushAPI_PublishStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_PublishStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
 	return nil
 }
 
-// RegisterStkPushAPIHandlerFromEndpoint is same as RegisterStkPushAPIHandler but
+// RegisterStkPushV2HandlerFromEndpoint is same as RegisterStkPushV2Handler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterStkPushAPIHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterStkPushV2HandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.Dial(endpoint, opts...)
 	if err != nil {
 		return err
@@ -385,119 +385,119 @@ func RegisterStkPushAPIHandlerFromEndpoint(ctx context.Context, mux *runtime.Ser
 		}()
 	}()
 
-	return RegisterStkPushAPIHandler(ctx, mux, conn)
+	return RegisterStkPushV2Handler(ctx, mux, conn)
 }
 
-// RegisterStkPushAPIHandler registers the http handlers for service StkPushAPI to "mux".
+// RegisterStkPushV2Handler registers the http handlers for service StkPushV2 to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterStkPushAPIHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterStkPushAPIHandlerClient(ctx, mux, NewStkPushAPIClient(conn))
+func RegisterStkPushV2Handler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterStkPushV2HandlerClient(ctx, mux, NewStkPushV2Client(conn))
 }
 
-// RegisterStkPushAPIHandlerClient registers the http handlers for service StkPushAPI
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "StkPushAPIClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "StkPushAPIClient"
+// RegisterStkPushV2HandlerClient registers the http handlers for service StkPushV2
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "StkPushV2Client".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "StkPushV2Client"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "StkPushAPIClient" to call the correct interceptors.
-func RegisterStkPushAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux, client StkPushAPIClient) error {
+// "StkPushV2Client" to call the correct interceptors.
+func RegisterStkPushV2HandlerClient(ctx context.Context, mux *runtime.ServeMux, client StkPushV2Client) error {
 
-	mux.Handle("POST", pattern_StkPushAPI_InitiateSTKPush_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_InitiateSTKPush_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/InitiateSTKPush")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/InitiateSTKPush")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_StkPushAPI_InitiateSTKPush_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_StkPushV2_InitiateSTKPush_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_StkPushAPI_InitiateSTKPush_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_InitiateSTKPush_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_StkPushAPI_GetStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_StkPushV2_GetStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/GetStkTransaction")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/GetStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_StkPushAPI_GetStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_StkPushV2_GetStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_StkPushAPI_GetStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_GetStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("GET", pattern_StkPushAPI_ListStkTransactions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("GET", pattern_StkPushV2_ListStkTransactions_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/ListStkTransactions")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/ListStkTransactions")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_StkPushAPI_ListStkTransactions_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_StkPushV2_ListStkTransactions_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_StkPushAPI_ListStkTransactions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_ListStkTransactions_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_StkPushAPI_ProcessStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_ProcessStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/ProcessStkTransaction")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/ProcessStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_StkPushAPI_ProcessStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_StkPushV2_ProcessStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_StkPushAPI_ProcessStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_ProcessStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
-	mux.Handle("POST", pattern_StkPushAPI_PublishStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_StkPushV2_PublishStkTransaction_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushAPI/PublishStkTransaction")
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/gidyon.mpesa.StkPushV2/PublishStkTransaction")
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_StkPushAPI_PublishStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_StkPushV2_PublishStkTransaction_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_StkPushAPI_PublishStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_StkPushV2_PublishStkTransaction_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -505,25 +505,25 @@ func RegisterStkPushAPIHandlerClient(ctx context.Context, mux *runtime.ServeMux,
 }
 
 var (
-	pattern_StkPushAPI_InitiateSTKPush_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "initiateSTKPush"))
+	pattern_StkPushV2_InitiateSTKPush_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "initiateSTKPush"))
 
-	pattern_StkPushAPI_GetStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "api", "mpestx", "stk", "transaction_id"}, ""))
+	pattern_StkPushV2_GetStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3, 1, 0, 4, 1, 5, 4}, []string{"v2", "api", "mpestx", "stk", "transaction_id"}, ""))
 
-	pattern_StkPushAPI_ListStkTransactions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, ""))
+	pattern_StkPushV2_ListStkTransactions_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, ""))
 
-	pattern_StkPushAPI_ProcessStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "processStkTransaction"))
+	pattern_StkPushV2_ProcessStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "processStkTransaction"))
 
-	pattern_StkPushAPI_PublishStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "publishStkTransaction"))
+	pattern_StkPushV2_PublishStkTransaction_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2, 2, 3}, []string{"v2", "api", "mpestx", "stk"}, "publishStkTransaction"))
 )
 
 var (
-	forward_StkPushAPI_InitiateSTKPush_0 = runtime.ForwardResponseMessage
+	forward_StkPushV2_InitiateSTKPush_0 = runtime.ForwardResponseMessage
 
-	forward_StkPushAPI_GetStkTransaction_0 = runtime.ForwardResponseMessage
+	forward_StkPushV2_GetStkTransaction_0 = runtime.ForwardResponseMessage
 
-	forward_StkPushAPI_ListStkTransactions_0 = runtime.ForwardResponseMessage
+	forward_StkPushV2_ListStkTransactions_0 = runtime.ForwardResponseMessage
 
-	forward_StkPushAPI_ProcessStkTransaction_0 = runtime.ForwardResponseMessage
+	forward_StkPushV2_ProcessStkTransaction_0 = runtime.ForwardResponseMessage
 
-	forward_StkPushAPI_PublishStkTransaction_0 = runtime.ForwardResponseMessage
+	forward_StkPushV2_PublishStkTransaction_0 = runtime.ForwardResponseMessage
 )

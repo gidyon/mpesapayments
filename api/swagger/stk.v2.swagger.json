@@ -28,7 +28,7 @@
     "/v2/api/mpestx/stk": {
       "get": {
         "summary": "Retrieves a collection of stk push payloads",
-        "operationId": "StkPushAPI_ListStkTransactions",
+        "operationId": "StkPushV2_ListStkTransactions",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -170,14 +170,14 @@
           }
         ],
         "tags": [
-          "StkPushAPI"
+          "StkPushV2"
         ]
       }
     },
     "/v2/api/mpestx/stk/{transactionId}": {
       "get": {
         "summary": "Retrieves a single stk payload",
-        "operationId": "StkPushAPI_GetStkTransaction",
+        "operationId": "StkPushV2_GetStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -207,14 +207,14 @@
           }
         ],
         "tags": [
-          "StkPushAPI"
+          "StkPushV2"
         ]
       }
     },
     "/v2/api/mpestx/stk:initiateSTKPush": {
       "post": {
         "summary": "Initiates mpesa payment.",
-        "operationId": "StkPushAPI_InitiateSTKPush",
+        "operationId": "StkPushV2_InitiateSTKPush",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -240,14 +240,14 @@
           }
         ],
         "tags": [
-          "StkPushAPI"
+          "StkPushV2"
         ]
       }
     },
     "/v2/api/mpestx/stk:processStkTransaction": {
       "post": {
         "summary": "Processes stk push payload updating its status",
-        "operationId": "StkPushAPI_ProcessStkTransaction",
+        "operationId": "StkPushV2_ProcessStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -273,14 +273,14 @@
           }
         ],
         "tags": [
-          "StkPushAPI"
+          "StkPushV2"
         ]
       }
     },
     "/v2/api/mpestx/stk:publishStkTransaction": {
       "post": {
         "summary": "Publishes stk push payload for consumers",
-        "operationId": "StkPushAPI_PublishStkTransaction",
+        "operationId": "StkPushV2_PublishStkTransaction",
         "responses": {
           "200": {
             "description": "A successful response.",
@@ -306,7 +306,7 @@
           }
         ],
         "tags": [
-          "StkPushAPI"
+          "StkPushV2"
         ]
       }
     }
@@ -569,37 +569,43 @@
         "initiatorCustomerNames": {
           "type": "string"
         },
-        "merchantRequestId": {
-          "type": "string"
-        },
-        "checkoutRequestId": {
-          "type": "string"
-        },
         "shortCode": {
           "type": "string"
         },
         "accountReference": {
           "type": "string"
         },
+        "amount": {
+          "type": "string"
+        },
+        "phoneNumber": {
+          "type": "string"
+        },
         "transactionDesc": {
           "type": "string"
         },
-        "resultCode": {
+        "merchantRequestId": {
           "type": "string"
         },
-        "resultDesc": {
+        "checkoutRequestId": {
           "type": "string"
         },
-        "amount": {
+        "stkResponseDescription": {
+          "type": "string"
+        },
+        "stkResponseCode": {
+          "type": "string"
+        },
+        "stkResultCode": {
+          "type": "string"
+        },
+        "stkResultDesc": {
           "type": "string"
         },
         "mpesaReceiptId": {
           "type": "string"
         },
         "balance": {
-          "type": "string"
-        },
-        "phoneNumber": {
           "type": "string"
         },
         "status": {

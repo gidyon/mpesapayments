@@ -14,10 +14,10 @@ import (
 // is compatible with the grpc package it is being compiled against.
 const _ = grpc.SupportPackageIsVersion7
 
-// StkPushAPIClient is the client API for StkPushAPI service.
+// StkPushV2Client is the client API for StkPushV2 service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type StkPushAPIClient interface {
+type StkPushV2Client interface {
 	// Initiates mpesa payment.
 	InitiateSTKPush(ctx context.Context, in *InitiateSTKPushRequest, opts ...grpc.CallOption) (*InitiateSTKPushResponse, error)
 	// Retrieves a single stk payload
@@ -30,63 +30,63 @@ type StkPushAPIClient interface {
 	PublishStkTransaction(ctx context.Context, in *PublishStkTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
-type stkPushAPIClient struct {
+type stkPushV2Client struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewStkPushAPIClient(cc grpc.ClientConnInterface) StkPushAPIClient {
-	return &stkPushAPIClient{cc}
+func NewStkPushV2Client(cc grpc.ClientConnInterface) StkPushV2Client {
+	return &stkPushV2Client{cc}
 }
 
-func (c *stkPushAPIClient) InitiateSTKPush(ctx context.Context, in *InitiateSTKPushRequest, opts ...grpc.CallOption) (*InitiateSTKPushResponse, error) {
+func (c *stkPushV2Client) InitiateSTKPush(ctx context.Context, in *InitiateSTKPushRequest, opts ...grpc.CallOption) (*InitiateSTKPushResponse, error) {
 	out := new(InitiateSTKPushResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/InitiateSTKPush", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushV2/InitiateSTKPush", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stkPushAPIClient) GetStkTransaction(ctx context.Context, in *GetStkTransactionRequest, opts ...grpc.CallOption) (*StkTransaction, error) {
+func (c *stkPushV2Client) GetStkTransaction(ctx context.Context, in *GetStkTransactionRequest, opts ...grpc.CallOption) (*StkTransaction, error) {
 	out := new(StkTransaction)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/GetStkTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushV2/GetStkTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stkPushAPIClient) ListStkTransactions(ctx context.Context, in *ListStkTransactionsRequest, opts ...grpc.CallOption) (*ListStkTransactionsResponse, error) {
+func (c *stkPushV2Client) ListStkTransactions(ctx context.Context, in *ListStkTransactionsRequest, opts ...grpc.CallOption) (*ListStkTransactionsResponse, error) {
 	out := new(ListStkTransactionsResponse)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/ListStkTransactions", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushV2/ListStkTransactions", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stkPushAPIClient) ProcessStkTransaction(ctx context.Context, in *ProcessStkTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *stkPushV2Client) ProcessStkTransaction(ctx context.Context, in *ProcessStkTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/ProcessStkTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushV2/ProcessStkTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *stkPushAPIClient) PublishStkTransaction(ctx context.Context, in *PublishStkTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+func (c *stkPushV2Client) PublishStkTransaction(ctx context.Context, in *PublishStkTransactionRequest, opts ...grpc.CallOption) (*emptypb.Empty, error) {
 	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushAPI/PublishStkTransaction", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/gidyon.mpesa.StkPushV2/PublishStkTransaction", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// StkPushAPIServer is the server API for StkPushAPI service.
-// All implementations must embed UnimplementedStkPushAPIServer
+// StkPushV2Server is the server API for StkPushV2 service.
+// All implementations must embed UnimplementedStkPushV2Server
 // for forward compatibility
-type StkPushAPIServer interface {
+type StkPushV2Server interface {
 	// Initiates mpesa payment.
 	InitiateSTKPush(context.Context, *InitiateSTKPushRequest) (*InitiateSTKPushResponse, error)
 	// Retrieves a single stk payload
@@ -97,154 +97,154 @@ type StkPushAPIServer interface {
 	ProcessStkTransaction(context.Context, *ProcessStkTransactionRequest) (*emptypb.Empty, error)
 	// Publishes stk push payload for consumers
 	PublishStkTransaction(context.Context, *PublishStkTransactionRequest) (*emptypb.Empty, error)
-	mustEmbedUnimplementedStkPushAPIServer()
+	mustEmbedUnimplementedStkPushV2Server()
 }
 
-// UnimplementedStkPushAPIServer must be embedded to have forward compatible implementations.
-type UnimplementedStkPushAPIServer struct {
+// UnimplementedStkPushV2Server must be embedded to have forward compatible implementations.
+type UnimplementedStkPushV2Server struct {
 }
 
-func (UnimplementedStkPushAPIServer) InitiateSTKPush(context.Context, *InitiateSTKPushRequest) (*InitiateSTKPushResponse, error) {
+func (UnimplementedStkPushV2Server) InitiateSTKPush(context.Context, *InitiateSTKPushRequest) (*InitiateSTKPushResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method InitiateSTKPush not implemented")
 }
-func (UnimplementedStkPushAPIServer) GetStkTransaction(context.Context, *GetStkTransactionRequest) (*StkTransaction, error) {
+func (UnimplementedStkPushV2Server) GetStkTransaction(context.Context, *GetStkTransactionRequest) (*StkTransaction, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetStkTransaction not implemented")
 }
-func (UnimplementedStkPushAPIServer) ListStkTransactions(context.Context, *ListStkTransactionsRequest) (*ListStkTransactionsResponse, error) {
+func (UnimplementedStkPushV2Server) ListStkTransactions(context.Context, *ListStkTransactionsRequest) (*ListStkTransactionsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListStkTransactions not implemented")
 }
-func (UnimplementedStkPushAPIServer) ProcessStkTransaction(context.Context, *ProcessStkTransactionRequest) (*emptypb.Empty, error) {
+func (UnimplementedStkPushV2Server) ProcessStkTransaction(context.Context, *ProcessStkTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessStkTransaction not implemented")
 }
-func (UnimplementedStkPushAPIServer) PublishStkTransaction(context.Context, *PublishStkTransactionRequest) (*emptypb.Empty, error) {
+func (UnimplementedStkPushV2Server) PublishStkTransaction(context.Context, *PublishStkTransactionRequest) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishStkTransaction not implemented")
 }
-func (UnimplementedStkPushAPIServer) mustEmbedUnimplementedStkPushAPIServer() {}
+func (UnimplementedStkPushV2Server) mustEmbedUnimplementedStkPushV2Server() {}
 
-// UnsafeStkPushAPIServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to StkPushAPIServer will
+// UnsafeStkPushV2Server may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StkPushV2Server will
 // result in compilation errors.
-type UnsafeStkPushAPIServer interface {
-	mustEmbedUnimplementedStkPushAPIServer()
+type UnsafeStkPushV2Server interface {
+	mustEmbedUnimplementedStkPushV2Server()
 }
 
-func RegisterStkPushAPIServer(s grpc.ServiceRegistrar, srv StkPushAPIServer) {
-	s.RegisterService(&_StkPushAPI_serviceDesc, srv)
+func RegisterStkPushV2Server(s grpc.ServiceRegistrar, srv StkPushV2Server) {
+	s.RegisterService(&_StkPushV2_serviceDesc, srv)
 }
 
-func _StkPushAPI_InitiateSTKPush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StkPushV2_InitiateSTKPush_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(InitiateSTKPushRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StkPushAPIServer).InitiateSTKPush(ctx, in)
+		return srv.(StkPushV2Server).InitiateSTKPush(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/InitiateSTKPush",
+		FullMethod: "/gidyon.mpesa.StkPushV2/InitiateSTKPush",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).InitiateSTKPush(ctx, req.(*InitiateSTKPushRequest))
+		return srv.(StkPushV2Server).InitiateSTKPush(ctx, req.(*InitiateSTKPushRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StkPushAPI_GetStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StkPushV2_GetStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetStkTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StkPushAPIServer).GetStkTransaction(ctx, in)
+		return srv.(StkPushV2Server).GetStkTransaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/GetStkTransaction",
+		FullMethod: "/gidyon.mpesa.StkPushV2/GetStkTransaction",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).GetStkTransaction(ctx, req.(*GetStkTransactionRequest))
+		return srv.(StkPushV2Server).GetStkTransaction(ctx, req.(*GetStkTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StkPushAPI_ListStkTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StkPushV2_ListStkTransactions_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ListStkTransactionsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StkPushAPIServer).ListStkTransactions(ctx, in)
+		return srv.(StkPushV2Server).ListStkTransactions(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/ListStkTransactions",
+		FullMethod: "/gidyon.mpesa.StkPushV2/ListStkTransactions",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).ListStkTransactions(ctx, req.(*ListStkTransactionsRequest))
+		return srv.(StkPushV2Server).ListStkTransactions(ctx, req.(*ListStkTransactionsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StkPushAPI_ProcessStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StkPushV2_ProcessStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ProcessStkTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StkPushAPIServer).ProcessStkTransaction(ctx, in)
+		return srv.(StkPushV2Server).ProcessStkTransaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/ProcessStkTransaction",
+		FullMethod: "/gidyon.mpesa.StkPushV2/ProcessStkTransaction",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).ProcessStkTransaction(ctx, req.(*ProcessStkTransactionRequest))
+		return srv.(StkPushV2Server).ProcessStkTransaction(ctx, req.(*ProcessStkTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _StkPushAPI_PublishStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _StkPushV2_PublishStkTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(PublishStkTransactionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StkPushAPIServer).PublishStkTransaction(ctx, in)
+		return srv.(StkPushV2Server).PublishStkTransaction(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/gidyon.mpesa.StkPushAPI/PublishStkTransaction",
+		FullMethod: "/gidyon.mpesa.StkPushV2/PublishStkTransaction",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StkPushAPIServer).PublishStkTransaction(ctx, req.(*PublishStkTransactionRequest))
+		return srv.(StkPushV2Server).PublishStkTransaction(ctx, req.(*PublishStkTransactionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-var _StkPushAPI_serviceDesc = grpc.ServiceDesc{
-	ServiceName: "gidyon.mpesa.StkPushAPI",
-	HandlerType: (*StkPushAPIServer)(nil),
+var _StkPushV2_serviceDesc = grpc.ServiceDesc{
+	ServiceName: "gidyon.mpesa.StkPushV2",
+	HandlerType: (*StkPushV2Server)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "InitiateSTKPush",
-			Handler:    _StkPushAPI_InitiateSTKPush_Handler,
+			Handler:    _StkPushV2_InitiateSTKPush_Handler,
 		},
 		{
 			MethodName: "GetStkTransaction",
-			Handler:    _StkPushAPI_GetStkTransaction_Handler,
+			Handler:    _StkPushV2_GetStkTransaction_Handler,
 		},
 		{
 			MethodName: "ListStkTransactions",
-			Handler:    _StkPushAPI_ListStkTransactions_Handler,
+			Handler:    _StkPushV2_ListStkTransactions_Handler,
 		},
 		{
 			MethodName: "ProcessStkTransaction",
-			Handler:    _StkPushAPI_ProcessStkTransaction_Handler,
+			Handler:    _StkPushV2_ProcessStkTransaction_Handler,
 		},
 		{
 			MethodName: "PublishStkTransaction",
-			Handler:    _StkPushAPI_PublishStkTransaction_Handler,
+			Handler:    _StkPushV2_PublishStkTransaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
