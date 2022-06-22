@@ -658,18 +658,6 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 
 	pb := req.GetPublishMessage().GetTransactionInfo()
 
-	if pb.GetTransactionId() == "" && req.GetPublishMessage().GetTransactionId() != "" {
-		pb, err = stkAPI.GetStkTransaction(ctx, &stk.GetStkTransactionRequest{
-			TransactionId: req.PublishMessage.TransactionId,
-		})
-		if err == nil {
-			stkAPI.Logger.Errorln(err)
-		}
-	}
-
-	// Update the value
-	req.PublishMessage.TransactionInfo = pb
-
 	// Marshal data
 	bs, err := proto.Marshal(req.PublishMessage)
 	if err != nil {
@@ -690,7 +678,7 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		}
 	case stk.StkProcessedState_STK_PROCESSED:
 		// Publish only if the processed state is true
-		if pb.Processed {
+		if pb.GetProcessed() {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
@@ -698,7 +686,7 @@ func (stkAPI *stkAPIServer) PublishStkTransaction(
 		}
 	case stk.StkProcessedState_STK_NOT_PROCESSED:
 		// Publish only if the processed state is false
-		if !pb.Processed {
+		if !pb.GetProcessed() {
 			err = stkAPI.RedisDB.Publish(ctx, channel, bs).Err()
 			if err != nil {
 				return nil, errs.RedisCmdFailed(err, "PUBSUB")
