@@ -23,8 +23,8 @@ type STKTransaction struct {
 	ShortCode                     string       `gorm:"index;type:varchar(15)"`
 	AccountReference              string       `gorm:"index;type:varchar(50)"`
 	TransactionDesc               string       `gorm:"type:varchar(300)"`
-	MerchantRequestID             string       `gorm:"index;type:varchar(50);not null"`
-	CheckoutRequestID             string       `gorm:"index;type:varchar(50);not null"`
+	MerchantRequestID             string       `gorm:"index;type:varchar(50);"`
+	CheckoutRequestID             string       `gorm:"index;type:varchar(50);"`
 	StkResponseDescription        string       `gorm:"type:varchar(300)"`
 	StkResponseCustomerMessage    string       `gorm:"type:varchar(300)"`
 	StkResponseCode               string       `gorm:"index;type:varchar(10)"`
