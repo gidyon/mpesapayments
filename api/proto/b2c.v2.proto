@@ -183,7 +183,7 @@ message PublishMessage {
   };
 
   string initiator_id = 1;
-  string payment_id = 2;
+  string transaction_id = 2;
   string mpesa_receipt_id = 3;
   string msisdn = 4;
   PublishInfo publish_info = 5;
