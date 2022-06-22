@@ -30,6 +30,7 @@ import (
 
 	app_grpc_middleware "github.com/gidyon/micro/v2/pkg/middleware/grpc"
 	grpc_auth "github.com/grpc-ecosystem/go-grpc-middleware/auth"
+	grpc_zap "github.com/grpc-ecosystem/go-grpc-middleware/logging/zap"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
@@ -93,6 +94,13 @@ func main() {
 			return
 		}
 	})
+
+	if os.Getenv("ENABLE_GRPC_REQUEST_BODY_LOGGING") != "" {
+		// Payload interceptor
+		alwaysLoggingDeciderServer := func(ctx context.Context, fullMethodName string, servingObject interface{}) bool { return true }
+		app.AddGRPCUnaryServerInterceptors(grpc_zap.PayloadUnaryServerInterceptor(zaplogger.Log, alwaysLoggingDeciderServer))
+		app.AddGRPCStreamServerInterceptors(grpc_zap.PayloadStreamServerInterceptor(zaplogger.Log, alwaysLoggingDeciderServer))
+	}
 
 	// Authentication middleware
 	app.AddGRPCUnaryServerInterceptors(grpc_auth.UnaryServerInterceptor(authAPI.AuthorizeFunc))
