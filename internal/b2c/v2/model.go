@@ -27,7 +27,7 @@ func B2CPaymentPB(db *b2c_model.Payment) (*b2c.B2CPayment, error) {
 		B2CResultDescription:          db.ResultDescription,
 		B2CResultCode:                 db.ResultCode,
 		ReceiverPartyPublicName:       db.ReceiverPublicName,
-		MpesaReceiptId:                db.MpesaReceiptId,
+		MpesaReceiptId:                db.MpesaReceiptId.String,
 		WorkingAccountFunds:           db.WorkingAccountFunds,
 		UtilityAccountFunds:           db.UtilityAccountFunds,
 		MpesaCharges:                  db.MpesaCharges,
