@@ -125,7 +125,7 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushV2Server, err er
 
 	defer func() {
 		if err != nil {
-			err = errs.WrapErrorWithMsgFunc("Failed to start stk client API service")(err)
+			err = errs.WrapErrorWithMsgFunc("Failed to start STK API service")(err)
 		}
 	}()
 
@@ -160,12 +160,12 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushV2Server, err er
 	}
 
 	// Auto migration
-	// if !stkAPI.SQLDB.Migrator().HasTable(&stk_model.STKTransaction{}) {
-	err = stkAPI.SQLDB.Migrator().AutoMigrate(&stk_model.STKTransaction{})
-	if err != nil {
-		return nil, err
+	if !stkAPI.SQLDB.Migrator().HasTable(&stk_model.STKTransaction{}) {
+		err = stkAPI.SQLDB.Migrator().AutoMigrate(&stk_model.STKTransaction{})
+		if err != nil {
+			return nil, err
+		}
 	}
-	// }
 
 	dur := time.Minute * 45
 	if opt.UpdateAccessTokenDuration > 0 {
@@ -174,6 +174,9 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushV2Server, err er
 
 	// Worker for updating access token
 	go stkAPI.updateAccessTokenWorker(ctx, dur)
+
+	// Worker for updating STK results
+	go stkAPI.updateSTKResultsWorker(ctx, dur)
 
 	return stkAPI, nil
 }
@@ -290,6 +293,13 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 
 		switch strings.ToLower(res.Header.Get("content-type")) {
 		case "application/json", "application/json;charset=utf-8":
+			// The CheckoutRequestID must exist
+			_, ok := resData["CheckoutRequestID"].(string)
+			if !ok {
+				stkAPI.Logger.Errorln("STK request failed: ", err)
+				return
+			}
+
 			// Save the request to database
 			err = stkAPI.SQLDB.Create(&stk_model.STKTransaction{
 				ID:                            0,
