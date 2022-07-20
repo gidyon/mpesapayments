@@ -181,3 +181,19 @@ func getTransactionTime(transactionTimeStr string) (time.Time, error) {
 // 	 }
 // 	}
 //    }
+
+type QueryStkRequest struct {
+	BusinessShortCode string `json:"BusinessShortCode"`
+	Password          string `json:"Password"`
+	Timestamp         string `json:"Timestamp"`
+	CheckoutRequestID string `json:"CheckoutRequestID"`
+}
+
+type QueryStkResponse struct {
+	ResponseCode        string `json:"ResponseCode"`
+	ResponseDescription string `json:"ResponseDescription"`
+	MerchantRequestID   string `json:"MerchantRequestID"`
+	CheckoutRequestID   string `json:"CheckoutRequestID"`
+	ResultCode          string `json:"ResultCode"`
+	ResultDesc          string `json:"ResultDesc"`
+}
