@@ -393,6 +393,13 @@ func (stkAPI *stkAPIServer) InitiateSTKPush(
 
 		switch strings.ToLower(res.Header.Get("content-type")) {
 		case "application/json", "application/json;charset=utf-8":
+			// The CheckoutRequestID must exist
+			_, ok := resData["CheckoutRequestID"].(string)
+			if !ok {
+				stkAPI.Logger.Errorln("STK request failed: ", err)
+				return
+			}
+
 			bs, err := proto.Marshal(req)
 			if err != nil {
 				stkAPI.Logger.Errorln(err)
