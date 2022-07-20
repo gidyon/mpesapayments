@@ -68,6 +68,7 @@ func (stkAPI *stkAPIServer) updateAccessToken() error {
 }
 
 func (stkAPI *stkAPIServer) updateSTKResultsWorker(ctx context.Context, dur time.Duration) {
+	time.Sleep(time.Second * 20)
 	for {
 		count, err := stkAPI.updateSTKResults(ctx)
 		if err != nil {
@@ -84,6 +85,9 @@ func (stkAPI *stkAPIServer) updateSTKResultsWorker(ctx context.Context, dur time
 }
 
 func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
+	if stkAPI.OptionSTK.accessToken == "" {
+		return 0, errors.New("missing access token")
+	}
 	var (
 		sem   = make(chan struct{}, 10)
 		dbs   = []*stk_model.STKTransaction{}
@@ -132,7 +136,7 @@ func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
 			}(db)
 		}
 
-		wg.Done()
+		wg.Wait()
 	}
 
 	return res, nil
