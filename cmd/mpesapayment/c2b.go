@@ -71,7 +71,7 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	var (
 		err          error
-		mpesaPayload = &payload.MpesaPayload{}
+		mpesaPayload = &payload.MpesaPayloadV2{}
 	)
 
 	// Marshaling
@@ -90,27 +90,29 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validation
-	switch {
-	case mpesaPayload == nil:
-		err = fmt.Errorf("nil mpesa transaction")
-	case mpesaPayload.BusinessShortCode == "":
-		err = fmt.Errorf("missing business short code")
-	case mpesaPayload.BillRefNumber == "":
-		gw.Logger.Warningln("missing account number")
-		mpesaPayload.BillRefNumber = "TILL_PAYMENT"
-	case mpesaPayload.MSISDN == "":
-		err = fmt.Errorf("missing transaction msisdn")
-	case mpesaPayload.TransactionType == "":
-		err = fmt.Errorf("missing transaction type")
-	case mpesaPayload.TransAmount == "":
-		err = fmt.Errorf("missing transaction amount")
-	case mpesaPayload.TransTime == "":
-		err = errs.MissingField("missing transaction time")
-	}
-	if err != nil {
-		gw.Logger.Errorf("validation error: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
+	{
+		switch {
+		case mpesaPayload == nil:
+			err = fmt.Errorf("nil mpesa transaction")
+		case mpesaPayload.BusinessShortCode == "":
+			err = fmt.Errorf("missing business short code")
+		case mpesaPayload.BillRefNumber == "":
+			gw.Logger.Warningln("missing account number")
+			mpesaPayload.BillRefNumber = "TILL_PAYMENT"
+		case mpesaPayload.MSISDN == "":
+			err = fmt.Errorf("missing transaction msisdn")
+		case mpesaPayload.TransactionType == "":
+			err = fmt.Errorf("missing transaction type")
+		case mpesaPayload.TransAmount == "":
+			err = fmt.Errorf("missing transaction amount")
+		case mpesaPayload.TransTime == "":
+			err = errs.MissingField("missing transaction time")
+		}
+		if err != nil {
+			gw.Logger.Errorf("validation error: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
 	}
 
 	transactionTime, err := getTransactionTime(mpesaPayload.TransTime)
@@ -142,12 +144,14 @@ func (gw *gateway) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	C2BPB := &c2b.C2BPayment{
-		TransactionId:          mpesaPayload.TransID,
+		PaymentId:              "",
 		TransactionType:        mpesaPayload.TransactionType,
-		TransactionTimeSeconds: transactionTime.Unix(),
+		TransactionId:          mpesaPayload.TransID,
 		Msisdn:                 mpesaPayload.MSISDN,
 		Names:                  fmt.Sprintf("%s %s", mpesaPayload.FirstName, mpesaPayload.LastName),
 		RefNumber:              mpesaPayload.BillRefNumber,
+		TransactionTimeSeconds: transactionTime.Unix(),
+		CreateTimeSeconds:      0,
 		Amount:                 float32(transactionAmount),
 		OrgBalance:             float32(orgBalance),
 		BusinessShortCode:      int32(businessShortCode),
