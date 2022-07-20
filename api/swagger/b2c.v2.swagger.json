@@ -816,7 +816,7 @@
         "initiatorId": {
           "type": "string"
         },
-        "paymentId": {
+        "transactionId": {
           "type": "string"
         },
         "mpesaReceiptId": {

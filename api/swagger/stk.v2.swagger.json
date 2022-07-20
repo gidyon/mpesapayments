@@ -124,6 +124,7 @@
                 "STK_STATUS_UNKNOWN",
                 "STK_REQUEST_FAILED",
                 "STK_REQUEST_SUBMITED",
+                "STK_RESULT_SUCCESS",
                 "STK_SUCCESS",
                 "STK_FAILED"
               ]
@@ -546,6 +547,7 @@
         "STK_STATUS_UNKNOWN",
         "STK_REQUEST_FAILED",
         "STK_REQUEST_SUBMITED",
+        "STK_RESULT_SUCCESS",
         "STK_SUCCESS",
         "STK_FAILED"
       ],
