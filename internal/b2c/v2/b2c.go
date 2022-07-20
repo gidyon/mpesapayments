@@ -323,7 +323,7 @@ func (b2cAPI *b2cAPIServer) TransferFunds(
 				MpesaCharges:                  0,
 				OnfonCharges:                  0,
 				RecipientRegistered:           false,
-				MpesaReceiptId:                "",
+				MpesaReceiptId:                sql.NullString{},
 				ReceiverPublicName:            "",
 				Status:                        b2c.B2CStatus_B2C_REQUEST_SUBMITED.String(),
 				Source:                        "",
@@ -617,9 +617,9 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 	if key != "" {
 		switch req.GetFilter().GetOrderField() {
 		case b2c.B2COrderField_B2C_PAYMENT_ID:
-			db = db.Where("id<?", key).Order("id DESC")
+			db = db.Order("id DESC").Where("id<?", key)
 		case b2c.B2COrderField_B2C_TRANSACTION_TIMESTAMP:
-			db = db.Where("transaction_time<?", key).Order("transaction_time DESC")
+			db = db.Order("transaction_time DESC").Where("transaction_time<?", key)
 		}
 	} else {
 		switch req.GetFilter().GetOrderField() {
@@ -656,7 +656,7 @@ func (b2cAPI *b2cAPIServer) ListB2CPayments(
 		}
 
 		if len(req.Filter.Msisdns) > 0 {
-			db = db.Where("phone_number IN(?)", req.Filter.Msisdns)
+			db = db.Where("msisdn IN(?)", req.Filter.Msisdns)
 		}
 
 		if len(req.Filter.MpesaReceipts) > 0 {

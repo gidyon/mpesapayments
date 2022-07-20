@@ -38,13 +38,13 @@ type Payment struct {
 	ResultCode               string `gorm:"index;type:varchar(10)"`
 	ResultDescription        string `gorm:"type:varchar(300)"`
 
-	WorkingAccountFunds float32 `gorm:"type:float(10)"`
-	UtilityAccountFunds float32 `gorm:"type:float(10)"`
-	MpesaCharges        float32 `gorm:"type:float(10)"`
-	OnfonCharges        float32 `gorm:"type:float(10)"`
-	RecipientRegistered bool    `gorm:"index;type:tinyint(1)"`
-	MpesaReceiptId      string  `gorm:"index;type:varchar(50);unique"`
-	ReceiverPublicName  string  `gorm:"type:varchar(50)"`
+	WorkingAccountFunds float32        `gorm:"type:float(10)"`
+	UtilityAccountFunds float32        `gorm:"type:float(10)"`
+	MpesaCharges        float32        `gorm:"type:float(10)"`
+	OnfonCharges        float32        `gorm:"type:float(10)"`
+	RecipientRegistered bool           `gorm:"index;type:tinyint(1)"`
+	MpesaReceiptId      sql.NullString `gorm:"index;type:varchar(50);unique"`
+	ReceiverPublicName  string         `gorm:"type:varchar(50)"`
 
 	Status    string `gorm:"index;type:varchar(30)"`
 	Source    string `gorm:"index;type:varchar(30)"`
