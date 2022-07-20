@@ -97,7 +97,8 @@ func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
 
 	for next {
 		dbs = dbs[0:0]
-		err = stkAPI.SQLDB.Order("id desc").Limit(limit+1).Find(&dbs, "stk_status = ? AND id > ?", stk.StkStatus_STK_REQUEST_SUBMITED, ID).Error
+		err = stkAPI.SQLDB.Order("id desc").Limit(limit+1).
+			Find(&dbs, "stk_status = ? AND id > ? AND created_at < ?", stk.StkStatus_STK_REQUEST_SUBMITED, ID, time.Now().Add(-time.Minute*10)).Error
 		if err != nil {
 			return 0, err
 		}

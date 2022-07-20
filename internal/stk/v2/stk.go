@@ -176,7 +176,7 @@ func NewStkAPI(ctx context.Context, opt *Options) (_ stk.StkPushV2Server, err er
 	go stkAPI.updateAccessTokenWorker(ctx, dur)
 
 	// Worker for updating STK results
-	go stkAPI.updateSTKResultsWorker(ctx, dur)
+	go stkAPI.updateSTKResultsWorker(ctx, time.Minute*5)
 
 	return stkAPI, nil
 }
