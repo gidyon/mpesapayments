@@ -89,8 +89,8 @@ func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
 		return 0, errors.New("missing access token")
 	}
 	var (
-		sem   = make(chan struct{}, 10)
-		dbs   = []*stk_model.STKTransaction{}
+		sem   = make(chan struct{}, 1)
+		dbs   = make([]*stk_model.STKTransaction, 0)
 		mu    = &sync.Mutex{}
 		res   = 0
 		ID    = 0
@@ -100,9 +100,8 @@ func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
 	)
 
 	for next {
-		dbs = dbs[0:0]
-		err = stkAPI.SQLDB.Order("id desc").Limit(limit+1).
-			Find(&dbs, "stk_status = ? AND id > ? AND created_at < ?", stk.StkStatus_STK_REQUEST_SUBMITED, ID, time.Now().Add(-time.Minute*10)).Error
+		err = stkAPI.SQLDB.Order("id desc").Limit(limit+1).Model(&stk_model.STKTransaction{}).
+			Find(&dbs, "stk_status = ? AND id > ? AND created_at < ?", stk.StkStatus_STK_REQUEST_SUBMITED.String(), ID, time.Now().Add(-time.Minute*10)).Error
 		if err != nil {
 			return 0, err
 		}
@@ -167,7 +166,7 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 
 	res, err := stkAPI.HTTPClient.Do(reqHtpp)
 	if err != nil {
-		return fmt.Errorf("Failed to post stk request to mpesa API: %v", err)
+		return fmt.Errorf("failed to post stk query API: %v", err)
 	}
 
 	httputils.DumpResponse(res, "QUERY STK RESULT RESPONSE")
@@ -176,11 +175,11 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 
 	err = json.NewDecoder(res.Body).Decode(&resData)
 	if err != nil && err != io.EOF {
-		return fmt.Errorf("Failed to decode mpesa response: %v", err)
+		return fmt.Errorf("failed to decode mpesa response: %v", err)
 	}
 
 	if resData.MerchantRequestID == "" || resData.CheckoutRequestID == "" || resData.ResultCode == "" {
-		return errors.New("Error happened while sending stk push")
+		return errors.New("gotten error while posting to query stk API")
 	}
 
 	succeeded := "NO"
@@ -200,11 +199,11 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 			"succeeded":                succeeded,
 		}).Error
 		if err != nil {
-			stkAPI.Logger.Errorln("Failed to updated stk transaction: ", err)
+			stkAPI.Logger.Errorln("failed to updated stk transaction: ", err)
 		}
 
 	default:
-		stkAPI.Logger.Errorln("Incorrect Response while Querying STK Status")
+		stkAPI.Logger.Errorln("incorrect response while querying stk API")
 	}
 
 	return nil
