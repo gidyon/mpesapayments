@@ -125,6 +125,7 @@
                 "STK_REQUEST_FAILED",
                 "STK_REQUEST_SUBMITED",
                 "STK_RESULT_SUCCESS",
+                "STK_RESULT_FAILED",
                 "STK_SUCCESS",
                 "STK_FAILED"
               ]
@@ -548,6 +549,7 @@
         "STK_REQUEST_FAILED",
         "STK_REQUEST_SUBMITED",
         "STK_RESULT_SUCCESS",
+        "STK_RESULT_FAILED",
         "STK_SUCCESS",
         "STK_FAILED"
       ],
