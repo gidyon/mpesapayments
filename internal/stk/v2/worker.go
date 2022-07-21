@@ -188,7 +188,7 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 		succeeded = "YES"
 		status = stk.StkStatus_STK_RESULT_SUCCESS.String()
 	}
-	systemId := fmt.Sprintf("ONFON_%d_%s", time.Now().UnixNano(), db.CheckoutRequestID)
+	systemId := fmt.Sprintf("ONFON_%d_%s", time.Now().UnixNano(), db.MerchantRequestID)
 
 	switch strings.ToLower(res.Header.Get("content-type")) {
 	case "application/json", "application/json;charset=utf-8":
