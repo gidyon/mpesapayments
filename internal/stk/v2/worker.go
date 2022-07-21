@@ -89,7 +89,7 @@ func (stkAPI *stkAPIServer) updateSTKResults(ctx context.Context) (int, error) {
 		return 0, errors.New("missing access token")
 	}
 	var (
-		sem   = make(chan struct{}, 1)
+		sem   = make(chan struct{}, 5)
 		dbs   = make([]*stk_model.STKTransaction, 0)
 		mu    = &sync.Mutex{}
 		res   = 0
@@ -183,9 +183,12 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 	}
 
 	succeeded := "NO"
+	status := stk.StkStatus_STK_RESULT_FAILED.String()
 	if resData.ResultCode == "0" && strings.Contains(strings.ToLower(resData.ResultDesc), "successfully") {
 		succeeded = "YES"
+		status = stk.StkStatus_STK_RESULT_SUCCESS.String()
 	}
+	systemId := fmt.Sprintf("ONFON_%d_%s", time.Now().UnixNano(), db.CheckoutRequestID)
 
 	switch strings.ToLower(res.Header.Get("content-type")) {
 	case "application/json", "application/json;charset=utf-8":
@@ -195,13 +198,13 @@ func (stkAPI *stkAPIServer) updateSTKResult(_ context.Context, db *stk_model.STK
 			"stk_response_code":        resData.ResponseCode,
 			"result_description":       resData.ResultDesc,
 			"result_code":              resData.ResultCode,
-			"stk_status":               stk.StkStatus_STK_RESULT_SUCCESS.String(),
+			"mpesa_receipt_id":         systemId,
+			"stk_status":               status,
 			"succeeded":                succeeded,
 		}).Error
 		if err != nil {
 			stkAPI.Logger.Errorln("failed to updated stk transaction: ", err)
 		}
-
 	default:
 		stkAPI.Logger.Errorln("incorrect response while querying stk API")
 	}
